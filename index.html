@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>LuckyBomb VN — DEMO (Virtual Currency Only)</title>
+<meta name="description" content="Fictional casino-style UI prototype. Virtual currency only. No real money, no payments, no gambling." />
+<style>
+/* ============================================================
+   LuckyBomb VN — FICTIONAL DEMO
+   Virtual currency only. No real money. No payment processing.
+   ============================================================ */
+
+:root{
+  --bg:#070410;
+  --bg-2:#0e0720;
+  --bg-3:#160c2c;
+  --red:#ff2d55;
+  --red-soft:#ff6b8a;
+  --gold:#ffc93c;
+  --gold-soft:#ffe08a;
+  --purple:#8b5cf6;
+  --purple-soft:#c4b5fd;
+  --cyan:#22d3ee;
+  --green:#34d399;
+  --text:#f4f1ff;
+  --muted:#a89fc4;
+  --glass:rgba(255,255,255,.055);
+  --glass-2:rgba(255,255,255,.09);
+  --stroke:rgba(255,255,255,.12);
+  --stroke-2:rgba(255,255,255,.2);
+  --radius:20px;
+  --sidebar-w:248px;
+  --banner-h:30px;
+  --shadow:0 18px 50px rgba(0,0,0,.55);
+  --font:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--font);
+  color:var(--text);
+  background:var(--bg);
+  overflow-x:hidden;
+  line-height:1.5;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:-2;
+  background:
+    radial-gradient(900px 620px at 12% -8%, rgba(139,92,246,.30), transparent 62%),
+    radial-gradient(760px 560px at 92% 4%, rgba(255,45,85,.24), transparent 60%),
+    radial-gradient(900px 700px at 60% 108%, rgba(255,201,60,.14), transparent 62%),
+    linear-gradient(170deg,var(--bg) 0%, var(--bg-2) 48%, #0b0518 100%);
+}
+body::after{
+  content:"";
+  position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.5;
+  background-image:
+    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+  background-size:46px 46px;
+  mask-image:radial-gradient(circle at 50% 30%, #000 10%, transparent 78%);
+  -webkit-mask-image:radial-gradient(circle at 50% 30%, #000 10%, transparent 78%);
+}
+::selection{background:rgba(255,45,85,.4)}
+h1,h2,h3,h4{margin:0;line-height:1.2}
+button,input,select{font-family:inherit;font-size:100%}
+button{cursor:pointer;border:0;background:none;color:inherit}
+[hidden]{display:none !important}
+
+/* ---------------- scrollbars ---------------- */
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+*::-webkit-scrollbar-thumb{background:rgba(139,92,246,.45);border-radius:20px}
+*::-webkit-scrollbar-thumb:hover{background:rgba(139,92,246,.7)}
+
+/* ---------------- reusable ---------------- */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  backdrop-filter:blur(16px) saturate(140%);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);
+  box-shadow:var(--shadow);
+}
+.card{padding:18px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 auto}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.tiny{font-size:11.5px}
+.center{text-align:center}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.gold{color:var(--gold)}
+.red{color:var(--red)}
+.green{color:var(--green)}
+.purple{color:var(--purple-soft)}
+.cyan{color:var(--cyan)}
+
+.title-neon{
+  font-weight:900;letter-spacing:.5px;
+  background:linear-gradient(92deg,var(--gold) 0%, var(--red) 46%, var(--purple) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 16px rgba(255,45,85,.35));
+}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;
+  border:1px solid var(--stroke-2);
+  background:var(--glass-2);
+  color:var(--text);
+  transition:transform .16s ease, box-shadow .22s ease, background .22s ease, border-color .22s ease, filter .22s ease;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-2px);background:rgba(255,255,255,.14);box-shadow:0 10px 26px rgba(0,0,0,.4)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn:disabled{opacity:.42;cursor:not-allowed;transform:none;box-shadow:none;filter:grayscale(.4)}
+.btn-primary{
+  background:linear-gradient(120deg,var(--red),#c026d3 55%,var(--purple));
+  border-color:transparent;
+  box-shadow:0 10px 30px rgba(255,45,85,.35);
+}
+.btn-primary:hover{box-shadow:0 14px 38px rgba(255,45,85,.5);background:linear-gradient(120deg,#ff466b,#d434ea 55%,#9d72ff)}
+.btn-gold{
+  background:linear-gradient(120deg,var(--gold),#ff9a2e);
+  color:#2a1a00;border-color:transparent;
+  box-shadow:0 10px 30px rgba(255,201,60,.32);
+}
+.btn-gold:hover{box-shadow:0 14px 38px rgba(255,201,60,.48)}
+.btn-ghost{background:rgba(255,255,255,.04)}
+.btn-danger{background:linear-gradient(120deg,#ef4444,#b91c1c);border-color:transparent}
+.btn-block{width:100%}
+.btn-sm{padding:8px 13px;font-size:12.5px;border-radius:11px}
+.btn-lg{padding:15px 26px;font-size:16px;border-radius:16px}
+
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.35px;text-transform:uppercase}
+.input{
+  width:100%;padding:13px 15px;border-radius:14px;
+  background:rgba(8,4,18,.62);
+  border:1px solid var(--stroke);
+  color:var(--text);outline:none;
+  transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.input::placeholder{color:#6f6590}
+.input:focus{border-color:rgba(255,45,85,.75);box-shadow:0 0 0 4px rgba(255,45,85,.16);background:rgba(8,4,18,.85)}
+
+.chip{
+  padding:9px 14px;border-radius:999px;font-weight:700;font-size:13px;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.05);
+  transition:all .18s ease;
+}
+.chip:hover{border-color:var(--stroke-2);background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.chip.active{
+  background:linear-gradient(120deg,rgba(255,45,85,.35),rgba(139,92,246,.35));
+  border-color:rgba(255,45,85,.7);
+  box-shadow:0 0 0 3px rgba(255,45,85,.14), 0 8px 22px rgba(255,45,85,.24);
+}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.4px;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.06);
+}
+.pill-warn{background:rgba(255,45,85,.16);border-color:rgba(255,45,85,.5);color:#ffb4c4}
+.pill-ok{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.45);color:#9df3d5}
+.pill-gold{background:rgba(255,201,60,.14);border-color:rgba(255,201,60,.45);color:var(--gold-soft)}
+
+.sep{height:1px;background:linear-gradient(90deg,transparent,var(--stroke),transparent);border:0;margin:6px 0}
+
+.section-title{
+  display:flex;align-items:center;gap:10px;
+  font-size:19px;font-weight:900;letter-spacing:.3px;margin-bottom:2px;
+}
+.section-title .dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red)}
+
+/* ---------------- demo banner ---------------- */
+.demo-banner{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:7px 12px;
+  font-size:11.5px;font-weight:900;letter-spacing:.9px;text-align:center;
+  color:#1a0308;
+  background:repeating-linear-gradient(135deg,#ffc93c 0 18px,#ff2d55 18px 36px);
+  text-shadow:0 1px 0 rgba(255,255,255,.25);
+}
+.demo-banner span{background:rgba(255,255,255,.75);padding:2px 10px;border-radius:999px}
+@media(max-width:560px){
+  .demo-banner{padding:6px 8px;font-size:9px;letter-spacing:.35px}
+  .demo-banner span{padding:2px 7px}
+}
+
+/* ---------------- auth ---------------- */
+#authScreen{min-height:100dvh;display:flex;flex-direction:column}
+.auth-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:24px 16px 48px;
+}
+.auth-card{width:100%;max-width:430px;padding:26px 24px 24px;animation:pop .45s cubic-bezier(.2,.9,.3,1.2)}
+.auth-logo{
+  display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:20px;text-align:center;
+}
+.auth-logo .bomb{
+  font-size:46px;filter:drop-shadow(0 0 22px rgba(255,45,85,.7));
+  animation:float 3.4s ease-in-out infinite;
+}
+.auth-logo h1{font-size:30px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:15px;background:rgba(0,0,0,.35);border:1px solid var(--stroke);margin-bottom:18px}
+.tabs button{padding:10px;border-radius:11px;font-weight:800;font-size:13.5px;color:var(--muted);transition:all .2s ease}
+.tabs button.active{background:linear-gradient(120deg,var(--red),var(--purple));color:#fff;box-shadow:0 8px 22px rgba(255,45,85,.3)}
+.auth-note{
+  margin-top:16px;padding:12px 14px;border-radius:14px;font-size:11.5px;line-height:1.6;
+  background:rgba(255,45,85,.09);border:1px solid rgba(255,45,85,.3);color:#ffc3d0;
+}
+.err{color:#ff8fa6;font-size:12.5px;font-weight:700;min-height:17px}
+
+/* ---------------- app shell ---------------- */
+#app{min-height:100dvh;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:var(--banner-h);z-index:50;
+  display:flex;align-items:center;gap:12px;
+  padding:10px 16px;
+  background:rgba(10,5,22,.72);
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  border-bottom:1px solid var(--stroke);
+}
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;font-size:17px;letter-spacing:.4px;white-space:nowrap}
+.brand .bomb{font-size:23px;filter:drop-shadow(0 0 10px rgba(255,45,85,.75))}
+.balance-box{
+  margin-left:auto;display:flex;align-items:center;gap:10px;
+  padding:7px 14px;border-radius:14px;
+  background:linear-gradient(120deg,rgba(255,201,60,.16),rgba(255,45,85,.14));
+  border:1px solid rgba(255,201,60,.4);
+  box-shadow:inset 0 0 22px rgba(255,201,60,.07);
+}
+.balance-box .amt{font-weight:900;font-size:17px;color:var(--gold);text-shadow:0 0 16px rgba(255,201,60,.45)}
+.balance-box .amt.bump{animation:bump .5s cubic-bezier(.2,.9,.3,1.4)}
+.balance-box .lbl{font-size:9.5px;font-weight:900;letter-spacing:.7px;color:var(--gold-soft);opacity:.8;white-space:nowrap}
+.avatar-btn{
+  width:38px;height:38px;border-radius:12px;flex:0 0 auto;
+  display:grid;place-items:center;font-weight:900;font-size:14px;
+  background:linear-gradient(135deg,var(--purple),var(--red));
+  box-shadow:0 8px 20px rgba(139,92,246,.4);
+}
+.shell{flex:1;display:flex;width:100%;max-width:1360px;margin:0 auto}
+
+.sidebar{
+  position:sticky;top:calc(var(--banner-h) + 70px);align-self:flex-start;
+  width:var(--sidebar-w);flex:0 0 var(--sidebar-w);
+  padding:18px 12px;display:flex;flex-direction:column;gap:5px;
+  height:calc(100dvh - 110px);
+}
+.nav-btn{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;border-radius:14px;font-weight:700;font-size:14px;
+  color:var(--muted);border:1px solid transparent;text-align:left;
+  transition:all .18s ease;
+}
+.nav-btn .ico{font-size:17px;width:22px;text-align:center}
+.nav-btn:hover{background:rgba(255,255,255,.06);color:var(--text);transform:translateX(3px)}
+.nav-btn.active{
+  background:linear-gradient(100deg,rgba(255,45,85,.22),rgba(139,92,246,.16));
+  border-color:rgba(255,45,85,.4);color:#fff;
+  box-shadow:0 8px 24px rgba(255,45,85,.16);
+}
+.nav-btn.active .ico{filter:drop-shadow(0 0 8px rgba(255,45,85,.8))}
+.sidebar-foot{margin-top:auto;padding:12px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid var(--stroke);font-size:10.5px;line-height:1.6;color:var(--muted)}
+
+.content{flex:1;min-width:0;padding:18px 16px 120px}
+@media(min-width:900px){.content{padding:22px 24px 40px}}
+
+.page{display:none;animation:fade .34s ease}
+.page.active{display:block}
+
+/* ---------------- home ---------------- */
+.hero{
+  position:relative;overflow:hidden;padding:26px 22px;
+  background:linear-gradient(120deg,rgba(255,45,85,.16),rgba(139,92,246,.14) 55%,rgba(255,201,60,.1));
+}
+.hero::after{
+  content:"";position:absolute;right:-60px;top:-70px;width:250px;height:250px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,201,60,.32),transparent 68%);
+  animation:float 6s ease-in-out infinite;
+}
+.hero h2{font-size:clamp(22px,5vw,34px);margin-bottom:6px}
+.hero .big-bal{font-size:clamp(30px,8vw,46px);font-weight:900;color:var(--gold);text-shadow:0 0 30px rgba(255,201,60,.4);letter-spacing:-.5px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{padding:14px 16px}
+.stat .k{font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}
+.stat .v{font-size:21px;font-weight:900;margin-top:3px}
+
+.game-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.game-card{
+  position:relative;overflow:hidden;padding:20px;cursor:pointer;
+  transition:transform .22s cubic-bezier(.2,.9,.3,1.2), box-shadow .25s ease, border-color .25s ease;
+}
+.game-card:hover{transform:translateY(-6px) scale(1.012);border-color:var(--stroke-2);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.game-card .emoji{font-size:40px;display:block;margin-bottom:10px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));transition:transform .3s ease}
+.game-card:hover .emoji{transform:scale(1.14) rotate(-7deg)}
+.game-card h3{font-size:17px;margin-bottom:4px}
+.game-card .glow{position:absolute;inset:auto -40px -50px auto;width:150px;height:150px;border-radius:50%;filter:blur(8px);opacity:.28}
+.gc-bomb .glow{background:var(--red)} .gc-wheel .glow{background:var(--purple)}
+.gc-dice .glow{background:var(--cyan)} .gc-dep .glow{background:var(--gold)}
+
+/* ---------------- bet controls ---------------- */
+.panel-grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:980px){.panel-grid{grid-template-columns:320px 1fr;align-items:start}}
+/* Grid/flex children must be allowed to shrink, otherwise a horizontally
+   scrollable child (the multiplier strip, the tables) widens the whole track. */
+.panel-grid>*,.dep-grid>*,.game-grid>*,.stat-grid>*,.amount-grid>*,.choice-grid>*{min-width:0}
+.mult-strip,.table-wrap,.legend{min-width:0}
+.bet-amount-display{
+  display:flex;align-items:baseline;gap:8px;padding:12px 15px;border-radius:14px;
+  background:rgba(0,0,0,.34);border:1px solid var(--stroke);
+}
+.bet-amount-display .v{font-size:22px;font-weight:900;color:var(--gold)}
+
+/* ---------------- mines ---------------- */
+.mine-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:9px;
+  max-width:460px;margin:0 auto;width:100%;
+}
+.tile{
+  position:relative;aspect-ratio:1/1;border-radius:14px;
+  display:grid;place-items:center;font-size:clamp(20px,5.5vw,28px);
+  background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.03));
+  border:1px solid var(--stroke);
+  transition:transform .16s ease, box-shadow .2s ease, background .3s ease, border-color .3s ease;
+  transform-style:preserve-3d;
+}
+.tile::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(160deg,rgba(255,255,255,.14),transparent 60%);
+  opacity:.8;pointer-events:none;
+}
+.tile:not(:disabled):hover{transform:translateY(-3px);border-color:rgba(255,201,60,.55);box-shadow:0 10px 24px rgba(0,0,0,.45), 0 0 0 2px rgba(255,201,60,.16)}
+.tile:disabled{cursor:default}
+.tile.safe{
+  background:linear-gradient(160deg,rgba(52,211,153,.32),rgba(52,211,153,.1));
+  border-color:rgba(52,211,153,.6);
+  box-shadow:0 0 22px rgba(52,211,153,.24) inset;
+  animation:flip .38s ease;
+}
+.tile.bomb{
+  background:linear-gradient(160deg,rgba(255,45,85,.42),rgba(255,45,85,.14));
+  border-color:rgba(255,45,85,.75);
+  box-shadow:0 0 26px rgba(255,45,85,.4) inset;
+  animation:shake .45s ease;
+}
+.tile.revealed-bomb{opacity:.55;filter:saturate(.7)}
+.tile.idle-locked{opacity:.5}
+.mult-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.mult-step{
+  flex:0 0 auto;padding:6px 11px;border-radius:11px;font-size:12px;font-weight:800;
+  background:rgba(255,255,255,.05);border:1px solid var(--stroke);color:var(--muted);
+}
+.mult-step.done{background:rgba(52,211,153,.18);border-color:rgba(52,211,153,.45);color:#a7f3d0}
+.mult-step.next{background:rgba(255,201,60,.18);border-color:rgba(255,201,60,.5);color:var(--gold-soft);box-shadow:0 0 0 2px rgba(255,201,60,.12)}
+
+.payout-box{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  padding:14px;border-radius:16px;background:rgba(0,0,0,.34);border:1px solid var(--stroke);
+}
+.payout-box .k{font-size:10.5px;font-weight:900;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}
+.payout-box .v{font-size:19px;font-weight:900}
+
+/* ---------------- wheel ---------------- */
+.wheel-stage{display:flex;flex-direction:column;align-items:center;gap:18px;padding:10px 0}
+.wheel-wrap{
+  position:relative;width:min(78vw,380px);aspect-ratio:1/1;
+}
+.wheel-pointer{
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:5;
+  width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;
+  border-top:30px solid var(--gold);
+  filter:drop-shadow(0 4px 10px rgba(255,201,60,.8));
+}
+.wheel-outer{
+  position:absolute;inset:0;border-radius:50%;
+  padding:10px;
+  background:conic-gradient(from 0deg,var(--gold),var(--red),var(--purple),var(--gold));
+  box-shadow:0 0 50px rgba(139,92,246,.45), 0 0 90px rgba(255,45,85,.25);
+}
+.wheel{
+  position:relative;width:100%;height:100%;border-radius:50%;
+  border:5px solid rgba(10,5,22,.85);
+  transition:transform 5s cubic-bezier(.12,.72,.12,1);
+  will-change:transform;
+}
+.wlab{position:absolute;inset:0;pointer-events:none}
+.wlab span{
+  position:absolute;top:7%;left:50%;transform:translateX(-50%);
+  font-weight:900;font-size:clamp(12px,3.4vw,16px);color:#fff;
+  text-shadow:0 2px 5px rgba(0,0,0,.85);white-space:nowrap;
+}
+.wheel-hub{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;
+  width:27%;aspect-ratio:1/1;border-radius:50%;
+  display:grid;place-items:center;text-align:center;
+  font-weight:900;font-size:clamp(11px,2.8vw,14px);letter-spacing:.5px;
+  background:radial-gradient(circle at 34% 28%,#2a1440,#0c0618);
+  border:3px solid var(--gold);
+  color:var(--gold);
+  box-shadow:0 0 28px rgba(255,201,60,.55), inset 0 0 22px rgba(0,0,0,.7);
+  transition:transform .18s ease, box-shadow .25s ease;
+}
+.wheel-hub:hover:not(:disabled){transform:translate(-50%,-50%) scale(1.07);box-shadow:0 0 40px rgba(255,201,60,.8)}
+.wheel-hub:disabled{opacity:.6;cursor:not-allowed}
+.wheel-result{
+  min-height:56px;display:grid;place-items:center;
+  font-size:clamp(20px,5vw,30px);font-weight:900;
+}
+.wheel-result.pop{animation:pop .5s cubic-bezier(.2,.9,.3,1.5)}
+.legend{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.legend .lg{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+.legend .sw{width:11px;height:11px;border-radius:3px}
+
+/* ---------------- dice ---------------- */
+.dice-row{display:flex;gap:clamp(10px,3vw,20px);justify-content:center;align-items:center;padding:16px 0}
+.die{
+  /* percentage padding would resolve against the ROW's width, so derive it
+     from the die's own size instead */
+  --die-size:clamp(62px,18vw,92px);
+  width:var(--die-size);aspect-ratio:1/1;flex:0 0 auto;border-radius:16px;
+  background:linear-gradient(155deg,#ffffff,#d8d2e8);
+  box-shadow:0 12px 30px rgba(0,0,0,.6), inset 0 -5px 10px rgba(0,0,0,.14), 0 0 26px rgba(255,255,255,.14);
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  padding:calc(var(--die-size) * .14);
+  gap:calc(var(--die-size) * .05);
+}
+.die .pip{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 34% 30%,#5b1230,#210209);box-shadow:inset 0 -1px 2px rgba(255,255,255,.28)}
+.die.rolling{animation:roll .52s cubic-bezier(.4,.1,.5,.9) infinite}
+.die.landed{animation:land .4s cubic-bezier(.2,.9,.3,1.5)}
+.die.jackpot{background:linear-gradient(155deg,#fff8dc,#ffd76b);box-shadow:0 0 40px rgba(255,201,60,.85), inset 0 -5px 10px rgba(0,0,0,.14)}
+.dice-sum{
+  display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;
+  font-size:15px;font-weight:800;
+}
+.dice-sum .big{font-size:26px;font-weight:900;color:var(--gold)}
+.choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.choice{
+  padding:14px 8px;border-radius:16px;text-align:center;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.045);
+  transition:all .2s cubic-bezier(.2,.9,.3,1.2);
+}
+.choice .ce{font-size:24px;display:block}
+.choice .cn{display:block;font-weight:900;font-size:12.5px;margin-top:4px;letter-spacing:.3px}
+.choice .cm{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-top:2px}
+.choice:hover{transform:translateY(-3px);background:rgba(255,255,255,.09);border-color:var(--stroke-2)}
+.choice.active{border-color:var(--gold);background:linear-gradient(140deg,rgba(255,201,60,.26),rgba(255,45,85,.16));box-shadow:0 0 0 3px rgba(255,201,60,.14),0 10px 26px rgba(255,201,60,.2)}
+.choice.active .cm{color:var(--gold-soft)}
+.result-banner{
+  padding:16px;border-radius:16px;text-align:center;font-weight:900;text-wrap:balance;
+  font-size:clamp(15px,4.2vw,20px);line-height:1.4;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);min-height:60px;display:grid;place-items:center;
+}
+.result-banner.win{background:linear-gradient(120deg,rgba(52,211,153,.3),rgba(34,211,238,.18));border-color:rgba(52,211,153,.6);animation:pop .5s cubic-bezier(.2,.9,.3,1.5)}
+.result-banner.lose{background:linear-gradient(120deg,rgba(255,45,85,.26),rgba(139,92,246,.14));border-color:rgba(255,45,85,.55);animation:shake .5s ease}
+.result-banner.jack{background:linear-gradient(120deg,rgba(255,201,60,.4),rgba(255,45,85,.24));border-color:var(--gold);animation:pop .6s cubic-bezier(.2,.9,.3,1.6);text-shadow:0 0 24px rgba(255,201,60,.8)}
+
+/* ---------------- deposit ---------------- */
+.dep-grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:900px){.dep-grid{grid-template-columns:1fr 340px;align-items:start}}
+.amount-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.amount-btn{
+  padding:16px 10px;border-radius:16px;text-align:center;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.045);
+  transition:all .2s cubic-bezier(.2,.9,.3,1.2);
+}
+.amount-btn .a{font-size:17px;font-weight:900;color:var(--gold)}
+.amount-btn .c{font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.5px}
+.amount-btn:hover{transform:translateY(-3px);border-color:rgba(255,201,60,.5);background:rgba(255,201,60,.09)}
+.amount-btn.active{border-color:var(--gold);background:linear-gradient(140deg,rgba(255,201,60,.24),rgba(255,45,85,.14));box-shadow:0 0 0 3px rgba(255,201,60,.14)}
+.qr-panel{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px}
+.qr-frame{
+  position:relative;padding:14px;border-radius:18px;background:#fff;
+  box-shadow:0 14px 40px rgba(0,0,0,.6);
+}
+.qr-frame canvas{display:block;width:min(56vw,208px);height:auto;image-rendering:pixelated}
+.qr-stamp{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-16deg);
+  padding:7px 16px;border-radius:9px;
+  background:rgba(255,45,85,.94);color:#fff;
+  font-weight:900;font-size:clamp(11px,3vw,15px);letter-spacing:1.4px;
+  border:3px solid #fff;box-shadow:0 8px 22px rgba(0,0,0,.5);white-space:nowrap;
+}
+.fake-info{width:100%;display:flex;flex-direction:column;gap:7px;font-size:12.5px}
+.fake-info .fi{display:flex;justify-content:space-between;gap:12px;padding:8px 11px;border-radius:11px;background:rgba(0,0,0,.34);border:1px solid var(--stroke)}
+.fake-info .fi b{color:var(--gold-soft);font-weight:800;text-align:right;overflow-wrap:break-word}
+.warn-box{
+  padding:14px 16px;border-radius:16px;
+  background:rgba(255,45,85,.11);border:1px solid rgba(255,45,85,.42);
+  color:#ffc3d0;font-size:12.5px;line-height:1.65;
+}
+.warn-box b{color:#fff}
+
+/* ---------------- tables / history ---------------- */
+.table-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--stroke);background:rgba(0,0,0,.24)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:540px}
+th{
+  text-align:left;padding:11px 14px;font-size:10.5px;font-weight:900;letter-spacing:.65px;
+  text-transform:uppercase;color:var(--muted);
+  background:rgba(255,255,255,.045);border-bottom:1px solid var(--stroke);white-space:nowrap;
+}
+td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.055);vertical-align:middle}
+tbody tr{transition:background .16s ease}
+tbody tr:hover{background:rgba(255,255,255,.04)}
+tbody tr:last-child td{border-bottom:0}
+.empty{padding:34px 16px;text-align:center;color:var(--muted);font-size:13px}
+.filters{display:flex;gap:7px;flex-wrap:wrap}
+
+/* ---------------- account ---------------- */
+.acct-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.acct-av{
+  width:66px;height:66px;border-radius:20px;display:grid;place-items:center;
+  font-size:26px;font-weight:900;
+  background:linear-gradient(135deg,var(--purple),var(--red));
+  box-shadow:0 12px 30px rgba(139,92,246,.45);
+}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kv .item{padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid var(--stroke)}
+.kv .item .k{font-size:10.5px;font-weight:900;letter-spacing:.55px;color:var(--muted);text-transform:uppercase}
+.kv .item .v{font-size:15px;font-weight:800;margin-top:3px;word-break:break-word}
+
+/* ---------------- bottom nav ---------------- */
+.bottomnav{
+  position:fixed;left:0;right:0;bottom:0;z-index:55;
+  display:none;
+  padding:7px 5px calc(7px + env(safe-area-inset-bottom));
+  background:rgba(10,5,22,.93);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--stroke);
+}
+.bottomnav .inner{display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.bn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:12px;color:var(--muted);transition:all .18s ease}
+.bn .ico{font-size:18px}
+.bn .lb{font-size:9px;font-weight:800;letter-spacing:.2px}
+.bn.active{color:var(--gold);background:rgba(255,201,60,.1)}
+.bn.active .ico{filter:drop-shadow(0 0 8px rgba(255,201,60,.8));transform:translateY(-1px)}
+
+/* ---------------- toasts ---------------- */
+#toasts{
+  position:fixed;z-index:200;top:calc(var(--banner-h) + 74px);right:14px;
+  display:flex;flex-direction:column;gap:9px;
+  max-width:min(92vw,360px);pointer-events:none;
+}
+.toast{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 15px;border-radius:15px;
+  background:rgba(18,9,34,.95);border:1px solid var(--stroke-2);
+  box-shadow:0 16px 40px rgba(0,0,0,.6);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  animation:slideIn .32s cubic-bezier(.2,.9,.3,1.3);
+  font-size:13px;pointer-events:auto;
+}
+.toast.out{animation:slideOut .28s ease forwards}
+.toast .ti{font-size:17px;line-height:1.3}
+.toast .tt{font-weight:800}
+.toast .tb{font-size:12px;color:var(--muted);margin-top:1px}
+.toast.win{border-color:rgba(52,211,153,.6);box-shadow:0 16px 40px rgba(52,211,153,.2)}
+.toast.lose{border-color:rgba(255,45,85,.6);box-shadow:0 16px 40px rgba(255,45,85,.2)}
+.toast.info{border-color:rgba(139,92,246,.6)}
+.toast.gold{border-color:rgba(255,201,60,.65);box-shadow:0 16px 40px rgba(255,201,60,.22)}
+
+/* ---------------- command console ---------------- */
+.console-fab{
+  position:fixed;z-index:120;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));
+  width:54px;height:54px;border-radius:18px;display:grid;place-items:center;font-size:23px;
+  background:linear-gradient(135deg,var(--purple),#4c1d95);
+  border:1px solid rgba(196,181,253,.45);
+  box-shadow:0 14px 34px rgba(139,92,246,.5);
+  transition:transform .2s cubic-bezier(.2,.9,.3,1.4), box-shadow .25s ease;
+}
+.console-fab:hover{transform:scale(1.08) rotate(-6deg);box-shadow:0 18px 44px rgba(139,92,246,.7)}
+@media(min-width:900px){.console-fab{bottom:20px}}
+
+.console{
+  position:fixed;z-index:130;right:14px;bottom:calc(150px + env(safe-area-inset-bottom));
+  width:min(94vw,392px);max-height:min(62vh,520px);
+  display:flex;flex-direction:column;overflow:hidden;
+  animation:pop .28s cubic-bezier(.2,.9,.3,1.3);
+}
+@media(min-width:900px){.console{bottom:86px}}
+.console-head{
+  display:flex;align-items:center;gap:9px;padding:11px 14px;
+  border-bottom:1px solid var(--stroke);background:rgba(139,92,246,.14);
+}
+.console-head .t{font-weight:900;font-size:13.5px}
+.console-log{
+  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;
+  font-size:12.5px;min-height:150px;
+}
+.msg{padding:9px 12px;border-radius:13px;max-width:92%;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.msg.sys{background:rgba(255,255,255,.055);border:1px solid var(--stroke);align-self:flex-start}
+.msg.usr{background:linear-gradient(120deg,rgba(255,45,85,.3),rgba(139,92,246,.3));align-self:flex-end;font-weight:700}
+.msg.ok{background:rgba(52,211,153,.16);border:1px solid rgba(52,211,153,.4);align-self:flex-start}
+.msg.err{background:rgba(255,45,85,.16);border:1px solid rgba(255,45,85,.45);align-self:flex-start}
+.msg code{background:rgba(0,0,0,.45);padding:1px 6px;border-radius:5px;font-size:11.5px;color:var(--gold-soft)}
+.console-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--stroke);background:rgba(0,0,0,.28)}
+.console-form .input{padding:10px 13px;border-radius:12px;font-size:13px}
+
+/* ---------------- modal ---------------- */
+.modal-bg{
+  position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:18px;
+  background:rgba(4,2,10,.76);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  animation:fade .22s ease;
+}
+.modal{width:100%;max-width:380px;padding:22px;animation:pop .32s cubic-bezier(.2,.9,.3,1.3)}
+
+/* ---------------- animations ---------------- */
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOut{to{opacity:0;transform:translateX(50px) scale(.94)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(7px)}54%{transform:translateX(-5px)}72%{transform:translateX(5px)}}
+@keyframes flip{from{transform:rotateY(85deg) scale(.86);opacity:.3}to{transform:rotateY(0) scale(1);opacity:1}}
+@keyframes roll{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-18px) rotate(90deg)}50%{transform:translateY(0) rotate(180deg)}75%{transform:translateY(-12px) rotate(270deg)}100%{transform:translateY(0) rotate(360deg)}}
+@keyframes land{0%{transform:scale(1.22)}60%{transform:scale(.94)}100%{transform:scale(1)}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05ms !important}
+}
+
+/* ---------------- responsive ---------------- */
+@media(max-width:899px){
+  .sidebar{display:none}
+  .bottomnav{display:block}
+  .topbar{padding:9px 10px;gap:8px}
+  .brand{font-size:13px;gap:6px}
+  .brand .bomb{font-size:18px}
+  .balance-box{padding:5px 9px;gap:6px}
+  .balance-box .amt{font-size:13.5px}
+  .balance-box .lbl{font-size:8px;letter-spacing:.35px}
+  .avatar-btn{width:34px;height:34px;font-size:12.5px}
+  .card{padding:15px}
+  #toasts{top:auto;bottom:calc(150px + env(safe-area-inset-bottom));right:10px;left:10px;max-width:none}
+}
+/* very narrow phones: the wordmark yields to the balance, which matters more */
+@media(max-width:374px){
+  .topbar{gap:6px;padding:9px 8px}
+  .brand .title-neon{display:none}
+  .balance-box .lbl{font-size:7.5px;letter-spacing:.25px}
+  .balance-box .amt{font-size:13px}
+}
+@media(max-width:400px){
+  .choice .cn{font-size:11px}
+  .mine-grid{gap:6px}
+  .bottomnav .inner{gap:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ GLOBAL DEMO BANNER ============ -->
+<div class="demo-banner">
+  <span>DEMO — VIRTUAL CURRENCY ONLY — NO REAL MONEY</span>
+</div>
+
+<!-- ============================================================
+     AUTH SCREEN
+     ============================================================ -->
+<div id="authScreen">
+  <div class="auth-wrap">
+    <div class="auth-card glass">
+
+      <div class="auth-logo">
+        <div class="bomb">💣</div>
+        <h1 class="title-neon">LUCKYBOMB VN</h1>
+        <div class="small muted">Sòng bài mô phỏng • Fictional casino prototype</div>
+        <div class="pill pill-warn" style="margin-top:6px">DEMO — NO REAL MONEY</div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button id="tabLogin" class="active" role="tab">Đăng nhập / Login</button>
+        <button id="tabRegister" role="tab">Tạo tài khoản</button>
+      </div>
+
+      <!-- login -->
+      <form id="loginForm" class="stack" autocomplete="off">
+        <div class="field">
+          <label for="loginUser">Username</label>
+          <input id="loginUser" class="input" type="text" placeholder="Tên đăng nhập" maxlength="24" />
+        </div>
+        <div class="field">
+          <label for="loginPass">Password</label>
+          <input id="loginPass" class="input" type="password" placeholder="Mật khẩu" maxlength="64" />
+        </div>
+        <div id="loginErr" class="err"></div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">🔓 Login</button>
+        <button type="button" id="goRegister" class="btn btn-ghost btn-block">✨ Create Account</button>
+      </form>
+
+      <!-- register -->
+      <form id="registerForm" class="stack" autocomplete="off" hidden>
+        <div class="field">
+          <label for="regUser">Username</label>
+          <input id="regUser" class="input" type="text" placeholder="3–24 ký tự" maxlength="24" />
+        </div>
+        <div class="field">
+          <label for="regPass">Password</label>
+          <input id="regPass" class="input" type="password" placeholder="Tối thiểu 4 ký tự" maxlength="64" />
+        </div>
+        <div class="field">
+          <label for="regPass2">Confirm password</label>
+          <input id="regPass2" class="input" type="password" placeholder="Nhập lại mật khẩu" maxlength="64" />
+        </div>
+        <div id="regErr" class="err"></div>
+        <button type="submit" class="btn btn-gold btn-block btn-lg">🎁 Create Account (+100,000 VND ảo)</button>
+        <button type="button" id="goLogin" class="btn btn-ghost btn-block">← Back to login</button>
+      </form>
+
+      <div class="auth-note">
+        <b>⚠️ Đây là sản phẩm hư cấu / This is fictional.</b><br />
+        Không có tiền thật, không có cổng thanh toán, không có ngân hàng, không có rút tiền.
+        Tài khoản demo chỉ lưu trong <b>localStorage</b> của trình duyệt này.
+        Đừng dùng mật khẩu thật.<br />
+        <span class="tiny">No real money · No payment gateway · No bank data · No withdrawals · Not real gambling.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP
+     ============================================================ -->
+<div id="app" hidden>
+
+  <!-- ---------- top bar ---------- -->
+  <header class="topbar">
+    <div class="brand"><span class="bomb">💣</span><span class="title-neon">LUCKYBOMB VN</span></div>
+    <div class="balance-box">
+      <span style="font-size:16px">💰</span>
+      <div>
+        <div class="amt mono" id="balanceTop">0 VND</div>
+        <div class="lbl">VIRTUAL · NO REAL MONEY</div>
+      </div>
+    </div>
+    <button class="avatar-btn" id="avatarBtn" title="Account">U</button>
+  </header>
+
+  <div class="shell">
+
+    <!-- ---------- sidebar ---------- -->
+    <aside class="sidebar">
+      <button class="nav-btn" data-page="home"><span class="ico">🏠</span> Home</button>
+      <button class="nav-btn" data-page="bomb"><span class="ico">💣</span> Bomb</button>
+      <button class="nav-btn" data-page="wheel"><span class="ico">🎡</span> Vòng Quay</button>
+      <button class="nav-btn" data-page="dice"><span class="ico">🎲</span> Dice</button>
+      <button class="nav-btn" data-page="deposit"><span class="ico">💳</span> Add Virtual Money</button>
+      <button class="nav-btn" data-page="history"><span class="ico">📜</span> History</button>
+      <button class="nav-btn" data-page="account"><span class="ico">👤</span> Account</button>
+      <div class="sidebar-foot">
+        <b class="gold">DEMO BUILD</b><br />
+        Virtual VND only. No real money, no payments, no withdrawals. Fictional prototype for UI demonstration.
+      </div>
+    </aside>
+
+    <!-- ---------- content ---------- -->
+    <main class="content">
+
+      <!-- ============ HOME ============ -->
+      <section class="page" id="page-home">
+        <div class="stack">
+
+          <div class="hero glass card">
+            <div class="pill pill-warn">DEMO — NO REAL MONEY</div>
+            <h2 style="margin-top:10px">Xin chào, <span class="gold" id="helloName">player</span> 👋</h2>
+            <div class="small muted">Số dư ảo của bạn / Your virtual balance</div>
+            <div class="big-bal mono" id="balanceHero">0 VND</div>
+            <div class="small muted">VIRTUAL VND — tiền ảo, không có giá trị thật</div>
+            <div class="row" style="margin-top:14px">
+              <button class="btn btn-gold" data-nav="deposit">💳 Add Virtual Money</button>
+              <button class="btn btn-ghost" data-nav="bomb">💣 Chơi ngay</button>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat glass"><div class="k">Ván đã chơi</div><div class="v mono" id="statPlays">0</div></div>
+            <div class="stat glass"><div class="k">Thắng / Wins</div><div class="v mono green" id="statWins">0</div></div>
+            <div class="stat glass"><div class="k">Thua / Losses</div><div class="v mono red" id="statLosses">0</div></div>
+            <div class="stat glass"><div class="k">Lãi/Lỗ ảo</div><div class="v mono" id="statNet">0</div></div>
+          </div>
+
+          <div class="section-title"><span class="dot"></span> Trò chơi / Games</div>
+          <div class="game-grid">
+            <div class="game-card glass gc-bomb" data-nav="bomb">
+              <div class="glow"></div>
+              <span class="emoji">💣</span>
+              <h3>Bomb / Mines</h3>
+              <div class="small muted">Lật ô an toàn, tránh bom. Hệ số tăng dần.</div>
+              <div class="pill pill-gold" style="margin-top:10px">Up to 100x+</div>
+            </div>
+            <div class="game-card glass gc-wheel" data-nav="wheel">
+              <div class="glow"></div>
+              <span class="emoji">🎡</span>
+              <h3>Vòng Quay May Mắn</h3>
+              <div class="small muted">Quay bánh xe, nhận hệ số 0x → 5x.</div>
+              <div class="pill pill-gold" style="margin-top:10px">Max 5x</div>
+            </div>
+            <div class="game-card glass gc-dice" data-nav="dice">
+              <div class="glow"></div>
+              <span class="emoji">🎲</span>
+              <h3>Dice Roll</h3>
+              <div class="small muted">THREE WHITE · ODD · EVEN với 3 viên xúc xắc.</div>
+              <div class="pill pill-gold" style="margin-top:10px">Jackpot 10x</div>
+            </div>
+            <div class="game-card glass gc-dep" data-nav="deposit">
+              <div class="glow"></div>
+              <span class="emoji">💳</span>
+              <h3>Add Virtual Money</h3>
+              <div class="small muted">Nạp tiền ảo mô phỏng — QR giả, không chuyển tiền.</div>
+              <div class="pill pill-warn" style="margin-top:10px">SIMULATED ONLY</div>
+            </div>
+          </div>
+
+          <div class="section-title"><span class="dot"></span> Lịch sử gần đây</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Thời gian</th><th>Game</th><th>Cược</th><th>Kết quả</th><th>Thay đổi</th></tr></thead>
+              <tbody id="homeHistoryBody"></tbody>
+            </table>
+            <div class="empty" id="homeHistoryEmpty">Chưa có ván nào. Hãy chơi thử! 🎮</div>
+          </div>
+
+          <div class="warn-box">
+            <b>DEMO — NO REAL MONEY.</b> Toàn bộ số dư, giao dịch và phần thưởng trên trang này là
+            <b>tiền ảo hư cấu</b>. Trang này không kết nối ngân hàng, không có cổng thanh toán,
+            không nhận nạp tiền thật và không cho rút tiền. Đây chỉ là bản mẫu giao diện (UI prototype).
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============ BOMB ============ -->
+      <section class="page" id="page-bomb">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 💣 Bomb / Mines</div>
+            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
+          </div>
+
+          <div class="panel-grid">
+
+            <!-- controls -->
+            <div class="glass card stack" id="bombControls">
+              <div class="field">
+                <label for="bombBet">Tiền cược ảo / Virtual bet</label>
+                <input id="bombBet" class="input mono" type="number" min="1000" step="1000" value="50000" />
+              </div>
+              <div class="row" id="bombBetPresets">
+                <button class="chip" data-bet="10000">10K</button>
+                <button class="chip" data-bet="50000">50K</button>
+                <button class="chip" data-bet="100000">100K</button>
+                <button class="chip" data-bet="200000">200K</button>
+                <button class="chip" data-bet="half">½</button>
+                <button class="chip" data-bet="max">MAX</button>
+              </div>
+
+              <div class="field">
+                <label>Số bom / Bombs</label>
+                <div class="row" id="bombCountPresets">
+                  <button class="chip active" data-bombs="3">3 💣</button>
+                  <button class="chip" data-bombs="5">5 💣</button>
+                  <button class="chip" data-bombs="10">10 💣</button>
+                  <button class="chip" data-bombs="15">15 💣</button>
+                </div>
+              </div>
+
+              <div class="payout-box">
+                <div>
+                  <div class="k">Hệ số hiện tại</div>
+                  <div class="v gold mono" id="bombMult">1.00x</div>
+                </div>
+                <div>
+                  <div class="k">Tiền thắng dự kiến</div>
+                  <div class="v green mono" id="bombPayout">0</div>
+                </div>
+                <div>
+                  <div class="k">Ô an toàn đã mở</div>
+                  <div class="v mono" id="bombSafeCount">0 / 22</div>
+                </div>
+                <div>
+                  <div class="k">Hệ số ô kế tiếp</div>
+                  <div class="v purple mono" id="bombNextMult">—</div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-block btn-lg" id="bombStart">▶ Bắt đầu / Start Game</button>
+              <button class="btn btn-gold btn-block btn-lg" id="bombCashout" hidden>💰 CASH OUT</button>
+              <div class="tiny muted center">Tiền cược ảo bị trừ khi bắt đầu ván. Không có tiền thật.</div>
+            </div>
+
+            <!-- board -->
+            <div class="glass card stack">
+              <div class="mult-strip" id="bombMultStrip"></div>
+              <div class="mine-grid" id="mineGrid"></div>
+              <div class="result-banner" id="bombBanner">Chọn mức cược và số bom, rồi nhấn <b>Start</b></div>
+              <div class="tiny muted center">
+                Hệ số = (xác suất công bằng × 97%). Đây là mô phỏng — không phải cờ bạc thật.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ WHEEL ============ -->
+      <section class="page" id="page-wheel">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 🎡 Vòng Quay May Mắn</div>
+            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
+          </div>
+
+          <div class="panel-grid">
+
+            <div class="glass card stack">
+              <div class="field">
+                <label for="wheelBet">Tiền cược ảo / Virtual bet</label>
+                <input id="wheelBet" class="input mono" type="number" min="1000" step="1000" value="50000" />
+              </div>
+              <div class="row" id="wheelBetPresets">
+                <button class="chip active" data-bet="50000">50,000</button>
+                <button class="chip" data-bet="100000">100,000</button>
+                <button class="chip" data-bet="200000">200,000</button>
+              </div>
+
+              <hr class="sep" />
+
+              <div class="small muted">Các hệ số có thể trúng / Possible multipliers</div>
+              <div class="legend" id="wheelLegend"></div>
+
+              <div class="payout-box">
+                <div><div class="k">Cược</div><div class="v gold mono" id="wheelBetShow">50,000</div></div>
+                <div><div class="k">Hệ số vừa quay</div><div class="v purple mono" id="wheelLastMult">—</div></div>
+              </div>
+
+              <div class="warn-box tiny">
+                “This is a simulated game using virtual currency.”<br />
+                <b>Đây là trò chơi mô phỏng dùng tiền ảo.</b> Không có tiền thật.
+              </div>
+            </div>
+
+            <div class="glass card">
+              <div class="wheel-stage">
+                <div class="wheel-wrap">
+                  <div class="wheel-pointer"></div>
+                  <div class="wheel-outer">
+                    <div class="wheel" id="wheel"><div id="wheelLabels"></div></div>
+                  </div>
+                  <button class="wheel-hub" id="spinBtn">SPIN</button>
+                </div>
+                <div class="wheel-result" id="wheelResult">Đặt cược rồi nhấn <b style="color:var(--gold)">SPIN</b></div>
+                <button class="btn btn-primary btn-lg" id="spinBtn2">🎡 QUAY / SPIN</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DICE ============ -->
+      <section class="page" id="page-dice">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 🎲 Dice Roll — Xúc Xắc</div>
+            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
+          </div>
+
+          <div class="panel-grid">
+
+            <div class="glass card stack">
+              <div class="field">
+                <label for="diceBet">Tiền cược ảo / Virtual bet</label>
+                <input id="diceBet" class="input mono" type="number" min="1000" step="1000" value="50000" />
+              </div>
+              <div class="row" id="diceBetPresets">
+                <button class="chip active" data-bet="50000">50,000</button>
+                <button class="chip" data-bet="100000">100,000</button>
+                <button class="chip" data-bet="200000">200,000</button>
+              </div>
+
+              <div class="field">
+                <label>Lựa chọn / Your choice</label>
+                <div class="choice-grid" id="diceChoices">
+                  <button class="choice" data-choice="three"><span class="ce">🎯</span><span class="cn">THREE WHITE</span><span class="cm">10.0x</span></button>
+                  <button class="choice active" data-choice="odd"><span class="ce">🔴</span><span class="cn">ODD / LẺ</span><span class="cm">1.8x</span></button>
+                  <button class="choice" data-choice="even"><span class="ce">🔵</span><span class="cn">EVEN / CHẴN</span><span class="cm">1.8x</span></button>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-block btn-lg" id="diceRoll">🎲 LẮC / ROLL</button>
+
+              <hr class="sep" />
+              <div class="small muted stack" style="gap:5px">
+                <div><b class="gold">Luật chơi hư cấu / Fictional rules</b></div>
+                <div>• <b>THREE WHITE</b> — cả 3 xúc xắc giống nhau (bộ ba) → jackpot <b>10x</b>.</div>
+                <div>• <b>ODD</b> — tổng 3 xúc xắc là số lẻ → <b>1.8x</b>.</div>
+                <div>• <b>EVEN</b> — tổng 3 xúc xắc là số chẵn → <b>1.8x</b>.</div>
+                <div>• Bộ ba (THREE WHITE) làm cược ODD/EVEN thua — luật nhà cái hư cấu.</div>
+              </div>
+            </div>
+
+            <div class="glass card stack">
+              <div class="dice-row" id="diceRow">
+                <div class="die" data-die="0"></div>
+                <div class="die" data-die="1"></div>
+                <div class="die" data-die="2"></div>
+              </div>
+              <div class="dice-sum" id="diceSum">
+                <span class="muted small">Tổng / Total:</span> <span class="big mono" id="diceTotal">—</span>
+                <span class="pill" id="dicePar">—</span>
+              </div>
+              <div class="result-banner" id="diceBanner">Chọn cược và nhấn <b>ROLL</b>.</div>
+              <div class="tiny muted center">Mọi khoản thắng đều là <b>tiền ảo</b>. Simulated dice — virtual payouts only.</div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DEPOSIT ============ -->
+      <section class="page" id="page-deposit">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 💳 Add Virtual Money</div>
+            <span class="pill pill-warn">SIMULATED PAYMENT ONLY</span>
+          </div>
+
+          <div class="warn-box">
+            <b>DEMO PAYMENT — THIS QR CODE DOES NOT TRANSFER MONEY.</b><br />
+            Mã QR bên dưới là hình vẽ trang trí, <b>không phải mã thanh toán</b>. Trang này
+            không kết nối ngân hàng, ví điện tử, hay bất kỳ cổng thanh toán nào.
+            Nút “SIMULATE PAYMENT” chỉ <b>cộng tiền ảo</b> vào số dư demo trong trình duyệt của bạn —
+            <b>không có giao dịch thật nào xảy ra</b> và không có khoản tiền nào được chuyển đi.
+          </div>
+
+          <div class="dep-grid">
+
+            <div class="glass card stack">
+              <div class="small muted">Chọn số tiền ảo / Select virtual amount</div>
+              <div class="amount-grid" id="depAmounts">
+                <button class="amount-btn" data-amt="50000"><div class="a mono">50,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn active" data-amt="100000"><div class="a mono">100,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn" data-amt="200000"><div class="a mono">200,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn" data-amt="500000"><div class="a mono">500,000</div><div class="c">VIRTUAL VND</div></button>
+              </div>
+
+              <div class="field">
+                <label for="depCustom">Số tiền tuỳ chọn / Custom amount (virtual)</label>
+                <input id="depCustom" class="input mono" type="number" min="1000" max="10000000" step="1000" placeholder="VD: 250000" />
+              </div>
+
+              <div class="bet-amount-display">
+                <span class="small muted">Sẽ cộng:</span>
+                <span class="v mono" id="depSelected">100,000</span>
+                <span class="small muted">VIRTUAL VND</span>
+              </div>
+
+              <button class="btn btn-gold btn-block btn-lg" id="simulatePay">⚡ SIMULATE PAYMENT</button>
+              <div class="tiny center" style="color:#ffb4c4">
+                Không có tiền thật được chuyển. No real payment is processed — nothing is charged, nothing is sent.
+              </div>
+
+              <hr class="sep" />
+
+              <div class="section-title" style="font-size:15px"><span class="dot"></span> Lịch sử giao dịch (demo)</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Mã GD</th><th>Thời gian</th><th>Loại</th><th>Số tiền ảo</th><th>Trạng thái</th></tr></thead>
+                  <tbody id="txBody"></tbody>
+                </table>
+                <div class="empty" id="txEmpty" hidden>Chưa có giao dịch demo nào.</div>
+              </div>
+              <div class="tiny muted">Tất cả giao dịch ở trên là <b>hư cấu / fictional</b> và chỉ tồn tại trong trình duyệt này.</div>
+            </div>
+
+            <div class="glass card qr-panel">
+              <div class="pill pill-warn">FAKE QR — NOT A PAYMENT CODE</div>
+              <div class="qr-frame">
+                <canvas id="qrCanvas" width="252" height="252" aria-label="Decorative fake QR graphic"></canvas>
+                <div class="qr-stamp">DEMO ONLY</div>
+              </div>
+              <div class="center small" style="color:#ffb4c4;font-weight:800">
+                DEMO PAYMENT — THIS QR CODE DOES NOT TRANSFER MONEY
+              </div>
+              <div class="fake-info">
+                <div class="fi"><span class="muted">Đơn vị (hư cấu)</span><b>LUCKYBOMB DEMO STUDIO</b></div>
+                <div class="fi"><span class="muted">Mã tham chiếu</span><b id="qrRef">DEMO-000000</b></div>
+                <div class="fi"><span class="muted">Số tiền ảo</span><b id="qrAmt">100,000 VIRTUAL VND</b></div>
+                <div class="fi"><span class="muted">Ngân hàng</span><b>KHÔNG CÓ / NONE</b></div>
+                <div class="fi"><span class="muted">Số tài khoản</span><b>KHÔNG CÓ / NONE</b></div>
+                <div class="fi"><span class="muted">Hiệu lực</span><b>Chỉ trong demo</b></div>
+              </div>
+              <div class="tiny muted center">
+                Không có thông tin ngân hàng thật nào được hiển thị hay thu thập.
+                No bank details are shown, requested, or collected.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ HISTORY ============ -->
+      <section class="page" id="page-history">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 📜 Lịch sử / History</div>
+            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat glass"><div class="k">Tổng ván</div><div class="v mono" id="hStatPlays">0</div></div>
+            <div class="stat glass"><div class="k">Tổng cược ảo</div><div class="v mono gold" id="hStatWagered">0</div></div>
+            <div class="stat glass"><div class="k">Tổng thắng ảo</div><div class="v mono green" id="hStatWon">0</div></div>
+            <div class="stat glass"><div class="k">Lãi/Lỗ ảo</div><div class="v mono" id="hStatNet">0</div></div>
+          </div>
+
+          <div class="glass card stack">
+            <div class="row">
+              <div class="filters" id="histFilters">
+                <button class="chip active" data-filter="all">Tất cả</button>
+                <button class="chip" data-filter="bomb">💣 Bomb</button>
+                <button class="chip" data-filter="wheel">🎡 Vòng Quay</button>
+                <button class="chip" data-filter="dice">🎲 Dice</button>
+              </div>
+              <div class="grow"></div>
+              <button class="btn btn-ghost btn-sm" id="clearHistory">🗑 Xoá lịch sử</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Thời gian</th><th>Game</th><th>Chi tiết</th><th>Cược ảo</th><th>Kết quả</th><th>Thay đổi</th></tr></thead>
+                <tbody id="historyBody"></tbody>
+              </table>
+              <div class="empty" id="historyEmpty">Chưa có lịch sử.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ACCOUNT ============ -->
+      <section class="page" id="page-account">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 👤 Tài khoản / Account</div>
+            <span class="pill pill-warn">DEMO ACCOUNT</span>
+          </div>
+
+          <div class="glass card stack">
+            <div class="acct-head">
+              <div class="acct-av" id="acctAv">U</div>
+              <div class="grow">
+                <h3 id="acctName">player</h3>
+                <div class="small muted">Tài khoản demo hư cấu · lưu trong localStorage</div>
+              </div>
+              <span class="pill pill-ok" id="acctMode">CHẾ ĐỘ: BÌNH THƯỜNG</span>
+            </div>
+
+            <div class="kv">
+              <div class="item"><div class="k">Số dư ảo</div><div class="v gold mono" id="acctBal">0</div></div>
+              <div class="item"><div class="k">Ngày tạo</div><div class="v" id="acctCreated">—</div></div>
+              <div class="item"><div class="k">Số ván đã chơi</div><div class="v mono" id="acctPlays">0</div></div>
+              <div class="item"><div class="k">Số giao dịch demo</div><div class="v mono" id="acctTx">0</div></div>
+            </div>
+
+            <hr class="sep" />
+
+            <div class="row">
+              <button class="btn btn-gold" data-nav="deposit">💳 Nạp tiền ảo</button>
+              <button class="btn btn-ghost" id="resetBalance">♻️ Đặt lại 100,000 ảo</button>
+              <button class="btn btn-ghost" id="openConsoleFromAcct">⌨️ Command Console</button>
+              <div class="grow"></div>
+              <button class="btn btn-ghost" id="logoutBtn">🚪 Đăng xuất</button>
+              <button class="btn btn-danger" id="deleteAcct">🗑 Xoá tài khoản demo</button>
+            </div>
+          </div>
+
+          <div class="glass card stack">
+            <div class="section-title" style="font-size:15px"><span class="dot"></span> ⌨️ Command Chat (demo admin)</div>
+            <div class="small muted">Mở console và gõ các lệnh sau / Open the console and type:</div>
+            <div class="small stack" style="gap:6px">
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/always win for (username)</code> — luôn thắng</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/always loose for (username)</code> — luôn thua</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">add (username) (amount)</code> — cộng tiền ảo</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/normal for (username)</code> — trả về ngẫu nhiên</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/users</code>, <code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/help</code></div>
+            </div>
+            <div class="tiny muted">Console này là một phần của bản demo hư cấu — nó chỉ sửa dữ liệu ảo trong trình duyệt.</div>
+          </div>
+
+          <div class="warn-box">
+            <b>Trách nhiệm / Responsible demo notice.</b>
+            Bản mẫu này cố tình <b>không có</b>: cổng thanh toán thật, QR thanh toán thật, thông tin ngân hàng,
+            nạp tiền thật, rút tiền, API thanh toán bên ngoài, hay cờ bạc thật.
+            Mọi con số đều là <b>VIRTUAL VND</b>.<br />
+            <span class="tiny">Gambling carries real risk. This prototype exists only to demonstrate UI/animation work — please do not treat it as a real product.</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ---------- bottom nav ---------- -->
+  <nav class="bottomnav">
+    <div class="inner">
+      <button class="bn" data-page="home"><span class="ico">🏠</span><span class="lb">Home</span></button>
+      <button class="bn" data-page="bomb"><span class="ico">💣</span><span class="lb">Bomb</span></button>
+      <button class="bn" data-page="wheel"><span class="ico">🎡</span><span class="lb">Vòng Quay</span></button>
+      <button class="bn" data-page="dice"><span class="ico">🎲</span><span class="lb">Dice</span></button>
+      <button class="bn" data-page="deposit"><span class="ico">💳</span><span class="lb">Nạp ảo</span></button>
+      <button class="bn" data-page="history"><span class="ico">📜</span><span class="lb">History</span></button>
+    </div>
+  </nav>
+
+  <!-- ---------- command console ---------- -->
+  <button class="console-fab" id="consoleFab" title="Command console">⌨️</button>
+
+  <div class="console glass" id="console" hidden>
+    <div class="console-head">
+      <span style="font-size:17px">⌨️</span>
+      <div class="grow">
+        <div class="t">COMMAND CHAT <span class="pill pill-warn" style="margin-left:4px">DEMO</span></div>
+        <div class="tiny muted">Chỉ sửa dữ liệu ảo · virtual data only</div>
+      </div>
+      <button class="btn btn-sm btn-ghost" id="consoleClose">✕</button>
+    </div>
+    <div class="console-log" id="consoleLog"></div>
+    <form class="console-form" id="consoleForm" autocomplete="off">
+      <input id="consoleInput" class="input grow" type="text" placeholder="/help" maxlength="120" />
+      <button class="btn btn-primary btn-sm" type="submit">➤</button>
+    </form>
+  </div>
+
+</div>
+
+<!-- ---------- toasts ---------- -->
+<div id="toasts" aria-live="polite"></div>
+
+<!-- ---------- modal root ---------- -->
+<div id="modalRoot"></div>
+
+<script>
+/* =============================================================
+   LuckyBomb VN — FICTIONAL DEMO PROTOTYPE
+   -------------------------------------------------------------
+   IMPORTANT: Everything here is fake.
+     • No real money, no real currency, no real payouts.
+     • No payment gateway, no bank API, no QR payment, no network calls.
+     • The "QR code" is a decorative canvas drawing, not a payment code.
+     • Accounts + balances live only in this browser's localStorage.
+   This file is a UI/animation demo, not a gambling product.
+   ============================================================= */
+(function () {
+'use strict';
+
+/* ======================== 1. CONSTANTS ======================== */
+
+const LS_KEY        = 'luckybomb_vn_demo_v1';
+const START_BALANCE = 100000;      // virtual VND granted on registration
+const GRID_SIZE     = 25;          // 5x5 mines board
+const HOUSE_EDGE    = 0.97;        // fictional 3% edge used by the mines math
+const MIN_BET       = 1000;
+
+const WHEEL_SEGMENTS = [
+  { m: 0,   c: '#3f2b60' },
+  { m: 1,   c: '#8b5cf6' },
+  { m: 0.5, c: '#ff2d55' },
+  { m: 2,   c: '#22d3ee' },
+  { m: 1,   c: '#8b5cf6' },
+  { m: 0.5, c: '#ff2d55' },
+  { m: 5,   c: '#ffc93c' },
+  { m: 1,   c: '#8b5cf6' },
+  { m: 0,   c: '#3f2b60' },
+  { m: 1.5, c: '#34d399' },
+  { m: 0.5, c: '#ff2d55' },
+  { m: 3,   c: '#f97316' }
+];
+
+const DICE_MULT = { three: 10, odd: 1.8, even: 1.8 };
+const DICE_NAME = { three: 'THREE WHITE', odd: 'ODD / LẺ', even: 'EVEN / CHẴN' };
+
+/* Pip layout per die face (3x3 grid cells that hold a dot) */
+const PIPS = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8]
+};
+
+/* ======================== 2. HELPERS ======================== */
+
+const $  = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+
+const fmt      = (n) => Math.round(n).toLocaleString('en-US');
+const fmtVnd   = (n) => fmt(n) + ' VND';
+const clamp    = (n, a, b) => Math.min(b, Math.max(a, n));
+const randInt  = (n) => Math.floor(Math.random() * n);
+const die      = () => randInt(6) + 1;
+const nowISO   = () => new Date().toISOString();
+
+/* The stylesheet collapses every animation when the viewer asks for reduced
+   motion, so the JS timers have to shorten with it or the games would idle. */
+const reducedMotion = () =>
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SPIN_MS = () => (reducedMotion() ? 350 : 5050);
+const ROLL_MS = () => (reducedMotion() ? 300 : 1300);
+
+function timeLabel(iso) {
+  const d = new Date(iso);
+  const p = (x) => String(x).padStart(2, '0');
+  return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function dateLabel(iso) {
+  const d = new Date(iso);
+  const p = (x) => String(x).padStart(2, '0');
+  return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+}
+
+/* NOT SECURE — a toy scrambler so the demo does not keep plaintext strings
+   lying around in localStorage. This is a prototype, not authentication. */
+function toyHash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+  let g = 2166136261;
+  for (let i = 0; i < str.length; i++) { g ^= str.charCodeAt(i); g = (g * 16777619) >>> 0; }
+  return h.toString(36) + '-' + g.toString(36) + '-' + str.length;
+}
+
+function txId() {
+  const s = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < 6; i++) out += s[randInt(s.length)];
+  return 'DEMO-' + out;
+}
+
+/* ======================== 3. STORAGE ======================== */
+
+function blankDB() { return { users: {}, session: null }; }
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return blankDB();
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !parsed.users) return blankDB();
+    return parsed;
+  } catch (e) {
+    console.warn('[LuckyBomb demo] localStorage unavailable, running in memory.', e);
+    return blankDB();
+  }
+}
+
+function saveDB() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(DB));
+  } catch (e) {
+    console.warn('[LuckyBomb demo] could not persist demo state.', e);
+  }
+}
+
+let DB   = loadDB();
+let user = null;               // the logged-in demo account object
+
+function key(name) { return String(name || '').trim().toLowerCase(); }
+
+function findUser(name) {
+  const k = key(name);
+  return k && DB.users[k] ? DB.users[k] : null;
+}
+
+function makeUser(name, pass) {
+  const created = nowISO();
+  return {
+    name: String(name).trim(),
+    pass: toyHash(pass),
+    balance: START_BALANCE,
+    created: created,
+    rig: null,                 // null | 'win' | 'lose'  (set by the command console)
+    txs: [
+      { id: txId(), t: created, type: 'WELCOME BONUS (DEMO)', amount: START_BALANCE, status: 'DEMO' },
+      { id: txId(), t: created, type: 'KYC CHECK (FICTIONAL)', amount: 0, status: 'DEMO' },
+      { id: txId(), t: created, type: 'ACCOUNT OPENED (DEMO)', amount: 0, status: 'DEMO' }
+    ],
+    history: []
+  };
+}
+
+/* ======================== 4. TOASTS & MODAL ======================== */
+
+const toastRoot = $('#toasts');
+
+function toast(title, body, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || 'info');
+  const icons = { win: '🎉', lose: '💥', info: 'ℹ️', gold: '💰' };
+  el.innerHTML =
+    '<div class="ti">' + (icons[kind] || 'ℹ️') + '</div>' +
+    '<div><div class="tt"></div>' + (body ? '<div class="tb"></div>' : '') + '</div>';
+  $('.tt', el).textContent = title;
+  if (body) $('.tb', el).textContent = body;
+  toastRoot.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 300);
+  }, 3400);
+  while (toastRoot.children.length > 4) toastRoot.firstChild.remove();
+}
+
+function confirmModal(title, message, confirmLabel, onConfirm) {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML =
+    '<div class="modal glass stack">' +
+      '<h3></h3>' +
+      '<div class="small muted" style="line-height:1.6"></div>' +
+      '<div class="row" style="margin-top:6px">' +
+        '<button class="btn btn-ghost grow" data-x="no">Huỷ</button>' +
+        '<button class="btn btn-danger grow" data-x="yes"></button>' +
+      '</div>' +
+    '</div>';
+  $('h3', bg).textContent = title;
+  $('.small', bg).textContent = message;
+  $('[data-x="yes"]', bg).textContent = confirmLabel;
+  bg.addEventListener('click', (e) => {
+    if (e.target === bg || e.target.dataset.x === 'no') bg.remove();
+    if (e.target.dataset.x === 'yes') { bg.remove(); onConfirm(); }
+  });
+  $('#modalRoot').appendChild(bg);
+}
+
+/* ======================== 5. BALANCE / RECORDS ======================== */
+
+function bumpBalance() {
+  const el = $('#balanceTop');
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+function renderBalance() {
+  if (!user) return;
+  $('#balanceTop').textContent  = fmtVnd(user.balance);
+  $('#balanceHero').textContent = fmtVnd(user.balance);
+  $('#acctBal').textContent     = fmtVnd(user.balance);
+  updateBombPreview();
+}
+
+function credit(amount) {
+  user.balance = Math.max(0, Math.round(user.balance + amount));
+  saveDB();
+  renderBalance();
+  bumpBalance();
+}
+
+function addTx(type, amount, status) {
+  user.txs.unshift({ id: txId(), t: nowISO(), type: type, amount: amount, status: status || 'DEMO' });
+  user.txs = user.txs.slice(0, 60);
+  saveDB();
+  renderTxs();
+  renderAccount();
+}
+
+function addHistory(game, detail, bet, result, delta) {
+  user.history.unshift({
+    t: nowISO(), game: game, detail: detail,
+    bet: bet, result: result, delta: Math.round(delta)
+  });
+  user.history = user.history.slice(0, 120);
+  saveDB();
+  renderHistory();
+  renderStats();
+}
+
+/* ======================== 6. NAVIGATION ======================== */
+
+let currentPage = 'home';
+
+function navigate(page) {
+  currentPage = page;
+  $$('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + page));
+  $$('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
+  $$('.bn').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (page === 'deposit') drawFakeQR();
+}
+
+document.addEventListener('click', (e) => {
+  const nav = e.target.closest('[data-page]');
+  if (nav) { navigate(nav.dataset.page); return; }
+  const quick = e.target.closest('[data-nav]');
+  if (quick) navigate(quick.dataset.nav);
+});
+
+/* ======================== 7. AUTH ======================== */
+
+function showAuth(tab) {
+  $('#app').hidden = true;
+  $('#authScreen').hidden = false;
+  switchAuthTab(tab || 'login');
+}
+
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  $('#tabLogin').classList.toggle('active', isLogin);
+  $('#tabRegister').classList.toggle('active', !isLogin);
+  $('#loginForm').hidden = !isLogin;
+  $('#registerForm').hidden = isLogin;
+  $('#loginErr').textContent = '';
+  $('#regErr').textContent = '';
+}
+
+function enterApp(u) {
+  user = u;
+  DB.session = key(u.name);
+  saveDB();
+  $('#authScreen').hidden = true;
+  $('#app').hidden = false;
+  $('#helloName').textContent = u.name;
+  $('#avatarBtn').textContent = u.name.charAt(0).toUpperCase();
+  $('#acctAv').textContent = u.name.charAt(0).toUpperCase();
+  renderBalance();
+  renderTxs();
+  renderHistory();
+  renderStats();
+  renderAccount();
+  resetBombBoard();
+  navigate('home');
+  toast('Chào mừng, ' + u.name + '!', 'Số dư ảo: ' + fmtVnd(u.balance) + ' (DEMO)', 'gold');
+}
+
+$('#tabLogin').addEventListener('click', () => switchAuthTab('login'));
+$('#tabRegister').addEventListener('click', () => switchAuthTab('register'));
+$('#goRegister').addEventListener('click', () => switchAuthTab('register'));
+$('#goLogin').addEventListener('click', () => switchAuthTab('login'));
+
+$('#loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = $('#loginUser').value.trim();
+  const pass = $('#loginPass').value;
+  const err  = $('#loginErr');
+  if (!name || !pass) { err.textContent = 'Nhập username và password.'; return; }
+  const u = findUser(name);
+  if (!u) { err.textContent = 'Không tìm thấy tài khoản demo này. Hãy tạo mới.'; return; }
+  if (u.pass !== toyHash(pass)) { err.textContent = 'Sai mật khẩu (demo).'; return; }
+  $('#loginPass').value = '';
+  enterApp(u);
+});
+
+$('#registerForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name  = $('#regUser').value.trim();
+  const pass  = $('#regPass').value;
+  const pass2 = $('#regPass2').value;
+  const err   = $('#regErr');
+  if (name.length < 3 || name.length > 24) { err.textContent = 'Username cần 3–24 ký tự.'; return; }
+  if (!/^[\w.\- ]+$/.test(name)) { err.textContent = 'Username chỉ dùng chữ, số, . _ - và khoảng trắng.'; return; }
+  if (findUser(name)) { err.textContent = 'Username đã tồn tại trong demo này.'; return; }
+  if (pass.length < 4) { err.textContent = 'Mật khẩu tối thiểu 4 ký tự.'; return; }
+  if (pass !== pass2) { err.textContent = 'Mật khẩu xác nhận không khớp.'; return; }
+  const u = makeUser(name, pass);
+  DB.users[key(name)] = u;
+  saveDB();
+  $('#regPass').value = ''; $('#regPass2').value = '';
+  enterApp(u);
+  toast('Tài khoản demo đã tạo', 'Tặng ' + fmtVnd(START_BALANCE) + ' tiền ảo (không phải tiền thật).', 'gold');
+});
+
+$('#logoutBtn').addEventListener('click', () => {
+  DB.session = null; saveDB(); user = null;
+  showAuth('login');
+  toast('Đã đăng xuất', 'Tài khoản demo vẫn được lưu trong trình duyệt.', 'info');
+});
+
+$('#avatarBtn').addEventListener('click', () => navigate('account'));
+
+$('#deleteAcct').addEventListener('click', () => {
+  confirmModal(
+    'Xoá tài khoản demo?',
+    'Toàn bộ dữ liệu ảo (số dư, lịch sử, giao dịch demo) của "' + user.name + '" sẽ bị xoá khỏi trình duyệt này. Không thể hoàn tác.',
+    'Xoá vĩnh viễn',
+    () => {
+      delete DB.users[key(user.name)];
+      DB.session = null; saveDB(); user = null;
+      showAuth('login');
+      toast('Đã xoá tài khoản demo', 'Dữ liệu ảo đã được gỡ khỏi localStorage.', 'info');
+    }
+  );
+});
+
+$('#resetBalance').addEventListener('click', () => {
+  confirmModal('Đặt lại số dư ảo?', 'Số dư sẽ trở về ' + fmtVnd(START_BALANCE) + ' tiền ảo.', 'Đặt lại', () => {
+    user.balance = START_BALANCE;
+    saveDB(); renderBalance(); renderAccount();
+    addTx('BALANCE RESET (DEMO)', 0, 'DEMO');
+    toast('Đã đặt lại số dư ảo', fmtVnd(START_BALANCE) + ' virtual VND.', 'gold');
+  });
+});
+
+/* ======================== 8. BET INPUT HELPERS ======================== */
+
+function readBet(inputId) {
+  const el = $('#' + inputId);
+  let v = Math.floor(Number(el.value) || 0);
+  if (!isFinite(v) || v <= 0) v = 0;
+  return v;
+}
+
+function validateBet(bet) {
+  if (bet < MIN_BET) { toast('Cược quá nhỏ', 'Tối thiểu ' + fmtVnd(MIN_BET) + ' (ảo).', 'lose'); return false; }
+  if (bet > user.balance) { toast('Không đủ tiền ảo', 'Số dư: ' + fmtVnd(user.balance) + '. Hãy nạp tiền ảo.', 'lose'); return false; }
+  return true;
+}
+
+function wireBetPresets(containerId, inputId, onChange) {
+  const box = $('#' + containerId);
+  box.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bet]');
+    if (!b) return;
+    const input = $('#' + inputId);
+    const raw = b.dataset.bet;
+    if (raw === 'half')     input.value = Math.max(MIN_BET, Math.floor(user.balance / 2));
+    else if (raw === 'max') input.value = Math.max(MIN_BET, Math.floor(user.balance));
+    else                    input.value = raw;
+    $$('[data-bet]', box).forEach((x) => x.classList.toggle('active', x === b));
+    if (onChange) onChange();
+  });
+  $('#' + inputId).addEventListener('input', () => {
+    $$('[data-bet]', box).forEach((x) => x.classList.remove('active'));
+    if (onChange) onChange();
+  });
+}
+
+/* ======================== 9. BOMB / MINES GAME ======================== */
+
+const bomb = {
+  active: false, bet: 0, bombs: 3,
+  mines: new Set(), opened: new Set(), picks: 0
+};
+
+function nCr(n, r) {
+  if (r < 0 || r > n) return 0;
+  let out = 1;
+  for (let i = 0; i < r; i++) out = (out * (n - i)) / (i + 1);
+  return out;
+}
+
+/* Fictional multiplier: fair odds of surviving `picks` safe tiles, minus house edge. */
+function mineMultiplier(bombs, picks) {
+  if (picks <= 0) return 1;
+  const fair = nCr(GRID_SIZE, picks) / nCr(GRID_SIZE - bombs, picks);
+  return Math.max(1, fair * HOUSE_EDGE);
+}
+
+function buildMineGrid() {
+  const grid = $('#mineGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < GRID_SIZE; i++) {
+    const t = document.createElement('button');
+    t.className = 'tile';
+    t.dataset.i = i;
+    t.disabled = true;
+    grid.appendChild(t);
+  }
+}
+
+function resetBombBoard() {
+  bomb.active = false;
+  bomb.mines = new Set();
+  bomb.opened = new Set();
+  bomb.picks = 0;
+  $$('#mineGrid .tile').forEach((t) => {
+    t.className = 'tile idle-locked';
+    t.textContent = '';
+    t.disabled = true;
+  });
+  $('#bombStart').hidden = false;
+  $('#bombCashout').hidden = true;
+  $('#bombControls').classList.remove('playing');
+  $('#bombBet').disabled = false;
+  $$('#bombCountPresets .chip').forEach((c) => (c.disabled = false));
+  updateBombPreview();
+}
+
+function updateBombPreview() {
+  if (!$('#bombMult')) return;
+  const safeTotal = GRID_SIZE - bomb.bombs;
+  const mult = mineMultiplier(bomb.bombs, bomb.picks);
+  const bet  = bomb.active ? bomb.bet : readBet('bombBet');
+  $('#bombMult').textContent      = mult.toFixed(2) + 'x';
+  $('#bombPayout').textContent    = fmtVnd(Math.floor(bet * mult));
+  $('#bombSafeCount').textContent = bomb.picks + ' / ' + safeTotal;
+  $('#bombNextMult').textContent  = bomb.picks < safeTotal
+    ? mineMultiplier(bomb.bombs, bomb.picks + 1).toFixed(2) + 'x'
+    : 'MAX';
+  renderMultStrip();
+}
+
+function renderMultStrip() {
+  const strip = $('#bombMultStrip');
+  const safeTotal = GRID_SIZE - bomb.bombs;
+  const show = Math.min(safeTotal, 12);
+  let html = '';
+  for (let i = 1; i <= show; i++) {
+    const cls = i <= bomb.picks ? 'done' : (i === bomb.picks + 1 ? 'next' : '');
+    html += '<div class="mult-step ' + cls + '">' + i + '· ' + mineMultiplier(bomb.bombs, i).toFixed(2) + 'x</div>';
+  }
+  if (safeTotal > show) html += '<div class="mult-step">… ' + mineMultiplier(bomb.bombs, safeTotal).toFixed(2) + 'x</div>';
+  strip.innerHTML = html;
+}
+
+function placeMines() {
+  const set = new Set();
+  while (set.size < bomb.bombs) set.add(randInt(GRID_SIZE));
+  bomb.mines = set;
+}
+
+/* Command-console rigging: quietly relocate a mine so the demo outcome matches. */
+function rigTile(i) {
+  if (!user.rig) return;
+  if (user.rig === 'win' && bomb.mines.has(i)) {
+    const free = [];
+    for (let j = 0; j < GRID_SIZE; j++) {
+      if (j !== i && !bomb.mines.has(j) && !bomb.opened.has(j)) free.push(j);
+    }
+    if (free.length) { bomb.mines.delete(i); bomb.mines.add(free[randInt(free.length)]); }
+  } else if (user.rig === 'lose' && !bomb.mines.has(i)) {
+    const movable = [];
+    bomb.mines.forEach((m) => { if (!bomb.opened.has(m)) movable.push(m); });
+    if (movable.length) { bomb.mines.delete(movable[randInt(movable.length)]); bomb.mines.add(i); }
+  }
+}
+
+function startBomb() {
+  const bet = readBet('bombBet');
+  if (!validateBet(bet)) return;
+  bomb.bet = bet;
+  bomb.opened = new Set();
+  bomb.picks = 0;
+  bomb.active = true;
+  placeMines();
+  credit(-bet);
+
+  $$('#mineGrid .tile').forEach((t) => { t.className = 'tile'; t.textContent = ''; t.disabled = false; });
+  $('#bombStart').hidden = true;
+  $('#bombCashout').hidden = false;
+  $('#bombCashout').disabled = true;
+  $('#bombCashout').innerHTML = '💰 CASH OUT';
+  $('#bombBet').disabled = true;
+  $$('#bombCountPresets .chip').forEach((c) => (c.disabled = true));
+  setBanner('#bombBanner', 'Đang chơi — mở ô để tăng hệ số. Cược ảo: <b class="gold">' + fmtVnd(bet) + '</b>', '');
+  updateBombPreview();
+}
+
+function revealAllMines(hitIndex) {
+  $$('#mineGrid .tile').forEach((t) => {
+    const i = Number(t.dataset.i);
+    t.disabled = true;
+    if (bomb.mines.has(i)) {
+      t.textContent = '💣';
+      t.classList.add('bomb');
+      if (i !== hitIndex) t.classList.add('revealed-bomb');
+    }
+  });
+}
+
+function endBombLoss(i) {
+  bomb.active = false;
+  revealAllMines(i);
+  setBanner('#bombBanner', '💥 DÍNH BOM! Mất <b class="red">' + fmtVnd(bomb.bet) + '</b> tiền ảo.', 'lose');
+  addHistory('bomb', bomb.bombs + ' bom · ' + bomb.picks + ' ô mở', bomb.bet, 'lose', -bomb.bet);
+  toast('Nổ rồi! 💥', 'Mất ' + fmtVnd(bomb.bet) + ' (tiền ảo).', 'lose');
+  finishBombRound();
+}
+
+/* Re-arm the controls and reset the preview to a fresh round. */
+function finishBombRound() {
+  bomb.picks = 0;
+  $('#bombStart').hidden = false;
+  $('#bombCashout').hidden = true;
+  $('#bombBet').disabled = false;
+  $$('#bombCountPresets .chip').forEach((c) => (c.disabled = false));
+  updateBombPreview();
+}
+
+function cashOutBomb(auto) {
+  if (!bomb.active || bomb.picks === 0) return;
+  const mult   = mineMultiplier(bomb.bombs, bomb.picks);
+  const payout = Math.floor(bomb.bet * mult);
+  bomb.active = false;
+  credit(payout);
+  revealAllMines(-1);
+  setBanner('#bombBanner',
+    (auto ? '🏆 DỌN SẠCH BÀN! ' : '💰 CASH OUT! ') +
+    'Nhận <b class="green">' + fmtVnd(payout) + ' ảo</b> (' + mult.toFixed(2) + 'x)', 'win');
+  addHistory('bomb', bomb.bombs + ' bom · ' + bomb.picks + ' ô · ' + mult.toFixed(2) + 'x',
+    bomb.bet, 'win', payout - bomb.bet);
+  toast('Rút tiền thành công 💰', '+' + fmtVnd(payout) + ' tiền ảo (' + mult.toFixed(2) + 'x)', 'win');
+  finishBombRound();
+}
+
+$('#mineGrid').addEventListener('click', (e) => {
+  const t = e.target.closest('.tile');
+  if (!t || !bomb.active) return;
+  const i = Number(t.dataset.i);
+  if (bomb.opened.has(i)) return;
+
+  rigTile(i);
+
+  if (bomb.mines.has(i)) { endBombLoss(i); return; }
+
+  bomb.opened.add(i);
+  bomb.picks++;
+  t.classList.add('safe');
+  t.textContent = '💎';
+  t.disabled = true;
+  $('#bombCashout').disabled = false;
+  updateBombPreview();
+
+  const mult = mineMultiplier(bomb.bombs, bomb.picks);
+  $('#bombCashout').innerHTML = '💰 CASH OUT · ' + fmtVnd(Math.floor(bomb.bet * mult)) + ' (' + mult.toFixed(2) + 'x)';
+  setBanner('#bombBanner', 'An toàn 💎 — hệ số <b class="gold">' + mult.toFixed(2) + 'x</b>, rút được <b class="green">' +
+    fmtVnd(Math.floor(bomb.bet * mult)) + ' ảo</b>', '');
+
+  if (bomb.picks >= GRID_SIZE - bomb.bombs) cashOutBomb(true);
+});
+
+$('#bombStart').addEventListener('click', startBomb);
+$('#bombCashout').addEventListener('click', () => cashOutBomb(false));
+
+$('#bombCountPresets').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-bombs]');
+  if (!b || bomb.active) return;
+  bomb.bombs = Number(b.dataset.bombs);
+  $$('#bombCountPresets .chip').forEach((c) => c.classList.toggle('active', c === b));
+  updateBombPreview();
+});
+
+function setBanner(sel, html, kind) {
+  const el = $(sel);
+  el.className = 'result-banner' + (kind ? ' ' + kind : '');
+  el.innerHTML = html;
+}
+
+/* ======================== 10. LUCKY WHEEL ======================== */
+
+let wheelRotation = 0;
+let wheelSpinning = false;
+const SEG_ANGLE = 360 / WHEEL_SEGMENTS.length;
+
+function buildWheel() {
+  const stops = WHEEL_SEGMENTS.map((s, i) => {
+    const from = (i * SEG_ANGLE).toFixed(3) + 'deg';
+    const to   = ((i + 1) * SEG_ANGLE).toFixed(3) + 'deg';
+    return s.c + ' ' + from + ' ' + to;
+  }).join(',');
+  /* "from -15deg" centres segment i on angle i*SEG_ANGLE (the pointer sits at 0deg). */
+  $('#wheel').style.background = 'conic-gradient(from ' + (-SEG_ANGLE / 2) + 'deg,' + stops + ')';
+
+  $('#wheelLabels').innerHTML = WHEEL_SEGMENTS.map((s, i) =>
+    '<div class="wlab" style="transform:rotate(' + (i * SEG_ANGLE) + 'deg)"><span>' + s.m + 'x</span></div>'
+  ).join('');
+
+  const seen = [];
+  WHEEL_SEGMENTS.forEach((s) => { if (!seen.some((x) => x.m === s.m)) seen.push(s); });
+  seen.sort((a, b) => a.m - b.m);
+  $('#wheelLegend').innerHTML = seen.map((s) =>
+    '<div class="lg"><span class="sw" style="background:' + s.c + '"></span>' + s.m + 'x</div>'
+  ).join('');
+}
+
+function pickWheelIndex() {
+  if (user.rig === 'win') {
+    let best = 0;
+    WHEEL_SEGMENTS.forEach((s, i) => { if (s.m > WHEEL_SEGMENTS[best].m) best = i; });
+    return best;
+  }
+  if (user.rig === 'lose') {
+    const zeros = [];
+    WHEEL_SEGMENTS.forEach((s, i) => { if (s.m === 0) zeros.push(i); });
+    if (zeros.length) return zeros[randInt(zeros.length)];
+  }
+  return randInt(WHEEL_SEGMENTS.length);
+}
+
+function spinWheel() {
+  if (wheelSpinning) return;
+  const bet = readBet('wheelBet');
+  if (!validateBet(bet)) return;
+
+  wheelSpinning = true;
+  $('#spinBtn').disabled = true;
+  $('#spinBtn2').disabled = true;
+  credit(-bet);
+
+  const idx = pickWheelIndex();
+  const seg = WHEEL_SEGMENTS[idx];
+
+  const targetMod  = ((-idx * SEG_ANGLE) % 360 + 360) % 360;
+  const currentMod = ((wheelRotation % 360) + 360) % 360;
+  let delta = ((targetMod - currentMod) % 360 + 360) % 360;
+  delta += (Math.random() * 18 - 9);                 // land a touch off-centre
+  wheelRotation += 360 * 6 + delta;
+
+  const el = $('#wheel');
+  el.style.transform = 'rotate(' + wheelRotation + 'deg)';
+  $('#wheelResult').innerHTML = '<span class="muted">Đang quay…</span>';
+
+  setTimeout(() => {
+    const payout = Math.floor(bet * seg.m);
+    if (payout > 0) credit(payout);
+
+    const net = payout - bet;
+    const win = payout > bet;
+    const push = payout === bet;
+
+    $('#wheelLastMult').textContent = seg.m + 'x';
+    const res = $('#wheelResult');
+    res.classList.remove('pop'); void res.offsetWidth; res.classList.add('pop');
+    res.innerHTML = '<div><span style="color:' + seg.c + '">' + seg.m + 'x</span> → <b class="' +
+      (win ? 'green' : push ? 'gold' : 'red') + '">' + fmtVnd(payout) + ' ảo</b></div>';
+
+    addHistory('wheel', 'Ô ' + seg.m + 'x', bet, win ? 'win' : push ? 'push' : 'lose', net);
+    if (win)       toast('Trúng ' + seg.m + 'x! 🎉', '+' + fmtVnd(net) + ' tiền ảo', 'win');
+    else if (push) toast('Hoà 1x', 'Hoàn lại ' + fmtVnd(payout) + ' tiền ảo', 'info');
+    else           toast('Hệ số ' + seg.m + 'x 💥', 'Mất ' + fmtVnd(-net) + ' tiền ảo', 'lose');
+
+    wheelSpinning = false;
+    $('#spinBtn').disabled = false;
+    $('#spinBtn2').disabled = false;
+  }, SPIN_MS());
+}
+
+$('#spinBtn').addEventListener('click', spinWheel);
+$('#spinBtn2').addEventListener('click', spinWheel);
+
+/* ======================== 11. DICE ROLL ======================== */
+
+let diceChoice = 'odd';
+let diceRolling = false;
+
+function renderDie(el, value) {
+  let html = '';
+  const cells = PIPS[value] || [];
+  for (let i = 0; i < 9; i++) html += cells.indexOf(i) >= 0 ? '<div class="pip"></div>' : '<div></div>';
+  el.innerHTML = html;
+}
+
+function rollThree(predicate) {
+  for (let guard = 0; guard < 400; guard++) {
+    const d = [die(), die(), die()];
+    if (!predicate || predicate(d)) return d;
+  }
+  return [die(), die(), die()];
+}
+
+const isTriple = (d) => d[0] === d[1] && d[1] === d[2];
+const sumOf    = (d) => d[0] + d[1] + d[2];
+
+function chooseDice(choice) {
+  if (user.rig === 'win') {
+    if (choice === 'three') { const f = die(); return [f, f, f]; }
+    if (choice === 'odd')   return rollThree((d) => !isTriple(d) && sumOf(d) % 2 === 1);
+    return rollThree((d) => !isTriple(d) && sumOf(d) % 2 === 0);
+  }
+  if (user.rig === 'lose') {
+    if (choice === 'three') return rollThree((d) => !isTriple(d));
+    if (choice === 'odd')   return rollThree((d) => !isTriple(d) && sumOf(d) % 2 === 0);
+    return rollThree((d) => !isTriple(d) && sumOf(d) % 2 === 1);
+  }
+  return rollThree(null);
+}
+
+function rollDice() {
+  if (diceRolling) return;
+  const bet = readBet('diceBet');
+  if (!validateBet(bet)) return;
+
+  diceRolling = true;
+  $('#diceRoll').disabled = true;
+  credit(-bet);
+
+  const dice = chooseDice(diceChoice);
+  const els  = $$('#diceRow .die');
+
+  els.forEach((el) => { el.className = 'die rolling'; });
+  $('#diceTotal').textContent = '…';
+  $('#dicePar').textContent = '…';
+  setBanner('#diceBanner', '<span class="muted">Đang lắc xúc xắc…</span>', '');
+
+  const shuffle = setInterval(() => els.forEach((el) => renderDie(el, die())), 90);
+
+  setTimeout(() => {
+    clearInterval(shuffle);
+    els.forEach((el, i) => { el.className = 'die landed'; renderDie(el, dice[i]); });
+
+    const triple = isTriple(dice);
+    const total  = sumOf(dice);
+    const odd    = total % 2 === 1;
+
+    let won = false;
+    if (diceChoice === 'three') won = triple;
+    else if (diceChoice === 'odd')  won = !triple && odd;
+    else                            won = !triple && !odd;
+
+    const mult   = DICE_MULT[diceChoice];
+    const payout = won ? Math.floor(bet * mult) : 0;
+    if (payout > 0) credit(payout);
+    if (triple) els.forEach((el) => el.classList.add('jackpot'));
+
+    $('#diceTotal').textContent = total;
+    $('#dicePar').textContent = triple ? 'BỘ BA / TRIPLE' : (odd ? 'LẺ / ODD' : 'CHẴN / EVEN');
+    $('#dicePar').className = 'pill ' + (triple ? 'pill-gold' : 'pill-ok');
+
+    const faces = dice.join(' · ');
+    if (won && diceChoice === 'three') {
+      setBanner('#diceBanner', '🎯 THREE WHITE JACKPOT! ' + faces + ' → <b class="gold">+' + fmtVnd(payout) + ' ảo</b> (10x)', 'jack');
+      toast('JACKPOT 🎯', '+' + fmtVnd(payout - bet) + ' tiền ảo', 'gold');
+    } else if (won) {
+      setBanner('#diceBanner', '✅ THẮNG ' + DICE_NAME[diceChoice] + ' · tổng ' + total + ' → <b class="green">+' + fmtVnd(payout) + ' ảo</b>', 'win');
+      toast('Thắng! 🎉', '+' + fmtVnd(payout - bet) + ' tiền ảo (' + mult + 'x)', 'win');
+    } else {
+      setBanner('#diceBanner', '❌ THUA · ' + faces + ' = ' + total + (triple ? ' (bộ ba)' : '') +
+        ' → mất <b class="red">' + fmtVnd(bet) + ' ảo</b>', 'lose');
+      toast('Thua ván này 💥', 'Mất ' + fmtVnd(bet) + ' tiền ảo', 'lose');
+    }
+
+    addHistory('dice', DICE_NAME[diceChoice] + ' · ' + faces + ' = ' + total,
+      bet, won ? 'win' : 'lose', payout - bet);
+
+    diceRolling = false;
+    $('#diceRoll').disabled = false;
+  }, ROLL_MS());
+}
+
+$('#diceChoices').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-choice]');
+  if (!b || diceRolling) return;
+  diceChoice = b.dataset.choice;
+  $$('#diceChoices .choice').forEach((c) => c.classList.toggle('active', c === b));
+});
+$('#diceRoll').addEventListener('click', rollDice);
+
+/* ======================== 12. DEPOSIT (SIMULATED) ======================== */
+
+let depAmount = 100000;
+
+function setDepAmount(v) {
+  depAmount = clamp(Math.floor(v || 0), 0, 100000000);
+  $('#depSelected').textContent = fmt(depAmount);
+  $('#qrAmt').textContent = fmt(depAmount) + ' VIRTUAL VND';
+}
+
+$('#depAmounts').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-amt]');
+  if (!b) return;
+  $$('#depAmounts .amount-btn').forEach((x) => x.classList.toggle('active', x === b));
+  $('#depCustom').value = '';
+  setDepAmount(Number(b.dataset.amt));
+  drawFakeQR();
+});
+
+$('#depCustom').addEventListener('input', (e) => {
+  $$('#depAmounts .amount-btn').forEach((x) => x.classList.remove('active'));
+  setDepAmount(Number(e.target.value));
+});
+
+/* Decorative only: this draws a QR-LOOKING pattern. It encodes nothing and
+   cannot be scanned into any payment. No payment API is contacted anywhere. */
+function drawFakeQR() {
+  const cv = $('#qrCanvas');
+  const ctx = cv.getContext('2d');
+  const N = 27, cell = cv.width / N;
+  let seed = (depAmount + Date.now() % 100000) >>> 0;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = '#12071f';
+
+  const finder = (ox, oy) => {
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      const edge = x === 0 || y === 0 || x === 6 || y === 6;
+      const core = x >= 2 && x <= 4 && y >= 2 && y <= 4;
+      if (edge || core) ctx.fillRect((ox + x) * cell, (oy + y) * cell, cell, cell);
+    }
+  };
+
+  const inFinder = (x, y) =>
+    (x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9);
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      if (inFinder(x, y)) continue;
+      if (rnd() > 0.52) ctx.fillRect(x * cell, y * cell, cell, cell);
+    }
+  }
+  finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+
+  $('#qrRef').textContent = txId();
+}
+
+$('#simulatePay').addEventListener('click', () => {
+  if (depAmount < MIN_BET) { toast('Số tiền không hợp lệ', 'Tối thiểu ' + fmtVnd(MIN_BET) + ' (ảo).', 'lose'); return; }
+  if (depAmount > 10000000) { toast('Vượt giới hạn demo', 'Tối đa 10,000,000 tiền ảo mỗi lần.', 'lose'); return; }
+  credit(depAmount);
+  addTx('SIMULATED TOP-UP (NO REAL PAYMENT)', depAmount, 'DEMO');
+  drawFakeQR();
+  toast('Đã cộng tiền ảo 💰',
+    '+' + fmt(depAmount) + ' VIRTUAL VND. Không có thanh toán thật nào được thực hiện.', 'gold');
+  console.info('[LuckyBomb demo] Simulated top-up only — no real payment was processed.');
+});
+
+function renderTxs() {
+  if (!user) return;
+  const body = $('#txBody');
+  body.innerHTML = user.txs.map((t) =>
+    '<tr>' +
+      '<td class="mono tiny">' + t.id + '</td>' +
+      '<td class="tiny muted">' + dateLabel(t.t) + ' ' + timeLabel(t.t).split(' ')[1] + '</td>' +
+      '<td class="tiny">' + t.type + '</td>' +
+      '<td class="mono gold">' + (t.amount ? '+' + fmt(t.amount) : '—') + '</td>' +
+      '<td><span class="pill pill-warn">' + t.status + '</span></td>' +
+    '</tr>'
+  ).join('');
+  $('#txEmpty').hidden = user.txs.length > 0;
+}
+
+/* ======================== 13. HISTORY & STATS ======================== */
+
+let histFilter = 'all';
+const GAME_LABEL = { bomb: '💣 Bomb', wheel: '🎡 Vòng Quay', dice: '🎲 Dice' };
+
+function resultPill(r) {
+  if (r === 'win')  return '<span class="pill pill-ok">THẮNG</span>';
+  if (r === 'push') return '<span class="pill pill-gold">HOÀ</span>';
+  return '<span class="pill pill-warn">THUA</span>';
+}
+
+function deltaCell(d) {
+  const cls = d > 0 ? 'green' : d < 0 ? 'red' : 'muted';
+  const sign = d > 0 ? '+' : '';
+  return '<span class="mono ' + cls + '"><b>' + sign + fmt(d) + '</b></span>';
+}
+
+function renderHistory() {
+  if (!user) return;
+  const rows = user.history.filter((h) => histFilter === 'all' || h.game === histFilter);
+
+  $('#historyBody').innerHTML = rows.map((h) =>
+    '<tr>' +
+      '<td class="tiny muted">' + timeLabel(h.t) + '</td>' +
+      '<td>' + (GAME_LABEL[h.game] || h.game) + '</td>' +
+      '<td class="tiny muted">' + h.detail + '</td>' +
+      '<td class="mono">' + fmt(h.bet) + '</td>' +
+      '<td>' + resultPill(h.result) + '</td>' +
+      '<td>' + deltaCell(h.delta) + '</td>' +
+    '</tr>'
+  ).join('');
+  $('#historyEmpty').hidden = rows.length > 0;
+
+  const recent = user.history.slice(0, 6);
+  $('#homeHistoryBody').innerHTML = recent.map((h) =>
+    '<tr>' +
+      '<td class="tiny muted">' + timeLabel(h.t) + '</td>' +
+      '<td>' + (GAME_LABEL[h.game] || h.game) + '</td>' +
+      '<td class="mono">' + fmt(h.bet) + '</td>' +
+      '<td>' + resultPill(h.result) + '</td>' +
+      '<td>' + deltaCell(h.delta) + '</td>' +
+    '</tr>'
+  ).join('');
+  $('#homeHistoryEmpty').hidden = recent.length > 0;
+}
+
+function renderStats() {
+  if (!user) return;
+  const h = user.history;
+  const plays = h.length;
+  const wins = h.filter((x) => x.result === 'win').length;
+  const losses = h.filter((x) => x.result === 'lose').length;
+  const wagered = h.reduce((a, x) => a + x.bet, 0);
+  const net = h.reduce((a, x) => a + x.delta, 0);
+  const won = h.reduce((a, x) => a + (x.delta > 0 ? x.delta + x.bet : 0), 0);
+
+  $('#statPlays').textContent  = fmt(plays);
+  $('#statWins').textContent   = fmt(wins);
+  $('#statLosses').textContent = fmt(losses);
+  $('#statNet').textContent    = (net >= 0 ? '+' : '') + fmt(net);
+  $('#statNet').className      = 'v mono ' + (net >= 0 ? 'green' : 'red');
+
+  $('#hStatPlays').textContent   = fmt(plays);
+  $('#hStatWagered').textContent = fmt(wagered);
+  $('#hStatWon').textContent     = fmt(won);
+  $('#hStatNet').textContent     = (net >= 0 ? '+' : '') + fmt(net);
+  $('#hStatNet').className       = 'v mono ' + (net >= 0 ? 'green' : 'red');
+}
+
+$('#histFilters').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-filter]');
+  if (!b) return;
+  histFilter = b.dataset.filter;
+  $$('#histFilters .chip').forEach((c) => c.classList.toggle('active', c === b));
+  renderHistory();
+});
+
+$('#clearHistory').addEventListener('click', () => {
+  confirmModal('Xoá lịch sử chơi?', 'Lịch sử ván chơi ảo sẽ bị xoá. Số dư không đổi.', 'Xoá', () => {
+    user.history = [];
+    saveDB(); renderHistory(); renderStats(); renderAccount();
+    toast('Đã xoá lịch sử', 'Số dư ảo giữ nguyên.', 'info');
+  });
+});
+
+/* ======================== 14. ACCOUNT PAGE ======================== */
+
+function renderAccount() {
+  if (!user) return;
+  $('#acctName').textContent    = user.name;
+  $('#acctCreated').textContent = dateLabel(user.created);
+  $('#acctPlays').textContent   = fmt(user.history.length);
+  $('#acctTx').textContent      = fmt(user.txs.length);
+  const mode = $('#acctMode');
+  if (user.rig === 'win')       { mode.textContent = 'CHẾ ĐỘ: ALWAYS WIN';  mode.className = 'pill pill-gold'; }
+  else if (user.rig === 'lose') { mode.textContent = 'CHẾ ĐỘ: ALWAYS LOOSE'; mode.className = 'pill pill-warn'; }
+  else                          { mode.textContent = 'CHẾ ĐỘ: BÌNH THƯỜNG'; mode.className = 'pill pill-ok'; }
+}
+
+/* ======================== 15. COMMAND CHAT CONSOLE ======================== */
+
+const consoleEl = $('#console');
+
+function logMsg(text, kind) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + (kind || 'sys');
+  el.innerHTML = text;
+  $('#consoleLog').appendChild(el);
+  $('#consoleLog').scrollTop = $('#consoleLog').scrollHeight;
+}
+
+function openConsole() {
+  consoleEl.hidden = false;
+  $('#consoleInput').focus();
+  if (!$('#consoleLog').children.length) printHelp();
+}
+
+function printHelp() {
+  logMsg(
+    '<b class="gold">COMMAND CHAT — DEMO ADMIN</b>\n' +
+    'Chỉ tác động lên dữ liệu ảo trong trình duyệt này.\n\n' +
+    '<code>/always win for (username)</code> — người đó luôn thắng\n' +
+    '<code>/always loose for (username)</code> — người đó luôn thua\n' +
+    '<code>add (username) (amount)</code> — cộng tiền ảo\n' +
+    '<code>/normal for (username)</code> — bỏ chế độ luôn thắng/thua\n' +
+    '<code>/balance (username)</code> — xem số dư ảo\n' +
+    '<code>/users</code> — danh sách tài khoản demo\n' +
+    '<code>/clear</code> — xoá khung chat · <code>/help</code>', 'sys');
+}
+
+function parseAmount(raw) {
+  const cleaned = String(raw).replace(/[^\d]/g, '');
+  if (!cleaned) return NaN;
+  return Number(cleaned);
+}
+
+function refreshIfSelf(target) {
+  if (user && key(target.name) === key(user.name)) {
+    renderBalance(); renderAccount(); renderStats();
+  }
+}
+
+function runCommand(raw) {
+  const line = raw.trim();
+  if (!line) return;
+
+  let m;
+
+  /* /help */
+  if (/^\/?help$/i.test(line)) { printHelp(); return; }
+
+  /* /clear */
+  if (/^\/?clear$/i.test(line)) { $('#consoleLog').innerHTML = ''; printHelp(); return; }
+
+  /* /users */
+  if (/^\/?users$/i.test(line)) {
+    const names = Object.keys(DB.users);
+    if (!names.length) { logMsg('Chưa có tài khoản demo nào.', 'err'); return; }
+    logMsg('<b>Tài khoản demo (' + names.length + '):</b>\n' + names.map((k) => {
+      const u = DB.users[k];
+      const tag = u.rig === 'win' ? ' [ALWAYS WIN]' : u.rig === 'lose' ? ' [ALWAYS LOOSE]' : '';
+      return '• ' + u.name + ' — ' + fmt(u.balance) + ' ảo' + tag;
+    }).join('\n'), 'ok');
+    return;
+  }
+
+  /* /balance <username> */
+  m = line.match(/^\/?balance\s+(.+)$/i);
+  if (m) {
+    const t = findUser(m[1]);
+    if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[1].trim() + '</b>.', 'err'); return; }
+    logMsg('💰 <b>' + t.name + '</b> đang có <b>' + fmtVnd(t.balance) + '</b> (ảo).', 'ok');
+    return;
+  }
+
+  /* /always win|loose|lose for <username> */
+  m = line.match(/^\/?always\s+(win|loose|lose)\s+for\s+(.+)$/i);
+  if (m) {
+    const mode = m[1].toLowerCase() === 'win' ? 'win' : 'lose';
+    const t = findUser(m[2]);
+    if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[2].trim() + '</b>. Gõ <code>/users</code>.', 'err'); return; }
+    t.rig = mode;
+    saveDB(); refreshIfSelf(t);
+    logMsg('✅ <b>' + t.name + '</b> giờ sẽ <b>' + (mode === 'win' ? 'LUÔN THẮNG' : 'LUÔN THUA') +
+      '</b> ở cả 3 game (demo).', 'ok');
+    toast('Đã đặt chế độ', t.name + ' → ' + (mode === 'win' ? 'ALWAYS WIN' : 'ALWAYS LOOSE'), 'gold');
+    return;
+  }
+
+  /* /normal for <username> */
+  m = line.match(/^\/?(?:normal|random|reset)\s+for\s+(.+)$/i);
+  if (m) {
+    const t = findUser(m[1]);
+    if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[1].trim() + '</b>.', 'err'); return; }
+    t.rig = null;
+    saveDB(); refreshIfSelf(t);
+    logMsg('✅ <b>' + t.name + '</b> trở lại chế độ ngẫu nhiên bình thường.', 'ok');
+    toast('Đã đặt lại', t.name + ' → ngẫu nhiên', 'info');
+    return;
+  }
+
+  /* add <username> <amount>   (also accepts /add) */
+  m = line.match(/^\/?add\s+(.+?)\s+([\d.,\s]+)$/i);
+  if (m) {
+    const t = findUser(m[1]);
+    if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[1].trim() + '</b>. Gõ <code>/users</code>.', 'err'); return; }
+    const amt = parseAmount(m[2]);
+    if (!isFinite(amt) || amt <= 0) { logMsg('❌ Số tiền không hợp lệ.', 'err'); return; }
+    if (amt > 100000000) { logMsg('❌ Giới hạn demo: tối đa 100,000,000 mỗi lệnh.', 'err'); return; }
+    t.balance = Math.round(t.balance + amt);
+    t.txs.unshift({ id: txId(), t: nowISO(), type: 'ADMIN CREDIT (DEMO COMMAND)', amount: amt, status: 'DEMO' });
+    t.txs = t.txs.slice(0, 60);
+    saveDB();
+    if (user && key(t.name) === key(user.name)) { renderBalance(); bumpBalance(); renderTxs(); renderAccount(); }
+    logMsg('✅ Đã cộng <b>' + fmt(amt) + '</b> tiền ảo cho <b>' + t.name + '</b>.\nSố dư mới: <b>' +
+      fmtVnd(t.balance) + '</b> (ảo — không phải tiền thật).', 'ok');
+    toast('Đã cộng tiền ảo', t.name + ' +' + fmt(amt) + ' (DEMO)', 'gold');
+    return;
+  }
+
+  logMsg('❓ Không hiểu lệnh: <code>' + line.replace(/</g, '&lt;') + '</code>\nGõ <code>/help</code> để xem danh sách lệnh.', 'err');
+}
+
+$('#consoleFab').addEventListener('click', () => {
+  if (consoleEl.hidden) openConsole(); else consoleEl.hidden = true;
+});
+$('#consoleClose').addEventListener('click', () => { consoleEl.hidden = true; });
+$('#openConsoleFromAcct').addEventListener('click', openConsole);
+
+$('#consoleForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = $('#consoleInput');
+  const line = input.value;
+  if (!line.trim()) return;
+  logMsg(line.replace(/</g, '&lt;'), 'usr');
+  input.value = '';
+  setTimeout(() => runCommand(line), 90);
+});
+
+/* ======================== 16. INIT ======================== */
+
+function syncBannerHeight() {
+  const h = $('.demo-banner').getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--banner-h', Math.round(h) + 'px');
+}
+
+function init() {
+  syncBannerHeight();
+  window.addEventListener('resize', syncBannerHeight);
+  if (window.ResizeObserver) new ResizeObserver(syncBannerHeight).observe($('.demo-banner'));
+  buildMineGrid();
+  buildWheel();
+  $$('#diceRow .die').forEach((el, i) => renderDie(el, [3, 5, 2][i]));
+  setDepAmount(100000);
+  drawFakeQR();
+
+  wireBetPresets('bombBetPresets', 'bombBet', updateBombPreview);
+  wireBetPresets('wheelBetPresets', 'wheelBet', () => {
+    $('#wheelBetShow').textContent = fmt(readBet('wheelBet'));
+  });
+  wireBetPresets('diceBetPresets', 'diceBet', null);
+  $('#wheelBetShow').textContent = fmt(readBet('wheelBet'));
+
+  const sessionUser = DB.session ? DB.users[DB.session] : null;
+  if (sessionUser) enterApp(sessionUser); else showAuth('login');
+
+  resetBombBoard();
+  console.info('%cLuckyBomb VN — DEMO', 'color:#ffc93c;font-weight:bold',
+    '\nFictional prototype. Virtual currency only. No real money, no payments, no bank data.');
+}
+
+init();
+
+})();
+</script>
+
+</body>
+</html>
