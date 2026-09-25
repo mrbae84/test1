@@ -32,7 +32,6 @@
   --stroke-2:rgba(255,255,255,.2);
   --radius:20px;
   --sidebar-w:248px;
-  --banner-h:30px;
   --shadow:0 18px 50px rgba(0,0,0,.55);
   --font:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
   color-scheme:dark;
@@ -182,22 +181,6 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 }
 .section-title .dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red)}
 
-/* ---------------- demo banner ---------------- */
-.demo-banner{
-  position:sticky;top:env(safe-area-inset-top,0px);z-index:60;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:7px 12px;
-  font-size:11.5px;font-weight:900;letter-spacing:.9px;text-align:center;
-  color:#1a0308;
-  background:repeating-linear-gradient(135deg,#ffc93c 0 18px,#ff2d55 18px 36px);
-  text-shadow:0 1px 0 rgba(255,255,255,.25);
-}
-.demo-banner span{background:rgba(255,255,255,.75);padding:2px 10px;border-radius:999px}
-@media(max-width:560px){
-  .demo-banner{padding:6px 8px;font-size:9px;letter-spacing:.35px}
-  .demo-banner span{padding:2px 7px}
-}
-
 /* ---------------- auth ---------------- */
 #authScreen{min-height:100%;display:flex;flex-direction:column}
 .auth-wrap{
@@ -225,7 +208,7 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 /* ---------------- app shell ---------------- */
 #app{min-height:100%;display:flex;flex-direction:column}
 .topbar{
-  position:sticky;top:calc(var(--banner-h) + env(safe-area-inset-top,0px));z-index:50;
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:50;
   display:flex;align-items:center;gap:12px;
   padding:10px 16px;
   background:rgba(10,5,22,.72);
@@ -242,7 +225,7 @@ button{cursor:pointer;border:0;background:none;color:inherit}
   border:1px solid rgba(255,201,60,.4);
   box-shadow:inset 0 0 22px rgba(255,201,60,.07);
 }
-.balance-box .amt{font-weight:900;font-size:17px;color:var(--gold);text-shadow:0 0 16px rgba(255,201,60,.45)}
+.balance-box .amt{font-weight:900;font-size:17px;color:var(--gold);text-shadow:0 0 16px rgba(255,201,60,.45);white-space:nowrap}
 .balance-box .amt.bump{animation:bump .5s cubic-bezier(.2,.9,.3,1.4)}
 .balance-box .lbl{font-size:9.5px;font-weight:900;letter-spacing:.7px;color:var(--gold-soft);opacity:.8;white-space:nowrap}
 .avatar-btn{
@@ -254,7 +237,7 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 .shell{flex:1;display:flex;width:100%;max-width:1360px;margin:0 auto}
 
 .sidebar{
-  position:sticky;top:calc(var(--banner-h) + 70px + env(safe-area-inset-top,0px));align-self:flex-start;
+  position:sticky;top:calc(70px + env(safe-area-inset-top,0px));align-self:flex-start;
   width:var(--sidebar-w);flex:0 0 var(--sidebar-w);
   padding:18px 12px;display:flex;flex-direction:column;gap:5px;
   height:calc(100dvh - 140px);
@@ -612,7 +595,7 @@ tbody tr:last-child td{border-bottom:0}
 
 /* ---------------- toasts ---------------- */
 #toasts{
-  position:fixed;z-index:200;top:calc(var(--banner-h) + 74px);right:14px;
+  position:fixed;z-index:200;top:calc(74px + env(safe-area-inset-top,0px));right:14px;
   display:flex;flex-direction:column;gap:9px;
   max-width:min(92vw,360px);pointer-events:none;
 }
@@ -709,6 +692,17 @@ tbody tr:last-child td{border-bottom:0}
   .card{padding:15px}
   #toasts{top:auto;bottom:calc(150px + env(safe-area-inset-bottom));right:10px;left:10px;max-width:none}
 }
+/* phones: the bar holds brand + DEMO tag + balance + avatar on one row */
+@media(max-width:430px){
+  .topbar{gap:5px;padding:9px 9px}
+  .brand{font-size:12px;gap:5px}
+  .brand .bomb{font-size:16px}
+  .topbar > .pill{font-size:8.5px;padding:3px 6px;letter-spacing:.3px}
+  .balance-box{padding:5px 8px;gap:5px}
+  .balance-box .amt{font-size:12.5px}
+  .balance-box > span{font-size:13px !important}
+  .avatar-btn{width:32px;height:32px;font-size:12px}
+}
 /* very narrow phones: the wordmark yields to the balance, which matters more */
 @media(max-width:374px){
   .topbar{gap:6px;padding:9px 8px}
@@ -729,10 +723,6 @@ tbody tr:last-child td{border-bottom:0}
 </head>
 <body>
 
-<!-- ============ GLOBAL DEMO BANNER ============ -->
-<div class="demo-banner">
-  <span>DEMO — VIRTUAL CURRENCY ONLY — NO REAL MONEY</span>
-</div>
 
 <!-- ============================================================
      AUTH SCREEN
@@ -783,7 +773,7 @@ tbody tr:last-child td{border-bottom:0}
           <input id="regPass2" class="input" type="password" placeholder="Nhập lại mật khẩu" maxlength="64" />
         </div>
         <div id="regErr" class="err"></div>
-        <button type="submit" class="btn btn-gold btn-block btn-lg">🎁 Create Account (+100,000 VND ảo)</button>
+        <button type="submit" class="btn btn-gold btn-block btn-lg">🎁 Create Account (+100,000 VND)</button>
         <button type="button" id="goLogin" class="btn btn-ghost btn-block">← Back to login</button>
       </form>
 
@@ -807,12 +797,10 @@ tbody tr:last-child td{border-bottom:0}
   <!-- ---------- top bar ---------- -->
   <header class="topbar">
     <div class="brand"><span class="bomb">💣</span><span class="title-neon">LUCKYBOMB VN</span></div>
+    <span class="pill pill-warn" style="flex:0 0 auto">DEMO</span>
     <div class="balance-box">
       <span style="font-size:16px">💰</span>
-      <div>
-        <div class="amt mono" id="balanceTop">0 VND</div>
-        <div class="lbl">VIRTUAL · NO REAL MONEY</div>
-      </div>
+      <div class="amt mono" id="balanceTop">0 VND</div>
     </div>
     <button class="avatar-btn" id="avatarBtn" title="Account">U</button>
   </header>
@@ -825,14 +813,11 @@ tbody tr:last-child td{border-bottom:0}
       <button class="nav-btn" data-page="bomb"><span class="ico">💣</span> Bomb</button>
       <button class="nav-btn" data-page="wheel"><span class="ico">🎡</span> Vòng Quay</button>
       <button class="nav-btn" data-page="dice"><span class="ico">🎲</span> Dice</button>
-      <button class="nav-btn" data-page="deposit"><span class="ico">💳</span> Add Virtual Money</button>
-      <button class="nav-btn" data-page="withdraw"><span class="ico">🏧</span> Rút tiền ảo</button>
+      <button class="nav-btn" data-page="deposit"><span class="ico">💳</span> Nạp tiền</button>
+      <button class="nav-btn" data-page="withdraw"><span class="ico">🏧</span> Rút tiền</button>
       <button class="nav-btn" data-page="history"><span class="ico">📜</span> History</button>
       <button class="nav-btn" data-page="account"><span class="ico">👤</span> Account</button>
-      <div class="sidebar-foot">
-        <b class="gold">DEMO BUILD</b><br />
-        Virtual VND only. No real money, no payments, no withdrawals. Fictional prototype for UI demonstration.
-      </div>
+
     </aside>
 
     <!-- ---------- content ---------- -->
@@ -843,13 +828,11 @@ tbody tr:last-child td{border-bottom:0}
         <div class="stack">
 
           <div class="hero glass card">
-            <div class="pill pill-warn">DEMO — NO REAL MONEY</div>
-            <h2 style="margin-top:10px">Xin chào, <span class="gold" id="helloName">player</span> 👋</h2>
-            <div class="small muted">Số dư ảo của bạn / Your virtual balance</div>
+            <h2>Xin chào, <span class="gold" id="helloName">player</span> 👋</h2>
+            <div class="small muted">Số dư của bạn</div>
             <div class="big-bal mono" id="balanceHero">0 VND</div>
-            <div class="small muted">VIRTUAL VND — tiền ảo, không có giá trị thật</div>
             <div class="row" style="margin-top:14px">
-              <button class="btn btn-gold" data-nav="deposit">💳 Add Virtual Money</button>
+              <button class="btn btn-gold" data-nav="deposit">💳 Nạp tiền</button>
               <button class="btn btn-ghost" data-nav="bomb">💣 Chơi ngay</button>
             </div>
           </div>
@@ -858,7 +841,7 @@ tbody tr:last-child td{border-bottom:0}
             <div class="stat glass"><div class="k">Ván đã chơi</div><div class="v mono" id="statPlays">0</div></div>
             <div class="stat glass"><div class="k">Thắng / Wins</div><div class="v mono green" id="statWins">0</div></div>
             <div class="stat glass"><div class="k">Thua / Losses</div><div class="v mono red" id="statLosses">0</div></div>
-            <div class="stat glass"><div class="k">Lãi/Lỗ ảo</div><div class="v mono" id="statNet">0</div></div>
+            <div class="stat glass"><div class="k">Lãi/Lỗ</div><div class="v mono" id="statNet">0</div></div>
           </div>
 
           <div class="section-title"><span class="dot"></span> Trò chơi / Games</div>
@@ -887,15 +870,15 @@ tbody tr:last-child td{border-bottom:0}
             <div class="game-card glass gc-wd" data-nav="withdraw">
               <div class="glow"></div>
               <span class="emoji">🏧</span>
-              <h3>Rút tiền ảo</h3>
-              <div class="small muted">Lệnh rút mô phỏng — trừ số dư ảo, không chuyển tiền thật.</div>
+              <h3>Rút tiền</h3>
+              <div class="small muted">Rút về ngân hàng hoặc ví.</div>
               <div class="pill pill-warn" style="margin-top:10px">SIMULATED ONLY</div>
             </div>
             <div class="game-card glass gc-dep" data-nav="deposit">
               <div class="glow"></div>
               <span class="emoji">💳</span>
-              <h3>Add Virtual Money</h3>
-              <div class="small muted">Nạp tiền ảo mô phỏng — QR giả, không chuyển tiền.</div>
+              <h3>Nạp tiền</h3>
+              <div class="small muted">Nạp nhanh qua QR.</div>
               <div class="pill pill-warn" style="margin-top:10px">SIMULATED ONLY</div>
             </div>
           </div>
@@ -909,11 +892,6 @@ tbody tr:last-child td{border-bottom:0}
             <div class="empty" id="homeHistoryEmpty">Chưa có ván nào. Hãy chơi thử! 🎮</div>
           </div>
 
-          <div class="warn-box">
-            <b>DEMO — NO REAL MONEY.</b> Toàn bộ số dư, giao dịch và phần thưởng trên trang này là
-            <b>tiền ảo hư cấu</b>. Trang này không kết nối ngân hàng, không có cổng thanh toán,
-            không nhận nạp tiền thật và không cho rút tiền. Đây chỉ là bản mẫu giao diện (UI prototype).
-          </div>
 
         </div>
       </section>
@@ -923,7 +901,6 @@ tbody tr:last-child td{border-bottom:0}
         <div class="stack">
           <div class="row">
             <div class="section-title"><span class="dot"></span> 💣 Bomb / Mines</div>
-            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
           </div>
 
           <div class="panel-grid">
@@ -931,7 +908,7 @@ tbody tr:last-child td{border-bottom:0}
             <!-- controls -->
             <div class="glass card stack" id="bombControls">
               <div class="field">
-                <label for="bombBet">Tiền cược ảo / Virtual bet</label>
+                <label for="bombBet">Tiền cược</label>
                 <input id="bombBet" class="input mono" type="number" min="1000" step="1000" value="50000" />
               </div>
               <div class="row" id="bombBetPresets">
@@ -992,14 +969,13 @@ tbody tr:last-child td{border-bottom:0}
         <div class="stack">
           <div class="row">
             <div class="section-title"><span class="dot"></span> 🎡 Vòng Quay May Mắn</div>
-            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
           </div>
 
           <div class="panel-grid">
 
             <div class="glass card stack">
               <div class="field">
-                <label for="wheelBet">Tiền cược ảo / Virtual bet</label>
+                <label for="wheelBet">Tiền cược</label>
                 <input id="wheelBet" class="input mono" type="number" min="1000" step="1000" value="50000" />
               </div>
               <div class="row" id="wheelBetPresets">
@@ -1018,10 +994,6 @@ tbody tr:last-child td{border-bottom:0}
                 <div><div class="k">Hệ số vừa quay</div><div class="v purple mono" id="wheelLastMult">—</div></div>
               </div>
 
-              <div class="warn-box tiny">
-                “This is a simulated game using virtual currency.”<br />
-                <b>Đây là trò chơi mô phỏng dùng tiền ảo.</b> Không có tiền thật.
-              </div>
             </div>
 
             <div class="glass card">
@@ -1047,14 +1019,13 @@ tbody tr:last-child td{border-bottom:0}
         <div class="stack">
           <div class="row">
             <div class="section-title"><span class="dot"></span> 🎲 Dice Roll — Xúc Xắc</div>
-            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
           </div>
 
           <div class="panel-grid">
 
             <div class="glass card stack">
               <div class="field">
-                <label for="diceBet">Tiền cược ảo / Virtual bet</label>
+                <label for="diceBet">Tiền cược</label>
                 <input id="diceBet" class="input mono" type="number" min="1000" step="1000" value="50000" />
               </div>
               <div class="row" id="diceBetPresets">
@@ -1095,7 +1066,6 @@ tbody tr:last-child td{border-bottom:0}
                 <span class="pill" id="dicePar">—</span>
               </div>
               <div class="result-banner" id="diceBanner">Chọn cược và nhấn <b>ROLL</b>.</div>
-              <div class="tiny muted center">Mọi khoản thắng đều là <b>tiền ảo</b>. Simulated dice — virtual payouts only.</div>
             </div>
 
           </div>
@@ -1106,7 +1076,7 @@ tbody tr:last-child td{border-bottom:0}
       <section class="page" id="page-deposit">
         <div class="stack">
           <div class="row">
-            <div class="section-title"><span class="dot"></span> 💳 Add Virtual Money</div>
+            <div class="section-title"><span class="dot"></span> 💳 Nạp tiền</div>
             <span class="pill pill-warn">SIMULATED PAYMENT ONLY</span>
           </div>
 
@@ -1121,23 +1091,23 @@ tbody tr:last-child td{border-bottom:0}
           <div class="dep-grid">
 
             <div class="glass card stack">
-              <div class="small muted">Chọn số tiền ảo / Select virtual amount</div>
+              <div class="small muted">Chọn số tiền</div>
               <div class="amount-grid" id="depAmounts">
-                <button class="amount-btn" data-amt="50000"><div class="a mono">50,000</div><div class="c">VIRTUAL VND</div></button>
-                <button class="amount-btn active" data-amt="100000"><div class="a mono">100,000</div><div class="c">VIRTUAL VND</div></button>
-                <button class="amount-btn" data-amt="200000"><div class="a mono">200,000</div><div class="c">VIRTUAL VND</div></button>
-                <button class="amount-btn" data-amt="500000"><div class="a mono">500,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn" data-amt="50000"><div class="a mono">50,000</div><div class="c">VND</div></button>
+                <button class="amount-btn active" data-amt="100000"><div class="a mono">100,000</div><div class="c">VND</div></button>
+                <button class="amount-btn" data-amt="200000"><div class="a mono">200,000</div><div class="c">VND</div></button>
+                <button class="amount-btn" data-amt="500000"><div class="a mono">500,000</div><div class="c">VND</div></button>
               </div>
 
               <div class="field">
-                <label for="depCustom">Số tiền tuỳ chọn / Custom amount (virtual)</label>
+                <label for="depCustom">Số tiền tuỳ chọn</label>
                 <input id="depCustom" class="input mono" type="number" min="1000" max="10000000" step="1000" placeholder="VD: 250000" />
               </div>
 
               <div class="bet-amount-display">
                 <span class="small muted">Sẽ cộng:</span>
                 <span class="v mono" id="depSelected">100,000</span>
-                <span class="small muted">VIRTUAL VND</span>
+                <span class="small muted">VND</span>
               </div>
 
               <button class="btn btn-gold btn-block btn-lg" id="simulatePay">⚡ SIMULATE PAYMENT</button>
@@ -1150,7 +1120,7 @@ tbody tr:last-child td{border-bottom:0}
               <div class="section-title" style="font-size:15px"><span class="dot"></span> Lịch sử giao dịch (demo)</div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Mã GD</th><th>Thời gian</th><th>Loại</th><th>Số tiền ảo</th><th>Trạng thái</th></tr></thead>
+                  <thead><tr><th>Mã GD</th><th>Thời gian</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
                   <tbody id="txBody"></tbody>
                 </table>
                 <div class="empty" id="txEmpty" hidden>Chưa có giao dịch demo nào.</div>
@@ -1170,7 +1140,7 @@ tbody tr:last-child td{border-bottom:0}
               <div class="fake-info">
                 <div class="fi"><span class="muted">Đơn vị (hư cấu)</span><b>LUCKYBOMB DEMO STUDIO</b></div>
                 <div class="fi"><span class="muted">Mã tham chiếu</span><b id="qrRef">DEMO-000000</b></div>
-                <div class="fi"><span class="muted">Số tiền ảo</span><b id="qrAmt">100,000 VIRTUAL VND</b></div>
+                <div class="fi"><span class="muted">Số tiền</span><b id="qrAmt">100,000 VND</b></div>
                 <div class="fi"><span class="muted">Ngân hàng</span><b>KHÔNG CÓ / NONE</b></div>
                 <div class="fi"><span class="muted">Số tài khoản</span><b>KHÔNG CÓ / NONE</b></div>
                 <div class="fi"><span class="muted">Hiệu lực</span><b>Chỉ trong demo</b></div>
@@ -1189,7 +1159,7 @@ tbody tr:last-child td{border-bottom:0}
       <section class="page" id="page-withdraw">
         <div class="stack">
           <div class="row">
-            <div class="section-title"><span class="dot"></span> 🏧 Rút tiền ảo / Withdraw</div>
+            <div class="section-title"><span class="dot"></span> 🏧 Rút tiền</div>
             <span class="pill pill-warn">SIMULATED — NO REAL MONEY</span>
           </div>
 
@@ -1204,23 +1174,23 @@ tbody tr:last-child td{border-bottom:0}
           <div class="dep-grid">
 
             <div class="glass card stack">
-              <div class="small muted">Số tiền muốn rút / Withdraw amount (virtual)</div>
+              <div class="small muted">Số tiền muốn rút</div>
               <div class="amount-grid" id="wdAmounts">
-                <button class="amount-btn active" data-amt="100000"><div class="a mono">100,000</div><div class="c">VIRTUAL VND</div></button>
-                <button class="amount-btn" data-amt="200000"><div class="a mono">200,000</div><div class="c">VIRTUAL VND</div></button>
-                <button class="amount-btn" data-amt="500000"><div class="a mono">500,000</div><div class="c">VIRTUAL VND</div></button>
-                <button class="amount-btn" data-amt="all"><div class="a mono">TẤT CẢ</div><div class="c">TOÀN BỘ SỐ DƯ ẢO</div></button>
+                <button class="amount-btn active" data-amt="100000"><div class="a mono">100,000</div><div class="c">VND</div></button>
+                <button class="amount-btn" data-amt="200000"><div class="a mono">200,000</div><div class="c">VND</div></button>
+                <button class="amount-btn" data-amt="500000"><div class="a mono">500,000</div><div class="c">VND</div></button>
+                <button class="amount-btn" data-amt="all"><div class="a mono">TẤT CẢ</div><div class="c">TOÀN BỘ SỐ DƯ</div></button>
               </div>
 
               <div class="field">
-                <label for="wdCustom">Số tiền tuỳ chọn / Custom amount (virtual)</label>
+                <label for="wdCustom">Số tiền tuỳ chọn</label>
                 <input id="wdCustom" class="input mono" type="number" min="100000" step="10000" placeholder="VD: 350000" />
               </div>
 
               <div class="wd-summary">
                 <div class="wr"><span>Số tiền rút</span><b class="mono" id="wdGross">100,000</b></div>
                 <div class="wr"><span>Phí hư cấu (2%, tối thiểu 5,000)</span><b class="mono red" id="wdFee">-5,000</b></div>
-                <div class="wr total"><span>Thực nhận (ảo)</span><b class="mono" id="wdNet">95,000</b></div>
+                <div class="wr total"><span>Thực nhận</span><b class="mono" id="wdNet">95,000</b></div>
               </div>
 
               <div class="field">
@@ -1252,9 +1222,9 @@ tbody tr:last-child td{border-bottom:0}
             <div class="glass card stack">
               <div class="section-title" style="font-size:15px"><span class="dot"></span> Trạng thái lệnh rút</div>
               <div class="steps" id="wdSteps">
-                <div class="step" data-step="0"><div class="sd">1</div><div><div class="st">Xác minh tài khoản demo</div><div class="ss">Kiểm tra số dư ảo và hạn mức hư cấu</div></div></div>
-                <div class="step" data-step="1"><div class="sd">2</div><div><div class="st">Gửi lệnh tới kênh nhận</div><div class="ss">Mô phỏng — không có yêu cầu mạng nào được gửi đi</div></div></div>
-                <div class="step" data-step="2"><div class="sd">3</div><div><div class="st">Kết quả</div><div class="ss">Biên lai demo sẽ hiện bên dưới</div></div></div>
+                <div class="step" data-step="0"><div class="sd">1</div><div><div class="st">Xác minh tài khoản</div><div class="ss">Kiểm tra số dư và hạn mức</div></div></div>
+                <div class="step" data-step="1"><div class="sd">2</div><div><div class="st">Gửi lệnh tới kênh nhận</div><div class="ss">Đang xử lý</div></div></div>
+                <div class="step" data-step="2"><div class="sd">3</div><div><div class="st">Kết quả</div><div class="ss">Biên lai sẽ hiện bên dưới</div></div></div>
               </div>
 
               <div id="wdReceipt" hidden></div>
@@ -1264,7 +1234,7 @@ tbody tr:last-child td{border-bottom:0}
               <div class="section-title" style="font-size:15px"><span class="dot"></span> Lệnh rút gần đây (demo)</div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Mã lệnh</th><th>Thời gian</th><th>Số tiền ảo</th><th>Trạng thái</th></tr></thead>
+                  <thead><tr><th>Mã lệnh</th><th>Thời gian</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
                   <tbody id="wdBody"></tbody>
                 </table>
                 <div class="empty" id="wdEmpty">Chưa có lệnh rút demo nào.</div>
@@ -1280,14 +1250,13 @@ tbody tr:last-child td{border-bottom:0}
         <div class="stack">
           <div class="row">
             <div class="section-title"><span class="dot"></span> 📜 Lịch sử / History</div>
-            <span class="pill pill-warn">VIRTUAL VND ONLY</span>
           </div>
 
           <div class="stat-grid">
             <div class="stat glass"><div class="k">Tổng ván</div><div class="v mono" id="hStatPlays">0</div></div>
-            <div class="stat glass"><div class="k">Tổng cược ảo</div><div class="v mono gold" id="hStatWagered">0</div></div>
-            <div class="stat glass"><div class="k">Tổng thắng ảo</div><div class="v mono green" id="hStatWon">0</div></div>
-            <div class="stat glass"><div class="k">Lãi/Lỗ ảo</div><div class="v mono" id="hStatNet">0</div></div>
+            <div class="stat glass"><div class="k">Tổng cược</div><div class="v mono gold" id="hStatWagered">0</div></div>
+            <div class="stat glass"><div class="k">Tổng thắng</div><div class="v mono green" id="hStatWon">0</div></div>
+            <div class="stat glass"><div class="k">Lãi/Lỗ</div><div class="v mono" id="hStatNet">0</div></div>
           </div>
 
           <div class="glass card stack">
@@ -1303,7 +1272,7 @@ tbody tr:last-child td{border-bottom:0}
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Thời gian</th><th>Game</th><th>Chi tiết</th><th>Cược ảo</th><th>Kết quả</th><th>Thay đổi</th></tr></thead>
+                <thead><tr><th>Thời gian</th><th>Game</th><th>Chi tiết</th><th>Cược</th><th>Kết quả</th><th>Thay đổi</th></tr></thead>
                 <tbody id="historyBody"></tbody>
               </table>
               <div class="empty" id="historyEmpty">Chưa có lịch sử.</div>
@@ -1334,7 +1303,7 @@ tbody tr:last-child td{border-bottom:0}
             </div>
 
             <div class="kv">
-              <div class="item"><div class="k">Số dư ảo</div><div class="v gold mono" id="acctBal">0</div></div>
+              <div class="item"><div class="k">Số dư</div><div class="v gold mono" id="acctBal">0</div></div>
               <div class="item"><div class="k">Ngày tạo</div><div class="v" id="acctCreated">—</div></div>
               <div class="item"><div class="k">Số ván đã chơi</div><div class="v mono" id="acctPlays">0</div></div>
               <div class="item"><div class="k">Số giao dịch demo</div><div class="v mono" id="acctTx">0</div></div>
@@ -1343,8 +1312,8 @@ tbody tr:last-child td{border-bottom:0}
             <hr class="sep" />
 
             <div class="row">
-              <button class="btn btn-gold" data-nav="deposit">💳 Nạp tiền ảo</button>
-              <button class="btn btn-ghost" id="resetBalance">♻️ Đặt lại 100,000 ảo</button>
+              <button class="btn btn-gold" data-nav="deposit">💳 Nạp tiền</button>
+              <button class="btn btn-ghost" id="resetBalance">♻️ Đặt lại 100,000</button>
               <button class="btn btn-ghost" id="openConsoleFromAcct">⌨️ Command Console</button>
               <div class="grow"></div>
               <button class="btn btn-ghost" id="logoutBtn">🚪 Đăng xuất</button>
@@ -1358,20 +1327,15 @@ tbody tr:last-child td{border-bottom:0}
             <div class="small stack" style="gap:6px">
               <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/always win for (username)</code> — luôn thắng</div>
               <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/always loose for (username)</code> — luôn thua</div>
-              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">add (username) (amount)</code> — cộng tiền ảo</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">add (username) (amount)</code> — cộng tiền</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/rut tien error for (username)</code> — rút luôn lỗi</div>
+              <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/rut tien thanh cong for (username)</code> — rút luôn được</div>
               <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/normal for (username)</code> — trả về ngẫu nhiên</div>
               <div><code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/users</code>, <code style="background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px" class="gold">/help</code></div>
             </div>
-            <div class="tiny muted">Console này là một phần của bản demo hư cấu — nó chỉ sửa dữ liệu ảo trong trình duyệt.</div>
+            <div class="tiny muted">Console chỉ sửa dữ liệu trong trình duyệt này.</div>
           </div>
 
-          <div class="warn-box">
-            <b>Trách nhiệm / Responsible demo notice.</b>
-            Bản mẫu này cố tình <b>không có</b>: cổng thanh toán thật, QR thanh toán thật, thông tin ngân hàng,
-            nạp tiền thật, rút tiền, API thanh toán bên ngoài, hay cờ bạc thật.
-            Mọi con số đều là <b>VIRTUAL VND</b>.<br />
-            <span class="tiny">Gambling carries real risk. This prototype exists only to demonstrate UI/animation work — please do not treat it as a real product.</span>
-          </div>
         </div>
       </section>
 
@@ -1385,8 +1349,8 @@ tbody tr:last-child td{border-bottom:0}
       <button class="bn" data-page="bomb"><span class="ico">💣</span><span class="lb">Bomb</span></button>
       <button class="bn" data-page="wheel"><span class="ico">🎡</span><span class="lb">Vòng Quay</span></button>
       <button class="bn" data-page="dice"><span class="ico">🎲</span><span class="lb">Dice</span></button>
-      <button class="bn" data-page="deposit"><span class="ico">💳</span><span class="lb">Nạp ảo</span></button>
-      <button class="bn" data-page="withdraw"><span class="ico">🏧</span><span class="lb">Rút ảo</span></button>
+      <button class="bn" data-page="deposit"><span class="ico">💳</span><span class="lb">Nạp</span></button>
+      <button class="bn" data-page="withdraw"><span class="ico">🏧</span><span class="lb">Rút</span></button>
       <button class="bn" data-page="history"><span class="ico">📜</span><span class="lb">History</span></button>
     </div>
   </nav>
@@ -1399,7 +1363,7 @@ tbody tr:last-child td{border-bottom:0}
       <span style="font-size:17px">⌨️</span>
       <div class="grow">
         <div class="t">COMMAND CHAT <span class="pill pill-warn" style="margin-left:4px">DEMO</span></div>
-        <div class="tiny muted">Chỉ sửa dữ liệu ảo · virtual data only</div>
+        <div class="tiny muted">Bảng điều khiển</div>
       </div>
       <button class="btn btn-sm btn-ghost" id="consoleClose">✕</button>
     </div>
@@ -1714,7 +1678,7 @@ function enterApp(u) {
   resetBombBoard();
   syncWithdrawPage();
   navigate('home');
-  toast('Chào mừng, ' + u.name + '!', 'Số dư ảo: ' + fmtVnd(u.balance) + ' (DEMO)', 'gold');
+  toast('Chào mừng, ' + u.name + '!', fmtVnd(u.balance), 'gold');
 }
 
 $('#tabLogin').addEventListener('click', () => switchAuthTab('login'));
@@ -1751,7 +1715,7 @@ $('#registerForm').addEventListener('submit', (e) => {
   saveDB();
   $('#regPass').value = ''; $('#regPass2').value = '';
   enterApp(u);
-  toast('Tài khoản demo đã tạo', 'Tặng ' + fmtVnd(START_BALANCE) + ' tiền ảo (không phải tiền thật).', 'gold');
+  toast('Tài khoản demo đã tạo', 'Tặng ' + fmtVnd(START_BALANCE) + '.', 'gold');
 });
 
 $('#logoutBtn').addEventListener('click', () => {
@@ -1765,23 +1729,23 @@ $('#avatarBtn').addEventListener('click', () => navigate('account'));
 $('#deleteAcct').addEventListener('click', () => {
   confirmModal(
     'Xoá tài khoản demo?',
-    'Toàn bộ dữ liệu ảo (số dư, lịch sử, giao dịch demo) của "' + user.name + '" sẽ bị xoá khỏi trình duyệt này. Không thể hoàn tác.',
+    'Toàn bộ dữ liệu (số dư, lịch sử, giao dịch) của "' + user.name + '" sẽ bị xoá khỏi trình duyệt này. Không thể hoàn tác.',
     'Xoá vĩnh viễn',
     () => {
       delete DB.users[key(user.name)];
       DB.session = null; saveDB(); user = null;
       showAuth('login');
-      toast('Đã xoá tài khoản demo', 'Dữ liệu ảo đã được gỡ khỏi localStorage.', 'info');
+      toast('Đã xoá tài khoản demo', 'Dữ liệu đã được gỡ khỏi trình duyệt.', 'info');
     }
   );
 });
 
 $('#resetBalance').addEventListener('click', () => {
-  confirmModal('Đặt lại số dư ảo?', 'Số dư sẽ trở về ' + fmtVnd(START_BALANCE) + ' tiền ảo.', 'Đặt lại', () => {
+  confirmModal('Đặt lại số dư?', 'Số dư sẽ trở về ' + fmtVnd(START_BALANCE) + '.', 'Đặt lại', () => {
     user.balance = START_BALANCE;
     saveDB(); renderBalance(); renderAccount();
     addTx('BALANCE RESET (DEMO)', 0, 'DEMO');
-    toast('Đã đặt lại số dư ảo', fmtVnd(START_BALANCE) + ' virtual VND.', 'gold');
+    toast('Đã đặt lại số dư', fmtVnd(START_BALANCE) + '.', 'gold');
   });
 });
 
@@ -1795,8 +1759,8 @@ function readBet(inputId) {
 }
 
 function validateBet(bet) {
-  if (bet < MIN_BET) { toast('Cược quá nhỏ', 'Tối thiểu ' + fmtVnd(MIN_BET) + ' (ảo).', 'lose'); return false; }
-  if (bet > user.balance) { toast('Không đủ tiền ảo', 'Số dư: ' + fmtVnd(user.balance) + '. Hãy nạp tiền ảo.', 'lose'); return false; }
+  if (bet < MIN_BET) { toast('Cược quá nhỏ', 'Tối thiểu ' + fmtVnd(MIN_BET) + '.', 'lose'); return false; }
+  if (bet > user.balance) { toast('Không đủ số dư', 'Số dư: ' + fmtVnd(user.balance) + '. Hãy nạp thêm.', 'lose'); return false; }
   return true;
 }
 
@@ -1936,7 +1900,7 @@ function startBomb() {
   $('#bombCashout').innerHTML = '💰 CASH OUT';
   $('#bombBet').disabled = true;
   $$('#bombCountPresets .chip').forEach((c) => (c.disabled = true));
-  setBanner('#bombBanner', 'Đang chơi — mở ô để tăng hệ số. Cược ảo: <b class="gold">' + fmtVnd(bet) + '</b>', '');
+  setBanner('#bombBanner', 'Đang chơi — mở ô để tăng hệ số. Cược: <b class="gold">' + fmtVnd(bet) + '</b>', '');
   updateBombPreview();
 }
 
@@ -1955,9 +1919,9 @@ function revealAllMines(hitIndex) {
 function endBombLoss(i) {
   bomb.active = false;
   revealAllMines(i);
-  setBanner('#bombBanner', '💥 DÍNH BOM! Mất <b class="red">' + fmtVnd(bomb.bet) + '</b> tiền ảo.', 'lose');
+  setBanner('#bombBanner', '💥 DÍNH BOM! Mất <b class="red">' + fmtVnd(bomb.bet) + '</b>.', 'lose');
   addHistory('bomb', bomb.bombs + ' bom · ' + bomb.picks + ' ô mở', bomb.bet, 'lose', -bomb.bet);
-  toast('Nổ rồi! 💥', 'Mất ' + fmtVnd(bomb.bet) + ' (tiền ảo).', 'lose');
+  toast('Nổ rồi! 💥', 'Mất ' + fmtVnd(bomb.bet) + '.', 'lose');
   finishBombRound();
 }
 
@@ -1980,10 +1944,10 @@ function cashOutBomb(auto) {
   revealAllMines(-1);
   setBanner('#bombBanner',
     (auto ? '🏆 DỌN SẠCH BÀN! ' : '💰 CASH OUT! ') +
-    'Nhận <b class="green">' + fmtVnd(payout) + ' ảo</b> (' + mult.toFixed(2) + 'x)', 'win');
+    'Nhận <b class="green">' + fmtVnd(payout) + '</b> (' + mult.toFixed(2) + 'x)', 'win');
   addHistory('bomb', bomb.bombs + ' bom · ' + bomb.picks + ' ô · ' + mult.toFixed(2) + 'x',
     bomb.bet, 'win', payout - bomb.bet);
-  toast('Rút tiền thành công 💰', '+' + fmtVnd(payout) + ' tiền ảo (' + mult.toFixed(2) + 'x)', 'win');
+  toast('Rút tiền thành công 💰', '+' + fmtVnd(payout) + ' (' + mult.toFixed(2) + 'x)', 'win');
   finishBombRound();
 }
 
@@ -2009,7 +1973,7 @@ $('#mineGrid').addEventListener('click', (e) => {
   $('#bombCashout').innerHTML = '💰 CASH OUT ' + fmtVnd(Math.floor(bomb.bet * mult));
   setBanner('#bombBanner',
     'An toàn 💎 <span class="nw">hệ số <b class="gold">' + mult.toFixed(2) + 'x</b></span> · ' +
-    '<span class="nw">rút được <b class="green">' + fmtVnd(Math.floor(bomb.bet * mult)) + ' ảo</b></span>', '');
+    '<span class="nw">rút được <b class="green">' + fmtVnd(Math.floor(bomb.bet * mult)) + '</b></span>', '');
 
   if (bomb.picks >= GRID_SIZE - bomb.bombs) cashOutBomb(true);
 });
@@ -2107,12 +2071,12 @@ function spinWheel() {
     const res = $('#wheelResult');
     res.classList.remove('pop'); void res.offsetWidth; res.classList.add('pop');
     res.innerHTML = '<div><span style="color:' + seg.c + '">' + seg.m + 'x</span> → <b class="' +
-      (win ? 'green' : push ? 'gold' : 'red') + '">' + fmtVnd(payout) + ' ảo</b></div>';
+      (win ? 'green' : push ? 'gold' : 'red') + '">' + fmtVnd(payout) + '</b></div>';
 
     addHistory('wheel', 'Ô ' + seg.m + 'x', bet, win ? 'win' : push ? 'push' : 'lose', net);
-    if (win)       toast('Trúng ' + seg.m + 'x! 🎉', '+' + fmtVnd(net) + ' tiền ảo', 'win');
-    else if (push) toast('Hoà 1x', 'Hoàn lại ' + fmtVnd(payout) + ' tiền ảo', 'info');
-    else           toast('Hệ số ' + seg.m + 'x 💥', 'Mất ' + fmtVnd(-net) + ' tiền ảo', 'lose');
+    if (win)       toast('Trúng ' + seg.m + 'x! 🎉', '+' + fmtVnd(net), 'win');
+    else if (push) toast('Hoà 1x', 'Hoàn lại ' + fmtVnd(payout), 'info');
+    else           toast('Hệ số ' + seg.m + 'x 💥', 'Mất ' + fmtVnd(-net), 'lose');
 
     wheelSpinning = false;
     $('#spinBtn').disabled = false;
@@ -2203,15 +2167,15 @@ function rollDice() {
 
     const faces = dice.join(' · ');
     if (won && diceChoice === 'three') {
-      setBanner('#diceBanner', '🎯 THREE WHITE JACKPOT! ' + faces + ' → <b class="gold">+' + fmtVnd(payout) + ' ảo</b> (10x)', 'jack');
-      toast('JACKPOT 🎯', '+' + fmtVnd(payout - bet) + ' tiền ảo', 'gold');
+      setBanner('#diceBanner', '🎯 THREE WHITE JACKPOT! ' + faces + ' → <b class="gold">+' + fmtVnd(payout) + '</b> (10x)', 'jack');
+      toast('JACKPOT 🎯', '+' + fmtVnd(payout - bet), 'gold');
     } else if (won) {
-      setBanner('#diceBanner', '✅ THẮNG ' + DICE_NAME[diceChoice] + ' · tổng ' + total + ' → <b class="green">+' + fmtVnd(payout) + ' ảo</b>', 'win');
-      toast('Thắng! 🎉', '+' + fmtVnd(payout - bet) + ' tiền ảo (' + mult + 'x)', 'win');
+      setBanner('#diceBanner', '✅ THẮNG ' + DICE_NAME[diceChoice] + ' · tổng ' + total + ' → <b class="green">+' + fmtVnd(payout) + '</b>', 'win');
+      toast('Thắng! 🎉', '+' + fmtVnd(payout - bet) + ' (' + mult + 'x)', 'win');
     } else {
       setBanner('#diceBanner', '❌ THUA · ' + faces + ' = ' + total + (triple ? ' (bộ ba)' : '') +
-        ' → mất <b class="red">' + fmtVnd(bet) + ' ảo</b>', 'lose');
-      toast('Thua ván này 💥', 'Mất ' + fmtVnd(bet) + ' tiền ảo', 'lose');
+        ' → mất <b class="red">' + fmtVnd(bet) + '</b>', 'lose');
+      toast('Thua ván này 💥', 'Mất ' + fmtVnd(bet), 'lose');
     }
 
     addHistory('dice', DICE_NAME[diceChoice] + ' · ' + faces + ' = ' + total,
@@ -2237,7 +2201,7 @@ let depAmount = 100000;
 function setDepAmount(v) {
   depAmount = clamp(Math.floor(v || 0), 0, 100000000);
   $('#depSelected').textContent = fmt(depAmount);
-  $('#qrAmt').textContent = fmt(depAmount) + ' VIRTUAL VND';
+  $('#qrAmt').textContent = fmt(depAmount) + ' VND';
 }
 
 $('#depAmounts').addEventListener('click', (e) => {
@@ -2290,13 +2254,13 @@ function drawFakeQR() {
 }
 
 $('#simulatePay').addEventListener('click', () => {
-  if (depAmount < MIN_BET) { toast('Số tiền không hợp lệ', 'Tối thiểu ' + fmtVnd(MIN_BET) + ' (ảo).', 'lose'); return; }
-  if (depAmount > 10000000) { toast('Vượt giới hạn demo', 'Tối đa 10,000,000 tiền ảo mỗi lần.', 'lose'); return; }
+  if (depAmount < MIN_BET) { toast('Số tiền không hợp lệ', 'Tối thiểu ' + fmtVnd(MIN_BET) + '.', 'lose'); return; }
+  if (depAmount > 10000000) { toast('Vượt giới hạn demo', 'Tối đa 10,000,000 mỗi lần.', 'lose'); return; }
   credit(depAmount);
   addTx('SIMULATED TOP-UP (NO REAL PAYMENT)', depAmount, 'DEMO');
   drawFakeQR();
-  toast('Đã cộng tiền ảo 💰',
-    '+' + fmt(depAmount) + ' VIRTUAL VND. Không có thanh toán thật nào được thực hiện.', 'gold');
+  toast('Đã nạp thành công 💰',
+    '+' + fmt(depAmount) + ' VND (mô phỏng — không có thanh toán thật).', 'gold');
   console.info('[LuckyBomb demo] Simulated top-up only — no real payment was processed.');
 });
 
@@ -2400,10 +2364,10 @@ function wdReceipt(o) {
       '<div class="rrow"><span>Kênh nhận</span><b>' + WD_CHANNELS[o.channel].icon + ' ' + WD_CHANNELS[o.channel].name + '</b></div>' +
       '<div class="rrow"><span>Người nhận</span><b>' + o.name + '</b></div>' +
       '<div class="rrow"><span>Tài khoản</span><b class="mono">' + o.account + '</b></div>' +
-      '<div class="rrow"><span>Số tiền rút</span><b class="mono">' + fmt(o.gross) + ' ảo</b></div>' +
+      '<div class="rrow"><span>Số tiền rút</span><b class="mono">' + fmt(o.gross) + '</b></div>' +
       '<div class="rrow"><span>Phí hư cấu</span><b class="mono red">-' + fmt(o.fee) + '</b></div>' +
       '<div class="rrow"><span>Thực nhận</span><b class="mono ' + (o.ok ? 'green' : 'muted') + '">' +
-        (o.ok ? fmt(o.net) + ' VIRTUAL VND' : '0 — không có gì được chuyển') + '</b></div>' +
+        (o.ok ? fmt(o.net) + ' VND' : '0 — không có gì được chuyển') + '</b></div>' +
       (o.reason ? '<div class="rrow"><span>Lý do</span><b>' + o.reason + '</b></div>' : '') +
       '<div class="rstamp">DEMO — KHÔNG CÓ TIỀN THẬT / NO REAL MONEY</div>' +
     '</div>';
@@ -2412,9 +2376,9 @@ function wdReceipt(o) {
 function runWithdraw() {
   if (wdBusy) return;
   const gross = wdAmount;
-  if (gross < WD_MIN) { toast('Chưa đủ mức rút', 'Tối thiểu ' + fmtVnd(WD_MIN) + ' (ảo).', 'lose'); return; }
+  if (gross < WD_MIN) { toast('Chưa đủ mức rút', 'Tối thiểu ' + fmtVnd(WD_MIN) + '.', 'lose'); return; }
   if (gross > WD_MAX) { toast('Vượt hạn mức demo', 'Tối đa ' + fmtVnd(WD_MAX) + ' mỗi lệnh.', 'lose'); return; }
-  if (gross > user.balance) { toast('Không đủ số dư ảo', 'Bạn đang có ' + fmtVnd(user.balance) + '.', 'lose'); return; }
+  if (gross > user.balance) { toast('Không đủ số dư', 'Bạn đang có ' + fmtVnd(user.balance) + '.', 'lose'); return; }
 
   const fee = wdFee(gross);
   const net = gross - fee;
@@ -2437,18 +2401,18 @@ function runWithdraw() {
       account: demoAccount(user),
       gross: gross, fee: fee, net: net, ok: !blocked,
       reason: blocked
-        ? 'Cần cược thêm ' + fmt(gross * 3) + ' tiền ảo trước khi rút (điều kiện hư cấu)'
+        ? 'Cần cược thêm ' + fmt(gross * 3) + ' trước khi rút'
         : ''
     };
 
     if (blocked) {
       addTx('WITHDRAWAL (SIMULATED)', 0, 'DEMO · TỪ CHỐI');
-      toast('Lệnh rút bị từ chối ⛔', 'Kịch bản demo — số dư ảo không đổi.', 'lose');
+      toast('Lệnh rút bị từ chối ⛔', 'Số dư không đổi.', 'lose');
     } else {
       credit(-gross);
       addTx('WITHDRAWAL (SIMULATED · NO REAL PAYOUT)', -gross, 'DEMO · THÀNH CÔNG');
-      toast('Đã rút (mô phỏng) 🏧',
-        fmt(net) + ' VIRTUAL VND. Không có tiền thật nào được chuyển đi.', 'gold');
+      toast('Rút thành công 🏧',
+        fmt(net) + ' VND (mô phỏng — không có tiền thật nào được chuyển).', 'gold');
       console.info('[LuckyBomb demo] Simulated withdrawal only — no real payout was made.');
     }
 
@@ -2553,10 +2517,10 @@ $('#histFilters').addEventListener('click', (e) => {
 });
 
 $('#clearHistory').addEventListener('click', () => {
-  confirmModal('Xoá lịch sử chơi?', 'Lịch sử ván chơi ảo sẽ bị xoá. Số dư không đổi.', 'Xoá', () => {
+  confirmModal('Xoá lịch sử chơi?', 'Lịch sử ván chơi sẽ bị xoá. Số dư không đổi.', 'Xoá', () => {
     user.history = [];
     saveDB(); renderHistory(); renderStats(); renderAccount();
-    toast('Đã xoá lịch sử', 'Số dư ảo giữ nguyên.', 'info');
+    toast('Đã xoá lịch sử', 'Số dư giữ nguyên.', 'info');
   });
 });
 
@@ -2607,14 +2571,14 @@ function openConsole() {
 function printHelp() {
   logMsg(
     '<b class="gold">COMMAND CHAT — DEMO ADMIN</b>\n' +
-    'Chỉ tác động lên dữ liệu ảo trong trình duyệt này.\n\n' +
+    'Sửa dữ liệu tài khoản trong trình duyệt này.\n\n' +
     '<code>/always win for (username)</code> — người đó luôn thắng\n' +
     '<code>/always loose for (username)</code> — người đó luôn thua\n' +
-    '<code>add (username) (amount)</code> — cộng tiền ảo\n' +
-    '<code>/block withdraw for (username)</code> — chặn rút tiền\n' +
-    '<code>/allow withdraw for (username)</code> — cho rút lại\n' +
+    '<code>add (username) (amount)</code> — cộng tiền\n' +
+    '<code>/rut tien error for (username)</code> — rút tiền luôn báo lỗi\n' +
+    '<code>/rut tien thanh cong for (username)</code> — rút tiền luôn thành công\n' +
     '<code>/normal for (username)</code> — bỏ chế độ luôn thắng/thua\n' +
-    '<code>/balance (username)</code> — xem số dư ảo\n' +
+    '<code>/balance (username)</code> — xem số dư\n' +
     '<code>/users</code> — danh sách tài khoản demo\n' +
     '<code>/clear</code> — xoá khung chat · <code>/help</code>', 'sys');
 }
@@ -2651,7 +2615,7 @@ function runCommand(raw) {
       const u = DB.users[k];
       const tag = u.rig === 'win' ? ' [ALWAYS WIN]' : u.rig === 'lose' ? ' [ALWAYS LOOSE]' : '';
       const wtag = u.wd === 'block' ? ' [NO WITHDRAW]' : '';
-      return '• ' + u.name + ' — ' + fmt(u.balance) + ' ảo' + tag + wtag;
+      return '• ' + u.name + ' — ' + fmt(u.balance) + tag + wtag;
     }).join('\n'), 'ok');
     return;
   }
@@ -2661,21 +2625,24 @@ function runCommand(raw) {
   if (m) {
     const t = findUser(m[1]);
     if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[1].trim() + '</b>.', 'err'); return; }
-    logMsg('💰 <b>' + t.name + '</b> đang có <b>' + fmtVnd(t.balance) + '</b> (ảo).', 'ok');
+    logMsg('💰 <b>' + t.name + '</b> đang có <b>' + fmtVnd(t.balance) + '</b>.', 'ok');
     return;
   }
 
-  /* /block|/allow withdraw for <username> */
-  m = line.match(/^\/?(block|allow)\s+with-?draw(?:al)?\s+for\s+(.+)$/i);
+  /* /block|/allow withdraw for <username>
+     …and the Vietnamese aliases: /rut tien error|thanh cong for <username> */
+  m = line.match(/^\/?(block|allow)\s+with-?draw(?:al)?\s+for\s+(.+)$/i) ||
+      line.match(/^\/?r[uúùụủũ]t\s*ti[eêềếệể]n\s+(error|l[oôồốộổ]i|fail|th[aàảãạ]nh\s*c[oôồốộổ]ng|ok|success)\s*(?:for\s+)?(.+)$/i);
   if (m) {
-    const blocked = m[1].toLowerCase() === 'block';
+    const word = m[1].toLowerCase().replace(/\s+/g, '');
+    const blocked = word === 'block' || word === 'error' || word === 'fail' || word.indexOf('l') === 0;
     const t = findUser(m[2]);
     if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[2].trim() + '</b>. Gõ <code>/users</code>.', 'err'); return; }
     t.wd = blocked ? 'block' : null;
     saveDB(); refreshIfSelf(t);
     logMsg('✅ <b>' + t.name + '</b> ' + (blocked
-      ? 'sẽ <b>LUÔN BỊ TỪ CHỐI</b> khi rút tiền ảo (demo).'
-      : 'có thể rút tiền ảo bình thường trở lại.'), 'ok');
+      ? 'sẽ <b>LUÔN BỊ TỪ CHỐI</b> khi rút tiền.'
+      : 'sẽ rút tiền <b>THÀNH CÔNG</b> bình thường.'), 'ok');
     toast('Đã đổi chế độ rút', t.name + ' → ' + (blocked ? 'BỊ CHẶN' : 'BÌNH THƯỜNG'), 'gold');
     return;
   }
@@ -2719,9 +2686,9 @@ function runCommand(raw) {
     t.txs = t.txs.slice(0, 60);
     saveDB();
     if (user && key(t.name) === key(user.name)) { renderBalance(); bumpBalance(); renderTxs(); renderAccount(); }
-    logMsg('✅ Đã cộng <b>' + fmt(amt) + '</b> tiền ảo cho <b>' + t.name + '</b>.\nSố dư mới: <b>' +
-      fmtVnd(t.balance) + '</b> (ảo — không phải tiền thật).', 'ok');
-    toast('Đã cộng tiền ảo', t.name + ' +' + fmt(amt) + ' (DEMO)', 'gold');
+    logMsg('✅ Đã cộng <b>' + fmt(amt) + '</b> cho <b>' + t.name + '</b>.\nSố dư mới: <b>' +
+      fmtVnd(t.balance) + '</b>.', 'ok');
+    toast('Đã cộng tiền', t.name + ' +' + fmt(amt), 'gold');
     return;
   }
 
@@ -2746,15 +2713,7 @@ $('#consoleForm').addEventListener('submit', (e) => {
 
 /* ======================== 16. INIT ======================== */
 
-function syncBannerHeight() {
-  const h = $('.demo-banner').getBoundingClientRect().height;
-  document.documentElement.style.setProperty('--banner-h', Math.round(h) + 'px');
-}
-
 function init() {
-  syncBannerHeight();
-  window.addEventListener('resize', syncBannerHeight);
-  if (window.ResizeObserver) new ResizeObserver(syncBannerHeight).observe($('.demo-banner'));
   buildMineGrid();
   buildWheel();
   $$('#diceRow .die').forEach((el, i) => renderDie(el, [3, 5, 2][i]));

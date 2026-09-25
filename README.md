@@ -13,7 +13,8 @@ This prototype deliberately contains **none** of the following:
 - no real payment gateway, and no external payment API
 - no real QR payment (the "QR code" is a decorative canvas drawing that encodes nothing)
 - no bank details — none are shown, requested, or collected
-- no real-money deposits and no withdrawals
+- no real-money deposits and no real payouts — the withdrawal screen only
+  subtracts a local number and prints a fictional receipt
 - no real gambling
 
 Every balance, bet and payout is **virtual VND** that exists only in this browser's
@@ -28,7 +29,8 @@ claims that a payment was made.
 | **Bomb / Mines** | 5×5 board, 3/5/10/15 bombs, multiplier = fair odds × 97%, cash out any time. |
 | **Vòng Quay May Mắn** | 12-segment CSS wheel (0x, 0.5x, 1x, 1.5x, 2x, 3x, 5x) with an animated spin. |
 | **Dice Roll** | Three dice — `THREE WHITE` (triple, 10x), `ODD` (1.8x), `EVEN` (1.8x). |
-| **Add Virtual Money** | Preset and custom amounts, fake QR graphic, simulated top-up, demo transaction log. |
+| **Nạp tiền** | Preset and custom amounts, fake QR graphic, simulated top-up, demo transaction log. |
+| **Rút tiền** | Staged "processing" sequence ending in a receipt; generated read-only destination account, fictional 2% fee. |
 | **History / Account** | Per-game filters, virtual win/loss stats, account management. |
 
 ## Command chat
