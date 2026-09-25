@@ -311,6 +311,7 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 .game-card .glow{position:absolute;inset:auto -40px -50px auto;width:150px;height:150px;border-radius:50%;filter:blur(8px);opacity:.28}
 .gc-bomb .glow{background:var(--red)} .gc-wheel .glow{background:var(--purple)}
 .gc-dice .glow{background:var(--cyan)} .gc-dep .glow{background:var(--gold)}
+.gc-wd .glow{background:var(--green)}
 
 /* ---------------- bet controls ---------------- */
 .panel-grid{display:grid;gap:16px;grid-template-columns:1fr}
@@ -505,6 +506,66 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 }
 .warn-box b{color:#fff}
 
+/* ---------------- withdraw (simulated) ---------------- */
+.steps{display:flex;flex-direction:column;gap:11px}
+.step{display:flex;gap:11px;align-items:flex-start;opacity:.38;transition:opacity .35s ease}
+.step.on,.step.done{opacity:1}
+.step .sd{
+  width:24px;height:24px;flex:0 0 auto;border-radius:50%;
+  display:grid;place-items:center;font-size:11px;font-weight:900;
+  background:rgba(255,255,255,.07);border:1px solid var(--stroke);
+  transition:background .3s ease,border-color .3s ease;
+}
+.step.on .sd{background:linear-gradient(135deg,var(--purple),var(--red));border-color:transparent}
+.step.done .sd{background:linear-gradient(135deg,var(--green),#0ea5e9);border-color:transparent}
+.step.fail .sd{background:linear-gradient(135deg,#ef4444,#7f1d1d);border-color:transparent}
+.step .st{font-weight:800;font-size:13px}
+.step .ss{font-size:11.5px;color:var(--muted);margin-top:1px}
+
+.receipt{
+  position:relative;padding:18px 16px;border-radius:16px;
+  background:rgba(0,0,0,.4);border:2px dashed var(--stroke-2);
+  animation:pop .4s cubic-bezier(.2,.9,.3,1.35);
+}
+.receipt .rhead{text-align:center;font-weight:900;letter-spacing:.6px;font-size:13px;margin-bottom:12px}
+.receipt .rrow{
+  display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.1);font-size:12.5px;
+}
+.receipt .rrow:last-child{border-bottom:0}
+.receipt .rrow span{color:var(--muted);white-space:nowrap}
+.receipt .rrow b{font-weight:800;text-align:right;overflow-wrap:break-word}
+.receipt .rstamp{
+  margin:14px auto 0;width:max-content;max-width:100%;
+  transform:rotate(-4deg);
+  padding:7px 14px;border-radius:9px;text-align:center;
+  font-weight:900;font-size:11.5px;letter-spacing:1px;
+  background:rgba(255,45,85,.92);color:#fff;border:3px solid rgba(255,255,255,.9);
+  box-shadow:0 8px 22px rgba(0,0,0,.5);
+}
+.wd-summary{display:flex;flex-direction:column;gap:2px;padding:13px 15px;border-radius:14px;background:rgba(0,0,0,.34);border:1px solid var(--stroke)}
+.wd-summary .wr{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:5px 0;font-size:13px}
+.wd-summary .wr span{color:var(--muted)}
+.wd-summary .wr.total{border-top:1px dashed rgba(255,255,255,.14);margin-top:4px;padding-top:9px}
+.wd-summary .wr.total b{font-size:18px;color:var(--gold)}
+.channel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.channel{
+  padding:12px 7px;border-radius:15px;text-align:center;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.045);
+  transition:all .2s cubic-bezier(.2,.9,.3,1.2);
+}
+.channel .che{font-size:21px;display:block}
+.channel .chn{display:block;font-weight:900;font-size:11px;margin-top:4px;line-height:1.3}
+.channel:hover{transform:translateY(-3px);background:rgba(255,255,255,.09);border-color:var(--stroke-2)}
+.channel.active{border-color:var(--purple);background:linear-gradient(140deg,rgba(139,92,246,.28),rgba(255,45,85,.14));box-shadow:0 0 0 3px rgba(139,92,246,.15)}
+.readonly-field{
+  display:flex;align-items:center;gap:9px;
+  padding:12px 15px;border-radius:14px;
+  background:rgba(8,4,18,.62);border:1px dashed var(--stroke-2);
+  font-weight:800;letter-spacing:.6px;color:var(--gold-soft);
+}
+.readonly-field .tag{font-size:9.5px;font-weight:900;letter-spacing:.6px;color:var(--muted);margin-left:auto;white-space:nowrap}
+
 /* ---------------- tables / history ---------------- */
 .table-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--stroke);background:rgba(0,0,0,.24)}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:540px}
@@ -542,10 +603,10 @@ tbody tr:last-child td{border-bottom:0}
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   border-top:1px solid var(--stroke);
 }
-.bottomnav .inner{display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.bottomnav .inner{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
 .bn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:12px;color:var(--muted);transition:all .18s ease}
 .bn .ico{font-size:18px}
-.bn .lb{font-size:9px;font-weight:800;letter-spacing:.2px}
+.bn .lb{font-size:8.5px;font-weight:800;letter-spacing:.1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bn.active{color:var(--gold);background:rgba(255,201,60,.1)}
 .bn.active .ico{filter:drop-shadow(0 0 8px rgba(255,201,60,.8));transform:translateY(-1px)}
 
@@ -659,6 +720,10 @@ tbody tr:last-child td{border-bottom:0}
   .choice .cn{font-size:11px}
   .mine-grid{gap:6px}
   .bottomnav .inner{gap:0}
+  .bn{padding:7px 1px}
+  .bn .ico{font-size:16px}
+  .bn .lb{font-size:7.5px}
+  .channel .chn{font-size:10px}
 }
 </style>
 </head>
@@ -761,6 +826,7 @@ tbody tr:last-child td{border-bottom:0}
       <button class="nav-btn" data-page="wheel"><span class="ico">🎡</span> Vòng Quay</button>
       <button class="nav-btn" data-page="dice"><span class="ico">🎲</span> Dice</button>
       <button class="nav-btn" data-page="deposit"><span class="ico">💳</span> Add Virtual Money</button>
+      <button class="nav-btn" data-page="withdraw"><span class="ico">🏧</span> Rút tiền ảo</button>
       <button class="nav-btn" data-page="history"><span class="ico">📜</span> History</button>
       <button class="nav-btn" data-page="account"><span class="ico">👤</span> Account</button>
       <div class="sidebar-foot">
@@ -817,6 +883,13 @@ tbody tr:last-child td{border-bottom:0}
               <h3>Dice Roll</h3>
               <div class="small muted">THREE WHITE · ODD · EVEN với 3 viên xúc xắc.</div>
               <div class="pill pill-gold" style="margin-top:10px">Jackpot 10x</div>
+            </div>
+            <div class="game-card glass gc-wd" data-nav="withdraw">
+              <div class="glow"></div>
+              <span class="emoji">🏧</span>
+              <h3>Rút tiền ảo</h3>
+              <div class="small muted">Lệnh rút mô phỏng — trừ số dư ảo, không chuyển tiền thật.</div>
+              <div class="pill pill-warn" style="margin-top:10px">SIMULATED ONLY</div>
             </div>
             <div class="game-card glass gc-dep" data-nav="deposit">
               <div class="glow"></div>
@@ -1112,6 +1185,96 @@ tbody tr:last-child td{border-bottom:0}
         </div>
       </section>
 
+      <!-- ============ WITHDRAW (SIMULATED) ============ -->
+      <section class="page" id="page-withdraw">
+        <div class="stack">
+          <div class="row">
+            <div class="section-title"><span class="dot"></span> 🏧 Rút tiền ảo / Withdraw</div>
+            <span class="pill pill-warn">SIMULATED — NO REAL MONEY</span>
+          </div>
+
+          <div class="warn-box">
+            <b>DEMO WITHDRAWAL — KHÔNG CÓ TIỀN THẬT NÀO ĐƯỢC CHUYỂN ĐI.</b><br />
+            Lệnh rút ở đây chỉ trừ <b>số dư ảo</b> trong trình duyệt của bạn rồi in ra một biên lai hư cấu.
+            Không có ngân hàng, không có ví điện tử, không có cổng thanh toán nào được liên hệ.<br />
+            Trang này <b>không hỏi và không lưu</b> thông tin tài khoản thật —
+            số tài khoản bên dưới là dãy số demo tự sinh, <b>đừng nhập số tài khoản thật của bạn ở bất kỳ đâu</b>.
+          </div>
+
+          <div class="dep-grid">
+
+            <div class="glass card stack">
+              <div class="small muted">Số tiền muốn rút / Withdraw amount (virtual)</div>
+              <div class="amount-grid" id="wdAmounts">
+                <button class="amount-btn active" data-amt="100000"><div class="a mono">100,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn" data-amt="200000"><div class="a mono">200,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn" data-amt="500000"><div class="a mono">500,000</div><div class="c">VIRTUAL VND</div></button>
+                <button class="amount-btn" data-amt="all"><div class="a mono">TẤT CẢ</div><div class="c">TOÀN BỘ SỐ DƯ ẢO</div></button>
+              </div>
+
+              <div class="field">
+                <label for="wdCustom">Số tiền tuỳ chọn / Custom amount (virtual)</label>
+                <input id="wdCustom" class="input mono" type="number" min="100000" step="10000" placeholder="VD: 350000" />
+              </div>
+
+              <div class="wd-summary">
+                <div class="wr"><span>Số tiền rút</span><b class="mono" id="wdGross">100,000</b></div>
+                <div class="wr"><span>Phí hư cấu (2%, tối thiểu 5,000)</span><b class="mono red" id="wdFee">-5,000</b></div>
+                <div class="wr total"><span>Thực nhận (ảo)</span><b class="mono" id="wdNet">95,000</b></div>
+              </div>
+
+              <div class="field">
+                <label>Kênh nhận (hư cấu) / Payout channel</label>
+                <div class="channel-grid" id="wdChannels">
+                  <button class="channel active" data-ch="bank"><span class="che">🏦</span><span class="chn">HƯ CẤU Bank</span></button>
+                  <button class="channel" data-ch="wallet"><span class="che">📱</span><span class="chn">DemoPay Ví</span></button>
+                  <button class="channel" data-ch="card"><span class="che">🎟️</span><span class="chn">Thẻ cào DEMO</span></button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Tài khoản nhận (dãy số demo tự sinh)</label>
+                <div class="readonly-field"><span id="wdAccount">DEMO 0000-0000-00</span><span class="tag">KHÔNG PHẢI STK THẬT</span></div>
+              </div>
+
+              <div class="field">
+                <label for="wdName">Tên người nhận (tuỳ chọn, hư cấu)</label>
+                <input id="wdName" class="input" type="text" maxlength="32" placeholder="VD: NGUYEN VAN DEMO" />
+              </div>
+
+              <button class="btn btn-primary btn-block btn-lg wrap" id="wdSubmit">🏧 RÚT TIỀN ẢO</button>
+              <div class="tiny center" style="color:#ffb4c4">
+                Tối thiểu 100,000 · tối đa 5,000,000 mỗi lệnh (giới hạn hư cấu).
+                Không có khoản tiền thật nào rời khỏi bất kỳ tài khoản nào.
+              </div>
+            </div>
+
+            <div class="glass card stack">
+              <div class="section-title" style="font-size:15px"><span class="dot"></span> Trạng thái lệnh rút</div>
+              <div class="steps" id="wdSteps">
+                <div class="step" data-step="0"><div class="sd">1</div><div><div class="st">Xác minh tài khoản demo</div><div class="ss">Kiểm tra số dư ảo và hạn mức hư cấu</div></div></div>
+                <div class="step" data-step="1"><div class="sd">2</div><div><div class="st">Gửi lệnh tới kênh nhận</div><div class="ss">Mô phỏng — không có yêu cầu mạng nào được gửi đi</div></div></div>
+                <div class="step" data-step="2"><div class="sd">3</div><div><div class="st">Kết quả</div><div class="ss">Biên lai demo sẽ hiện bên dưới</div></div></div>
+              </div>
+
+              <div id="wdReceipt" hidden></div>
+
+              <hr class="sep" />
+
+              <div class="section-title" style="font-size:15px"><span class="dot"></span> Lệnh rút gần đây (demo)</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Mã lệnh</th><th>Thời gian</th><th>Số tiền ảo</th><th>Trạng thái</th></tr></thead>
+                  <tbody id="wdBody"></tbody>
+                </table>
+                <div class="empty" id="wdEmpty">Chưa có lệnh rút demo nào.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <!-- ============ HISTORY ============ -->
       <section class="page" id="page-history">
         <div class="stack">
@@ -1164,7 +1327,10 @@ tbody tr:last-child td{border-bottom:0}
                 <h3 id="acctName">player</h3>
                 <div class="small muted">Tài khoản demo hư cấu · lưu trong localStorage</div>
               </div>
-              <span class="pill pill-ok" id="acctMode">CHẾ ĐỘ: BÌNH THƯỜNG</span>
+              <div class="row" style="gap:6px">
+                <span class="pill pill-ok" id="acctMode">CHẾ ĐỘ: BÌNH THƯỜNG</span>
+                <span class="pill pill-ok" id="acctWd">RÚT TIỀN: BÌNH THƯỜNG</span>
+              </div>
             </div>
 
             <div class="kv">
@@ -1220,6 +1386,7 @@ tbody tr:last-child td{border-bottom:0}
       <button class="bn" data-page="wheel"><span class="ico">🎡</span><span class="lb">Vòng Quay</span></button>
       <button class="bn" data-page="dice"><span class="ico">🎲</span><span class="lb">Dice</span></button>
       <button class="bn" data-page="deposit"><span class="ico">💳</span><span class="lb">Nạp ảo</span></button>
+      <button class="bn" data-page="withdraw"><span class="ico">🏧</span><span class="lb">Rút ảo</span></button>
       <button class="bn" data-page="history"><span class="ico">📜</span><span class="lb">History</span></button>
     </div>
   </nav>
@@ -1319,6 +1486,7 @@ const reducedMotion = () =>
   window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SPIN_MS = () => (reducedMotion() ? 350 : 5050);
 const ROLL_MS = () => (reducedMotion() ? 300 : 1300);
+const STEP_MS = () => (reducedMotion() ? 130 : 850);
 
 function timeLabel(iso) {
   const d = new Date(iso);
@@ -1392,6 +1560,7 @@ function makeUser(name, pass) {
     balance: START_BALANCE,
     created: created,
     rig: null,                 // null | 'win' | 'lose'  (set by the command console)
+    wd: null,                  // null = withdrawals go through | 'block' = always rejected
     txs: [
       { id: txId(), t: created, type: 'WELCOME BONUS (DEMO)', amount: START_BALANCE, status: 'DEMO' },
       { id: txId(), t: created, type: 'KYC CHECK (FICTIONAL)', amount: 0, status: 'DEMO' },
@@ -1473,6 +1642,7 @@ function addTx(type, amount, status) {
   user.txs = user.txs.slice(0, 60);
   saveDB();
   renderTxs();
+  renderWithdraws();
   renderAccount();
 }
 
@@ -1498,6 +1668,7 @@ function navigate(page) {
   $$('.bn').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (page === 'deposit') drawFakeQR();
+  if (page === 'withdraw') syncWithdrawPage();
 }
 
 document.addEventListener('click', (e) => {
@@ -1536,10 +1707,12 @@ function enterApp(u) {
   $('#acctAv').textContent = u.name.charAt(0).toUpperCase();
   renderBalance();
   renderTxs();
+  renderWithdraws();
   renderHistory();
   renderStats();
   renderAccount();
   resetBombBoard();
+  syncWithdrawPage();
   navigate('home');
   toast('Chào mừng, ' + u.name + '!', 'Số dư ảo: ' + fmtVnd(u.balance) + ' (DEMO)', 'gold');
 }
@@ -2135,11 +2308,171 @@ function renderTxs() {
       '<td class="mono tiny">' + t.id + '</td>' +
       '<td class="tiny muted">' + dateLabel(t.t) + ' ' + timeLabel(t.t).split(' ')[1] + '</td>' +
       '<td class="tiny">' + t.type + '</td>' +
-      '<td class="mono gold">' + (t.amount ? '+' + fmt(t.amount) : '—') + '</td>' +
+      '<td class="mono ' + (t.amount > 0 ? 'gold' : t.amount < 0 ? 'red' : 'muted') + '">' +
+        (t.amount ? (t.amount > 0 ? '+' : '') + fmt(t.amount) : '—') + '</td>' +
       '<td><span class="pill pill-warn">' + t.status + '</span></td>' +
     '</tr>'
   ).join('');
   $('#txEmpty').hidden = user.txs.length > 0;
+}
+
+/* ======================== 12b. WITHDRAW (SIMULATED) ========================
+   Nothing here touches a bank, a wallet, or the network. A withdrawal
+   subtracts virtual VND from the local balance and prints a fake receipt.
+   The destination account is generated, never asked for, so the screen
+   cannot collect anyone's real banking details.                          */
+
+const WD_MIN = 100000;
+const WD_MAX = 5000000;
+const WD_FEE_PCT = 0.02;
+const WD_FEE_MIN = 5000;
+const WD_CHANNELS = {
+  bank:   { icon: '🏦', name: 'HƯ CẤU Bank (ngân hàng hư cấu)' },
+  wallet: { icon: '📱', name: 'DemoPay Ví (ví hư cấu)' },
+  card:   { icon: '🎟️', name: 'Thẻ cào DEMO (hư cấu)' }
+};
+
+let wdAmount  = WD_MIN;
+let wdChannel = 'bank';
+let wdBusy    = false;
+
+const wdFee = (a) => Math.max(WD_FEE_MIN, Math.round(a * WD_FEE_PCT));
+
+/* A stable, obviously-fictional destination so no real number is ever typed. */
+function demoAccount(u) {
+  if (!u.demoAcct) {
+    const h = toyHash(u.name + '|demo-account');
+    let digits = '';
+    for (let i = 0; i < h.length && digits.length < 10; i++) digits += String(h.charCodeAt(i) % 10);
+    while (digits.length < 10) digits += String(randInt(10));
+    u.demoAcct = 'DEMO ' + digits.slice(0, 4) + '-' + digits.slice(4, 8) + '-' + digits.slice(8, 10);
+    saveDB();
+  }
+  return u.demoAcct;
+}
+
+function setWdAmount(v) {
+  wdAmount = clamp(Math.floor(v || 0), 0, WD_MAX);
+  const fee = wdAmount > 0 ? wdFee(wdAmount) : 0;
+  $('#wdGross').textContent = fmt(wdAmount);
+  $('#wdFee').textContent   = fee ? '-' + fmt(fee) : '0';
+  $('#wdNet').textContent   = fmt(Math.max(0, wdAmount - fee));
+}
+
+$('#wdAmounts').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-amt]');
+  if (!b || wdBusy) return;
+  $$('#wdAmounts .amount-btn').forEach((x) => x.classList.toggle('active', x === b));
+  $('#wdCustom').value = '';
+  setWdAmount(b.dataset.amt === 'all' ? user.balance : Number(b.dataset.amt));
+});
+
+$('#wdCustom').addEventListener('input', (e) => {
+  $$('#wdAmounts .amount-btn').forEach((x) => x.classList.remove('active'));
+  setWdAmount(Number(e.target.value));
+});
+
+$('#wdChannels').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ch]');
+  if (!b || wdBusy) return;
+  wdChannel = b.dataset.ch;
+  $$('#wdChannels .channel').forEach((x) => x.classList.toggle('active', x === b));
+});
+
+function setWdStep(i, state) {
+  const el = $('#wdSteps .step[data-step="' + i + '"]');
+  if (el) el.className = 'step ' + (state || '');
+}
+
+function resetWdSteps() {
+  for (let i = 0; i < 3; i++) setWdStep(i, '');
+  $('#wdReceipt').hidden = true;
+}
+
+function wdReceipt(o) {
+  const box = $('#wdReceipt');
+  box.hidden = false;
+  box.innerHTML =
+    '<div class="receipt">' +
+      '<div class="rhead">' + (o.ok ? '✅ BIÊN LAI RÚT TIỀN (DEMO)' : '⛔ LỆNH RÚT BỊ TỪ CHỐI (DEMO)') + '</div>' +
+      '<div class="rrow"><span>Mã lệnh</span><b class="mono">' + o.id + '</b></div>' +
+      '<div class="rrow"><span>Thời gian</span><b>' + dateLabel(o.t) + ' ' + timeLabel(o.t).split(' ')[1] + '</b></div>' +
+      '<div class="rrow"><span>Kênh nhận</span><b>' + WD_CHANNELS[o.channel].icon + ' ' + WD_CHANNELS[o.channel].name + '</b></div>' +
+      '<div class="rrow"><span>Người nhận</span><b>' + o.name + '</b></div>' +
+      '<div class="rrow"><span>Tài khoản</span><b class="mono">' + o.account + '</b></div>' +
+      '<div class="rrow"><span>Số tiền rút</span><b class="mono">' + fmt(o.gross) + ' ảo</b></div>' +
+      '<div class="rrow"><span>Phí hư cấu</span><b class="mono red">-' + fmt(o.fee) + '</b></div>' +
+      '<div class="rrow"><span>Thực nhận</span><b class="mono ' + (o.ok ? 'green' : 'muted') + '">' +
+        (o.ok ? fmt(o.net) + ' VIRTUAL VND' : '0 — không có gì được chuyển') + '</b></div>' +
+      (o.reason ? '<div class="rrow"><span>Lý do</span><b>' + o.reason + '</b></div>' : '') +
+      '<div class="rstamp">DEMO — KHÔNG CÓ TIỀN THẬT / NO REAL MONEY</div>' +
+    '</div>';
+}
+
+function runWithdraw() {
+  if (wdBusy) return;
+  const gross = wdAmount;
+  if (gross < WD_MIN) { toast('Chưa đủ mức rút', 'Tối thiểu ' + fmtVnd(WD_MIN) + ' (ảo).', 'lose'); return; }
+  if (gross > WD_MAX) { toast('Vượt hạn mức demo', 'Tối đa ' + fmtVnd(WD_MAX) + ' mỗi lệnh.', 'lose'); return; }
+  if (gross > user.balance) { toast('Không đủ số dư ảo', 'Bạn đang có ' + fmtVnd(user.balance) + '.', 'lose'); return; }
+
+  const fee = wdFee(gross);
+  const net = gross - fee;
+  const blocked = user.wd === 'block';
+
+  wdBusy = true;
+  $('#wdSubmit').disabled = true;
+  resetWdSteps();
+  setWdStep(0, 'on');
+
+  const t = STEP_MS();
+  setTimeout(() => { setWdStep(0, 'done'); setWdStep(1, 'on'); }, t);
+  setTimeout(() => {
+    setWdStep(1, 'done');
+    setWdStep(2, blocked ? 'fail' : 'done');
+
+    const rec = {
+      id: txId(), t: nowISO(), channel: wdChannel,
+      name: ($('#wdName').value.trim() || user.name).toUpperCase(),
+      account: demoAccount(user),
+      gross: gross, fee: fee, net: net, ok: !blocked,
+      reason: blocked
+        ? 'Cần cược thêm ' + fmt(gross * 3) + ' tiền ảo trước khi rút (điều kiện hư cấu)'
+        : ''
+    };
+
+    if (blocked) {
+      addTx('WITHDRAWAL (SIMULATED)', 0, 'DEMO · TỪ CHỐI');
+      toast('Lệnh rút bị từ chối ⛔', 'Kịch bản demo — số dư ảo không đổi.', 'lose');
+    } else {
+      credit(-gross);
+      addTx('WITHDRAWAL (SIMULATED · NO REAL PAYOUT)', -gross, 'DEMO · THÀNH CÔNG');
+      toast('Đã rút (mô phỏng) 🏧',
+        fmt(net) + ' VIRTUAL VND. Không có tiền thật nào được chuyển đi.', 'gold');
+      console.info('[LuckyBomb demo] Simulated withdrawal only — no real payout was made.');
+    }
+
+    wdReceipt(rec);
+    renderWithdraws();
+    wdBusy = false;
+    $('#wdSubmit').disabled = false;
+  }, t * 2);
+}
+
+$('#wdSubmit').addEventListener('click', runWithdraw);
+
+function renderWithdraws() {
+  if (!user) return;
+  const rows = user.txs.filter((t) => t.type.indexOf('WITHDRAWAL') === 0);
+  $('#wdBody').innerHTML = rows.map((t) =>
+    '<tr>' +
+      '<td class="mono tiny">' + t.id + '</td>' +
+      '<td class="tiny muted">' + dateLabel(t.t) + ' ' + timeLabel(t.t).split(' ')[1] + '</td>' +
+      '<td class="mono ' + (t.amount ? 'red' : 'muted') + '">' + (t.amount ? fmt(t.amount) : '—') + '</td>' +
+      '<td><span class="pill pill-warn">' + t.status + '</span></td>' +
+    '</tr>'
+  ).join('');
+  $('#wdEmpty').hidden = rows.length > 0;
 }
 
 /* ======================== 13. HISTORY & STATS ======================== */
@@ -2239,6 +2572,18 @@ function renderAccount() {
   if (user.rig === 'win')       { mode.textContent = 'CHẾ ĐỘ: ALWAYS WIN';  mode.className = 'pill pill-gold'; }
   else if (user.rig === 'lose') { mode.textContent = 'CHẾ ĐỘ: ALWAYS LOOSE'; mode.className = 'pill pill-warn'; }
   else                          { mode.textContent = 'CHẾ ĐỘ: BÌNH THƯỜNG'; mode.className = 'pill pill-ok'; }
+  const wd = $('#acctWd');
+  if (user.wd === 'block') { wd.textContent = 'RÚT TIỀN: BỊ CHẶN'; wd.className = 'pill pill-warn'; }
+  else                     { wd.textContent = 'RÚT TIỀN: BÌNH THƯỜNG'; wd.className = 'pill pill-ok'; }
+}
+
+/* Keep the withdrawal screen in step with the account that is signed in. */
+function syncWithdrawPage() {
+  if (!user) return;
+  $('#wdAccount').textContent = demoAccount(user);
+  $('#wdName').placeholder = user.name.toUpperCase();
+  if (!wdBusy) { resetWdSteps(); setWdAmount(wdAmount); }
+  renderWithdraws();
 }
 
 /* ======================== 15. COMMAND CHAT CONSOLE ======================== */
@@ -2266,6 +2611,8 @@ function printHelp() {
     '<code>/always win for (username)</code> — người đó luôn thắng\n' +
     '<code>/always loose for (username)</code> — người đó luôn thua\n' +
     '<code>add (username) (amount)</code> — cộng tiền ảo\n' +
+    '<code>/block withdraw for (username)</code> — chặn rút tiền\n' +
+    '<code>/allow withdraw for (username)</code> — cho rút lại\n' +
     '<code>/normal for (username)</code> — bỏ chế độ luôn thắng/thua\n' +
     '<code>/balance (username)</code> — xem số dư ảo\n' +
     '<code>/users</code> — danh sách tài khoản demo\n' +
@@ -2280,7 +2627,7 @@ function parseAmount(raw) {
 
 function refreshIfSelf(target) {
   if (user && key(target.name) === key(user.name)) {
-    renderBalance(); renderAccount(); renderStats();
+    renderBalance(); renderAccount(); renderStats(); syncWithdrawPage();
   }
 }
 
@@ -2303,7 +2650,8 @@ function runCommand(raw) {
     logMsg('<b>Tài khoản demo (' + names.length + '):</b>\n' + names.map((k) => {
       const u = DB.users[k];
       const tag = u.rig === 'win' ? ' [ALWAYS WIN]' : u.rig === 'lose' ? ' [ALWAYS LOOSE]' : '';
-      return '• ' + u.name + ' — ' + fmt(u.balance) + ' ảo' + tag;
+      const wtag = u.wd === 'block' ? ' [NO WITHDRAW]' : '';
+      return '• ' + u.name + ' — ' + fmt(u.balance) + ' ảo' + tag + wtag;
     }).join('\n'), 'ok');
     return;
   }
@@ -2314,6 +2662,21 @@ function runCommand(raw) {
     const t = findUser(m[1]);
     if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[1].trim() + '</b>.', 'err'); return; }
     logMsg('💰 <b>' + t.name + '</b> đang có <b>' + fmtVnd(t.balance) + '</b> (ảo).', 'ok');
+    return;
+  }
+
+  /* /block|/allow withdraw for <username> */
+  m = line.match(/^\/?(block|allow)\s+with-?draw(?:al)?\s+for\s+(.+)$/i);
+  if (m) {
+    const blocked = m[1].toLowerCase() === 'block';
+    const t = findUser(m[2]);
+    if (!t) { logMsg('❌ Không tìm thấy tài khoản <b>' + m[2].trim() + '</b>. Gõ <code>/users</code>.', 'err'); return; }
+    t.wd = blocked ? 'block' : null;
+    saveDB(); refreshIfSelf(t);
+    logMsg('✅ <b>' + t.name + '</b> ' + (blocked
+      ? 'sẽ <b>LUÔN BỊ TỪ CHỐI</b> khi rút tiền ảo (demo).'
+      : 'có thể rút tiền ảo bình thường trở lại.'), 'ok');
+    toast('Đã đổi chế độ rút', t.name + ' → ' + (blocked ? 'BỊ CHẶN' : 'BÌNH THƯỜNG'), 'gold');
     return;
   }
 
@@ -2396,6 +2759,7 @@ function init() {
   buildWheel();
   $$('#diceRow .die').forEach((el, i) => renderDie(el, [3, 5, 2][i]));
   setDepAmount(100000);
+  setWdAmount(WD_MIN);
   drawFakeQR();
 
   wireBetPresets('bombBetPresets', 'bombBet', updateBombPreview);
