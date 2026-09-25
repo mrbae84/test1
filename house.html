@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>3D House Walkthrough</title>
+<meta name="description" content="A two-storey 3D house you can walk into and explore in first person." />
+<style>
+  :root{
+    --panel:rgba(12,16,24,.78);
+    --text:#f3f5f9;
+    --muted:#aab3c5;
+    --accent:#ffb347;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#87b8e8;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text)}
+  canvas{display:block;touch-action:none}
+
+  #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(8,12,20,.55);backdrop-filter:blur(3px);z-index:20;padding:16px;cursor:pointer}
+  #overlay.hidden{display:none}
+  .card{max-width:440px;width:100%;background:var(--panel);border:1px solid rgba(255,255,255,.12);
+    border-radius:16px;padding:24px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .card h1{margin:0 0 6px;font-size:26px}
+  .card p{margin:0 0 16px;color:var(--muted);line-height:1.45}
+  .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;text-align:left;margin:0 auto 18px;max-width:320px;font-size:14px}
+  kbd{display:inline-block;min-width:22px;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.2);font:600 12px/1.4 ui-monospace,monospace;text-align:center}
+  .go{display:inline-block;background:var(--accent);color:#1b1206;font-weight:700;padding:10px 22px;border-radius:999px}
+  .touch-only{display:none}
+  body.touch .touch-only{display:block}
+  body.touch .desk-only{display:none}
+
+  #hud{position:fixed;top:12px;left:12px;z-index:10;pointer-events:none;display:flex;flex-direction:column;gap:6px}
+  #room{background:var(--panel);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;width:max-content}
+  #hint{background:var(--panel);padding:6px 12px;border-radius:999px;font-size:13px;color:var(--accent);width:max-content;opacity:0;transition:opacity .15s}
+  #hint.show{opacity:1}
+  #crosshair{position:fixed;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+    background:rgba(255,255,255,.85);box-shadow:0 0 0 1px rgba(0,0,0,.4);z-index:10;pointer-events:none}
+
+  /* touch controls */
+  #touch{display:none}
+  body.touch.playing #touch{display:block}
+  #stick{position:fixed;left:24px;bottom:28px;width:130px;height:130px;border-radius:50%;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);z-index:15;touch-action:none}
+  #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+    background:rgba(255,255,255,.55)}
+  .tbtn{position:fixed;right:20px;width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.18);
+    border:2px solid rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:15px;z-index:15;touch-action:none;
+    display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
+  #btnJump{bottom:28px}
+  #btnUse{bottom:104px}
+  #btnNight{bottom:180px;font-size:20px}
+  #btnRun{bottom:28px;right:94px;font-size:13px}
+  #btnRun.on{background:rgba(255,179,71,.6)}
+</style>
+</head>
+<body>
+<div id="overlay">
+  <div class="card">
+    <h1>🏠 3D House</h1>
+    <p>A two-storey house with a living room, kitchen, dining room, bathrooms, bedrooms, a playroom and a balcony. Walk in the front door and explore.</p>
+    <div class="keys desk-only">
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Walk (or arrow keys)</span>
+      <span><kbd>Mouse</kbd></span><span>Look around</span>
+      <span><kbd>Shift</kbd></span><span>Run</span>
+      <span><kbd>Space</kbd></span><span>Jump</span>
+      <span><kbd>E</kbd></span><span>Open / close doors</span>
+      <span><kbd>L</kbd></span><span>Switch day / night</span>
+      <span><kbd>Esc</kbd></span><span>Pause</span>
+    </div>
+    <div class="keys touch-only">
+      <span>Left stick</span><span>Walk</span>
+      <span>Drag right side</span><span>Look around</span>
+      <span><b>E</b> / <b>⤒</b></span><span>Doors / jump</span>
+      <span>🌙</span><span>Day / night</span>
+    </div>
+    <span class="go" id="goLabel">Click to enter</span>
+  </div>
+</div>
+
+<div id="hud"><div id="room">Front yard</div><div id="hint">Press E to open the door</div></div>
+<div id="crosshair"></div>
+
+<div id="touch">
+  <div id="stick"><div id="knob"></div></div>
+  <div class="tbtn" id="btnUse">E</div>
+  <div class="tbtn" id="btnJump">⤒</div>
+  <div class="tbtn" id="btnRun">RUN</div>
+  <div class="tbtn" id="btnNight">🌙</div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ------------------------------------------------------------------
+   Renderer / scene
+------------------------------------------------------------------ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 400);
+camera.rotation.order = 'YXZ';
+
+const DAY_SKY = new THREE.Color(0x87b8e8), NIGHT_SKY = new THREE.Color(0x0b1026);
+scene.background = DAY_SKY.clone();
+scene.fog = new THREE.Fog(DAY_SKY.clone(), 60, 180);
+
+const hemi = new THREE.HemisphereLight(0xdfefff, 0xb9ab94, 1.1);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.6);
+sun.position.set(18, 30, 22);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 90 });
+sun.shadow.bias = -0.0005;
+sun.shadow.normalBias = 0.02;
+scene.add(sun);
+
+/* ------------------------------------------------------------------
+   Procedural textures (canvas) — no image downloads needed
+------------------------------------------------------------------ */
+function canvasTex(size, draw, repeatX = 1, repeatY = 1) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeatX, repeatY);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+const rand = (a, b) => a + Math.random() * (b - a);
+
+const tex = {
+  grass: canvasTex(256, (g, s) => {
+    g.fillStyle = '#5d8a3a'; g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 5000; i++) {
+      g.fillStyle = `hsl(${rand(80, 110)},${rand(35, 55)}%,${rand(24, 40)}%)`;
+      g.fillRect(rand(0, s), rand(0, s), 1.5, rand(2, 5));
+    }
+  }, 60, 60),
+  wood: canvasTex(256, (g, s) => {
+    const plank = s / 4;
+    for (let i = 0; i < 4; i++) {
+      g.fillStyle = `hsl(28,${rand(38, 48)}%,${rand(38, 46)}%)`;
+      g.fillRect(0, i * plank, s, plank);
+      for (let k = 0; k < 40; k++) {
+        g.strokeStyle = `rgba(60,30,10,${rand(.05, .18)})`;
+        g.beginPath(); const y = i * plank + rand(0, plank);
+        g.moveTo(0, y); g.bezierCurveTo(s * .3, y + rand(-4, 4), s * .6, y + rand(-4, 4), s, y); g.stroke();
+      }
+      g.fillStyle = 'rgba(40,20,5,.55)'; g.fillRect(0, i * plank, s, 2);
+      g.fillRect(((i * 97) % s), i * plank, 2, plank);
+    }
+  }, 3, 3),
+  tile: canvasTex(128, (g, s) => {
+    g.fillStyle = '#9aa3ab'; g.fillRect(0, 0, s, s);
+    const n = 4, w = s / n;
+    for (let x = 0; x < n; x++) for (let y = 0; y < n; y++) {
+      g.fillStyle = `hsl(200,8%,${rand(86, 93)}%)`;
+      g.fillRect(x * w + 1.5, y * w + 1.5, w - 3, w - 3);
+    }
+  }, 4, 4),
+  checker: canvasTex(128, (g, s) => {
+    const n = 4, w = s / n;
+    for (let x = 0; x < n; x++) for (let y = 0; y < n; y++) {
+      g.fillStyle = (x + y) % 2 ? '#2f3338' : '#e9e4d8'; g.fillRect(x * w, y * w, w, w);
+    }
+  }, 4, 4),
+  carpet: canvasTex(128, (g, s) => {
+    g.fillStyle = '#b9a58c'; g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(${rand(80, 140)},${rand(60, 110)},${rand(40, 90)},.12)`; g.fillRect(rand(0, s), rand(0, s), 1, 1); }
+  }, 6, 6),
+  brick: canvasTex(256, (g, s) => {
+    g.fillStyle = '#d9d1c4'; g.fillRect(0, 0, s, s);
+    const rows = 12, h = s / rows, w = s / 5;
+    for (let r = 0; r < rows; r++) for (let c = -1; c < 6; c++) {
+      g.fillStyle = `hsl(${rand(8, 18)},${rand(35, 50)}%,${rand(42, 52)}%)`;
+      g.fillRect(c * w + (r % 2) * w / 2 + 1.5, r * h + 1.5, w - 3, h - 3);
+    }
+  }, 4, 2),
+  stone: canvasTex(128, (g, s) => {
+    g.fillStyle = '#8f8a82'; g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 18; i++) {
+      g.fillStyle = `hsl(35,${rand(5, 12)}%,${rand(58, 72)}%)`;
+      g.beginPath(); g.ellipse(rand(0, s), rand(0, s), rand(12, 24), rand(10, 20), rand(0, 3), 0, 7); g.fill();
+    }
+  }, 1, 6),
+  roof: canvasTex(128, (g, s) => {
+    g.fillStyle = '#5b2e24'; g.fillRect(0, 0, s, s);
+    const rows = 8, h = s / rows;
+    for (let r = 0; r < rows; r++) for (let c = -1; c < 9; c++) {
+      g.fillStyle = `hsl(10,${rand(35, 45)}%,${rand(26, 34)}%)`;
+      g.fillRect(c * 16 + (r % 2) * 8 + 1, r * h + 1, 14, h - 2);
+    }
+  }, 10, 4),
+};
+
+/* ------------------------------------------------------------------
+   Materials
+------------------------------------------------------------------ */
+const M = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: .85, ...extra });
+const mat = {
+  plaster: M(0xf1ebe0), plasterBlue: M(0xdbe6ee), exterior: M(0xffffff, { map: tex.brick }),
+  ceiling: M(0xfbfaf6), trim: M(0xffffff),
+  wood: M(0xffffff, { map: tex.wood }), tile: M(0xffffff, { map: tex.tile, roughness: .4 }),
+  checker: M(0xffffff, { map: tex.checker, roughness: .4 }), carpet: M(0xffffff, { map: tex.carpet }),
+  grass: M(0xffffff, { map: tex.grass }), stone: M(0xffffff, { map: tex.stone }),
+  roof: M(0xffffff, { map: tex.roof }),
+  glass: new THREE.MeshStandardMaterial({ color: 0xbfe3ff, transparent: true, opacity: .28, roughness: .05, metalness: .1, depthWrite: false }),
+  door: M(0x8a5a36), frontDoor: M(0x2f5d8a), handle: M(0xd8c07a, { metalness: .8, roughness: .3 }),
+  darkWood: M(0x4a2f1f), lightWood: M(0xc49a6c), white: M(0xf6f6f2, { roughness: .5 }),
+  fabricGrey: M(0x7d8590), fabricBlue: M(0x3f6ea8), fabricRed: M(0xb5473d), fabricGreen: M(0x5f8d5a),
+  fabricPink: M(0xe7a3b8), fabricYellow: M(0xe8c35a), cushion: M(0xe9dcc6),
+  metal: M(0xb9bec4, { metalness: .7, roughness: .35 }), black: M(0x1c1d20, { roughness: .4 }),
+  screen: M(0x0d1522, { roughness: .2, emissive: 0x102a4a, emissiveIntensity: .6 }),
+  porcelain: M(0xffffff, { roughness: .25 }), counter: M(0x3a3f45, { roughness: .35 }),
+  cabinet: M(0xe7e2d6), fire: M(0xff7b2e, { emissive: 0xff5a14, emissiveIntensity: 2 }),
+  leaf: M(0x3f7a36), leafDark: M(0x2f6a2c), trunk: M(0x6b4a2e), soil: M(0x5a4030),
+  lampShade: M(0xfff3d6, { emissive: 0xffe2a8, emissiveIntensity: .8 }),
+  bulb: M(0xffffff, { emissive: 0xfff0c8, emissiveIntensity: 1.5 }),
+  book: [M(0xa33b3b), M(0x3b62a3), M(0x3ba36a), M(0xd8b04a), M(0x6b3ba3)],
+  fence: M(0xf4efe6), cloud: M(0xffffff, { roughness: 1, emissive: 0xffffff, emissiveIntensity: .45 }),
+};
+
+/* ------------------------------------------------------------------
+   World helpers. Every solid thing is registered as an axis-aligned
+   box collider; the same list is used for walls and for floors.
+------------------------------------------------------------------ */
+const colliders = [];   // {min: Vector3, max: Vector3}
+function addCollider(x0, y0, z0, x1, y1, z1) {
+  colliders.push({ min: new THREE.Vector3(Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1)),
+                   max: new THREE.Vector3(Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1)) });
+}
+// box by min/max corners
+function block(x0, y0, z0, x1, y1, z1, material, solid = true, parent = scene) {
+  const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0), d = Math.abs(z1 - z0);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  m.castShadow = m.receiveShadow = true;
+  parent.add(m);
+  if (solid) addCollider(x0, y0, z0, x1, y1, z1);
+  return m;
+}
+// box by size + centre-bottom position
+function box(w, h, d, x, y, z, material, solid = true) {
+  return block(x - w / 2, y, z - d / 2, x + w / 2, y + h, z + d / 2, material, solid);
+}
+function cyl(rTop, rBot, h, x, y, z, material, seg = 16) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), material);
+  m.position.set(x, y + h / 2, z);
+  m.castShadow = m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+function floorPlane(x0, z0, x1, z1, y, material, tileSize = 2) {
+  const w = x1 - x0, d = z1 - z0;
+  const mt = material.clone();
+  if (mt.map) { mt.map = mt.map.clone(); mt.map.needsUpdate = true; mt.map.repeat.set(w / tileSize, d / tileSize); }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mt);
+  m.rotation.x = -Math.PI / 2;
+  m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2);
+  m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+
+/* ------------------------------------------------------------------
+   Walls with openings. A wall runs along X (fixed z) or along Z (fixed x).
+   openings: [{a, b, bottom, top, glass?}] in the wall's own run coordinate.
+------------------------------------------------------------------ */
+const T = 0.2; // wall thickness
+function wall(axis, fixed, from, to, y0, height, openings = [], innerMat = mat.plaster, outward = 0) {
+  // outward: +1/-1 = which side faces outside (gets brick), 0 = interior wall
+  let mats = innerMat;
+  if (outward) {
+    mats = [innerMat, innerMat, innerMat, innerMat, innerMat, innerMat];
+    // BoxGeometry material order: +x, -x, +y, -y, +z, -z
+    const idx = axis === 'x' ? (outward > 0 ? 4 : 5) : (outward > 0 ? 0 : 1);
+    mats[idx] = mat.exterior;
+  }
+  const piece = (a, b, ya, yb) => {
+    if (b - a < 0.001 || yb - ya < 0.001) return;
+    if (axis === 'x') block(a, ya, fixed - T / 2, b, yb, fixed + T / 2, mats);
+    else block(fixed - T / 2, ya, a, fixed + T / 2, yb, b, mats);
+  };
+  const ops = [...openings].sort((p, q) => p.a - q.a);
+  let cursor = from;
+  for (const o of ops) {
+    piece(cursor, o.a, y0, y0 + height);
+    piece(o.a, o.b, y0, y0 + o.bottom);          // below (sill)
+    piece(o.a, o.b, y0 + o.top, y0 + height);     // above (lintel)
+    if (o.glass) {
+      const g = axis === 'x'
+        ? block(o.a, y0 + o.bottom, fixed - 0.02, o.b, y0 + o.top, fixed + 0.02, mat.glass)
+        : block(fixed - 0.02, y0 + o.bottom, o.a, fixed + 0.02, y0 + o.top, o.b, mat.glass);
+      g.castShadow = false;
+      // window frame + mullion
+      const fr = 0.06;
+      if (axis === 'x') {
+        block(o.a, y0 + o.bottom - 0.04, fixed - T / 2 - 0.08, o.b, y0 + o.bottom, fixed + T / 2 + 0.08, mat.trim, false);
+        block((o.a + o.b) / 2 - fr / 2, y0 + o.bottom, fixed - 0.05, (o.a + o.b) / 2 + fr / 2, y0 + o.top, fixed + 0.05, mat.trim, false);
+      } else {
+        block(fixed - T / 2 - 0.08, y0 + o.bottom - 0.04, o.a, fixed + T / 2 + 0.08, y0 + o.bottom, o.b, mat.trim, false);
+        block(fixed - 0.05, y0 + o.bottom, (o.a + o.b) / 2 - fr / 2, fixed + 0.05, y0 + o.top, (o.a + o.b) / 2 + fr / 2, mat.trim, false);
+      }
+    }
+    cursor = o.b;
+  }
+  piece(cursor, to, y0, y0 + height);
+}
+const win = (a, b, bottom = 0.9, top = 2.2) => ({ a, b, bottom, top, glass: true });
+const gap = (a, b, top = 2.2) => ({ a, b, bottom: 0, top });
+
+/* ------------------------------------------------------------------
+   Doors (interactive, swing on a hinge)
+------------------------------------------------------------------ */
+const doors = [];
+function door(axis, fixed, a, b, y0, swing, material = mat.door, label = 'door') {
+  const w = b - a, h = 2.2;
+  const pivot = new THREE.Group();
+  if (axis === 'x') pivot.position.set(a, y0, fixed); else pivot.position.set(fixed, y0, a);
+  const base = axis === 'x' ? 0 : -Math.PI / 2;
+  pivot.rotation.y = base;
+  const leaf = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, h - 0.02, 0.06), material);
+  leaf.position.set(w / 2, h / 2, 0);
+  leaf.castShadow = leaf.receiveShadow = true;
+  pivot.add(leaf);
+  // panels + handle for a bit of detail
+  for (const s of [-1, 1]) {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(w * .62, h * .3, 0.02), material);
+    panel.position.set(w / 2, h * .3, s * 0.035); pivot.add(panel);
+    const p2 = panel.clone(); p2.position.y = h * .72; pivot.add(p2);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), mat.handle);
+    knob.position.set(w - 0.12, 1.0, s * 0.06); pivot.add(knob);
+  }
+  scene.add(pivot);
+  const d = { pivot, leaf, base, swing, open: false, t: 0, label,
+    center: axis === 'x' ? new THREE.Vector3((a + b) / 2, y0 + 1, fixed) : new THREE.Vector3(fixed, y0 + 1, (a + b) / 2),
+    box: new THREE.Box3() };
+  doors.push(d);
+  return d;
+}
+
+/* ------------------------------------------------------------------
+   The house.  Footprint x -8..8, z -6..6 (front faces +z).
+   Ground floor y 0..3, first-floor slab 3.0..3.2, upper floor 3.2..6.
+------------------------------------------------------------------ */
+const F1 = 3.2;               // upper floor level
+const GH = 3.2, UH = 2.95;    // exterior wall heights per floor
+const IH0 = 3.0, IH1 = 2.8;   // interior wall heights per floor
+
+// --- ground & yard
+block(-150, -1, -150, 150, 0, 150, mat.grass).castShadow = false;
+floorPlane(0.55, 6.1, 1.65, 24, 0.012, mat.stone, 1.1);            // front path
+block(-8.3, 0, -6.3, 8.3, 0.02, 6.3, mat.stone, false);           // foundation lip
+
+// ground floor room floors
+floorPlane(-8, -1, 0, 6, 0.03, mat.wood, 2.4);        // living
+floorPlane(-8, -6, -4, -1, 0.03, mat.tile, 1.2);      // bathroom
+floorPlane(-4, -6, 0, -1, 0.03, mat.carpet, 2);       // study
+floorPlane(0, -6, 3, 6, 0.03, mat.wood, 2.4);         // hallway
+floorPlane(3, -6, 8, 0, 0.03, mat.checker, 1.6);      // kitchen
+floorPlane(3, 0, 8, 6, 0.03, mat.wood, 2.4);          // dining
+
+// --- ground floor exterior walls
+wall('x', 6, -8.1, 8.1, 0, GH, [win(-6.5, -4.5), win(-3, -1.5), gap(0.6, 1.6), win(4.5, 6.5)], mat.plaster, +1);
+wall('x', -6, -8.1, 8.1, 0, GH, [win(-6.5, -5.5, 1.4, 2.1), win(-2.5, -1), win(0.8, 1.6, 1.1, 2.1), win(4.5, 6.5, 1.1, 2.1)], mat.plaster, -1);
+wall('z', -8, -5.9, 5.9, 0, GH, [win(0.2, 1.6), win(-3.5, -2.5, 1.4, 2.1)], mat.plaster, -1);
+wall('z', 8, -5.9, 5.9, 0, GH, [win(-4, -2, 1.1, 2.1), win(2, 4)], mat.plaster, +1);
+// --- ground floor interior walls
+wall('z', 0, -5.9, 5.9, 0, IH0, [gap(2, 3.4), gap(-3.5, -2.5)]);
+wall('z', 3, -5.9, 5.9, 0, IH0, [gap(2.5, 4), gap(-5.5, -4.4)], mat.plasterBlue);
+wall('x', -1, -7.9, -0.1, 0, IH0, [gap(-6, -5)]);
+wall('z', -4, -5.9, -1.1, 0, IH0, []);
+wall('x', 0, 3.1, 7.9, 0, IH0, [gap(4.5, 6)], mat.plasterBlue);
+
+door('x', 6, 0.6, 1.6, 0, +1, mat.frontDoor, 'front door');
+door('z', 0, -3.5, -2.5, 0, -1, mat.door, 'study door');
+door('x', -1, -6, -5, 0, +1, mat.door, 'bathroom door');
+
+// --- first-floor slab (with a stairwell hole x 1.7..2.9, z -3.48..1.2)
+const SX0 = 1.7, SX1 = 2.9, SZ0 = -3.48, SZ1 = 1.2;
+block(-8.1, 3.0, -6.1, SX0, F1, 6.1, mat.ceiling);
+block(SX1, 3.0, -6.1, 8.1, F1, 6.1, mat.ceiling);
+block(SX0, 3.0, -6.1, SX1, F1, SZ0, mat.ceiling);
+block(SX0, 3.0, SZ1, SX1, F1, 6.1, mat.ceiling);
+
+// upper floor coverings
+const U = F1 + 0.005;
+floorPlane(-8, -1, 0, 6, U, mat.carpet, 2);           // master bedroom
+floorPlane(-8, -6, -4, -1, U, mat.tile, 1.2);         // bathroom 2
+floorPlane(-4, -6, 0, -1, U, mat.wood, 2.4);          // kids room
+floorPlane(0, -6, SX0, 6, U, mat.wood, 2.4);          // hall (around stairwell)
+floorPlane(SX0, -6, 3, SZ0, U, mat.wood, 2.4);
+floorPlane(SX0, SZ1, 3, 6, U, mat.wood, 2.4);
+floorPlane(3, -6, 8, 0, U, mat.carpet, 2);            // bedroom 2
+floorPlane(3, 0, 8, 6, U, mat.wood, 2.4);             // playroom
+
+// --- stairs: 16 steps of 0.2 m rise / 0.28 m tread, climbing towards -z
+const STEPS = 16, RISE = F1 / STEPS, TREAD = 0.28;
+for (let i = 0; i < STEPS; i++) {
+  const z0 = SZ1 - 0.2 - i * TREAD, z1 = z0 - TREAD;
+  block(SX0, 0, z1, SX1, (i + 1) * RISE, z0, i % 2 ? mat.lightWood : mat.darkWood);
+}
+// handrail (visual) along the open side of the stairs
+{
+  const len = Math.hypot(STEPS * TREAD, F1);
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, len), mat.darkWood);
+  rail.position.set(SX0 + 0.03, F1 / 2 + 0.95, SZ1 - 0.2 - STEPS * TREAD / 2);
+  rail.rotation.x = Math.atan2(F1, STEPS * TREAD);
+  scene.add(rail);
+  for (let i = 0; i <= STEPS; i += 3) {
+    const z = SZ1 - 0.2 - i * TREAD - TREAD / 2;
+    box(0.04, 0.95, 0.04, SX0 + 0.03, Math.min(i + 1, STEPS) * RISE, z, mat.darkWood, false);
+  }
+}
+// railings around the stairwell upstairs
+function railing(x0, z0, x1, z1, y0, h = 1.0) {
+  const horiz = Math.abs(x1 - x0) > Math.abs(z1 - z0);
+  block(horiz ? x0 : x0 - 0.03, y0 + h - 0.06, horiz ? z0 - 0.03 : z0, horiz ? x1 : x0 + 0.03, y0 + h, horiz ? z0 + 0.03 : z1, mat.darkWood, false);
+  const len = horiz ? Math.abs(x1 - x0) : Math.abs(z1 - z0);
+  const n = Math.max(2, Math.round(len / 0.14));
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const x = horiz ? x0 + (x1 - x0) * t : x0, z = horiz ? z0 : z0 + (z1 - z0) * t;
+    box(0.025, h - 0.06, 0.025, x, y0, z, mat.trim, false);
+  }
+  addCollider(Math.min(x0, x1) - 0.04, y0, Math.min(z0, z1) - 0.04, Math.max(x0, x1) + 0.04, y0 + h, Math.max(z0, z1) + 0.04);
+}
+railing(SX0 - 0.02, SZ0 + 0.9, SX0 - 0.02, SZ1, F1);  // leave the top of the stairs open
+railing(SX0 - 0.02, SZ1, SX1, SZ1, F1);
+
+// --- upper floor exterior walls
+wall('x', 6, -8.1, 8.1, F1, UH, [win(-6.5, -4.5), win(-3, -1.5), win(0.8, 2.2), win(3.5, 4.5), gap(5, 6), win(6.6, 7.6)], mat.plaster, +1);
+wall('x', -6, -8.1, 8.1, F1, UH, [win(-6.5, -5.5, 1.4, 2.1), win(-2.5, -1), win(0.8, 1.6, 1.1, 2.1), win(4.5, 6.5)], mat.plaster, -1);
+wall('z', -8, -5.9, 5.9, F1, UH, [win(1.5, 3.5), win(-4, -3, 1.4, 2.1)], mat.plaster, -1);
+wall('z', 8, -5.9, 5.9, F1, UH, [win(-4, -2), win(2, 4)], mat.plaster, +1);
+// --- upper floor interior walls
+wall('z', 0, -5.9, 5.9, F1, IH1, [gap(2, 3), gap(-5, -4)]);
+wall('z', 3, -5.9, 5.9, F1, IH1, [gap(2, 3), gap(-5, -4)], mat.plasterBlue);
+wall('x', -1, -7.9, -0.1, F1, IH1, [gap(-6, -5)]);
+wall('z', -4, -5.9, -1.1, F1, IH1, []);
+wall('x', 0, 3.1, 7.9, F1, IH1, [], mat.plasterBlue);
+
+door('z', 0, 2, 3, F1, -1, mat.door, 'bedroom door');
+door('z', 0, -5, -4, F1, -1, mat.door, 'kids room door');
+door('z', 3, 2, 3, F1, +1, mat.door, 'playroom door');
+door('z', 3, -5, -4, F1, +1, mat.door, 'bedroom door');
+door('x', -1, -6, -5, F1, +1, mat.door, 'bathroom door');
+door('x', 6, 5, 6, F1, -1, mat.frontDoor, 'balcony door');
+
+// upper ceiling
+block(-8.1, F1 + UH - 0.15, -6.1, 8.1, F1 + UH, 6.1, mat.ceiling);
+
+// --- balcony over the dining room windows
+block(3, 3.0, 6.1, 8.2, F1, 8.2, mat.stone);
+floorPlane(3, 6.1, 8.2, 8.2, F1 + 0.005, mat.wood, 2.4);
+railing(3.05, 8.15, 8.15, 8.15, F1);
+railing(3.05, 6.1, 3.05, 8.15, F1);
+railing(8.15, 6.1, 8.15, 8.15, F1);
+box(0.25, 3.0, 0.25, 3.2, 0, 8.0, mat.trim);
+box(0.25, 3.0, 0.25, 8.0, 0, 8.0, mat.trim);
+
+// --- front porch canopy over the door
+block(0.1, 2.55, 6.1, 2.1, 2.65, 7.4, mat.roof, false);
+box(0.12, 2.55, 0.12, 0.2, 0, 7.3, mat.trim);
+box(0.12, 2.55, 0.12, 2.0, 0, 7.3, mat.trim);
+block(0.3, 0, 6.1, 1.9, 0.08, 7.3, mat.stone, false);
+
+// --- roof (gable along x)
+{
+  const top = F1 + UH, rise = 3.4, half = 6.7;
+  const slope = Math.hypot(half, rise), ang = Math.atan2(rise, half);
+  for (const s of [1, -1]) {
+    const r = new THREE.Mesh(new THREE.BoxGeometry(17.4, 0.18, slope), mat.roof);
+    r.position.set(0, top + rise / 2 + 0.05, s * half / 2);
+    r.rotation.x = s * ang;
+    r.castShadow = r.receiveShadow = true;
+    scene.add(r);
+  }
+  const shape = new THREE.Shape();
+  shape.moveTo(-6.1, 0); shape.lineTo(6.1, 0); shape.lineTo(0, rise * 6.1 / half); shape.closePath();
+  for (const x of [-8.05, 8.05]) {
+    const g = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat.exterior.clone());
+    g.material.side = THREE.DoubleSide;
+    g.material.map = tex.brick.clone(); g.material.map.needsUpdate = true; g.material.map.repeat.set(3, 1);
+    g.rotation.y = Math.PI / 2;
+    g.position.set(x, top, 0);
+    g.castShadow = true;
+    scene.add(g);
+  }
+  // chimney above the fireplace
+  box(0.9, 4.2, 1.3, -7.2, top, 3.8, mat.exterior, false);
+  box(1.05, 0.15, 1.45, -7.2, top + 4.2, 3.8, mat.trim, false);
+}
+
+/* ------------------------------------------------------------------
+   Furniture
+------------------------------------------------------------------ */
+function sofa(x, z, rotY, len = 2.2, color = mat.fabricGrey, y = 0) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = rotY;
+  const part = (w, h, d, px, py, pz, m) => {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); p.position.set(px, py + h / 2, pz);
+    p.castShadow = p.receiveShadow = true; g.add(p);
+  };
+  part(len, 0.42, 0.9, 0, 0.08, 0, color);
+  part(len, 0.5, 0.22, 0, 0.45, -0.34, color);
+  part(0.2, 0.3, 0.9, -len / 2 + 0.1, 0.5, 0, color);
+  part(0.2, 0.3, 0.9, len / 2 - 0.1, 0.5, 0, color);
+  for (let i = 0; i < 3; i++) part(len / 3 - 0.14, 0.12, 0.62, -len / 3 + i * len / 3, 0.5, 0.06, mat.cushion);
+  scene.add(g);
+  const c = Math.abs(Math.cos(rotY)) > 0.5, w = c ? len : 0.9, d = c ? 0.9 : len;
+  addCollider(x - w / 2, y, z - d / 2, x + w / 2, y + 0.8, z + d / 2);
+}
+function table(x, z, w, d, h = 0.75, m = mat.lightWood, y = 0) {
+  box(w, 0.05, d, x, y + h - 0.05, z, m, false);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.06, h - 0.05, 0.06, x + sx * (w / 2 - 0.08), y, z + sz * (d / 2 - 0.08), m, false);
+  addCollider(x - w / 2, y, z - d / 2, x + w / 2, y + h, z + d / 2);
+}
+function chair(x, z, rotY, y = 0, m = mat.darkWood) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = rotY;
+  const part = (w, h, d, px, py, pz) => {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); p.position.set(px, py + h / 2, pz);
+    p.castShadow = true; g.add(p);
+  };
+  part(0.44, 0.05, 0.44, 0, 0.44, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(0.04, 0.44, 0.04, sx * 0.19, 0, sz * 0.19);
+  part(0.44, 0.5, 0.04, 0, 0.49, -0.2);
+  scene.add(g);
+  addCollider(x - 0.24, y, z - 0.24, x + 0.24, y + 0.9, z + 0.24);
+}
+function bed(x, z, y, w, len, dir, blanket) {
+  // dir: which way the foot points: 'x+','x-','z+','z-'
+  const alongZ = dir[0] === 'z', s = dir[1] === '+' ? 1 : -1;
+  const W = alongZ ? w : len, D = alongZ ? len : w;
+  box(W, 0.35, D, x, y, z, mat.lightWood);
+  box(W - 0.06, 0.2, D - 0.06, x, y + 0.35, z, mat.white, false);
+  // blanket covers the foot two thirds
+  if (alongZ) box(W - 0.02, 0.06, D * 0.66, x, y + 0.53, z + s * D * 0.17, blanket, false);
+  else box(W * 0.66, 0.06, D - 0.02, x + s * W * 0.17, y + 0.53, z, blanket, false);
+  // headboard + pillows
+  const hx = alongZ ? x : x - s * (W / 2 - 0.04), hz = alongZ ? z - s * (D / 2 - 0.04) : z;
+  box(alongZ ? W : 0.08, 1.05, alongZ ? 0.08 : D, hx, y, hz, mat.darkWood);
+  const pillows = w > 1.2 ? [-0.4, 0.4] : [0];
+  for (const p of pillows) {
+    const px = alongZ ? x + p * (w / 1.6) : x - s * (W / 2 - 0.35), pz = alongZ ? z - s * (D / 2 - 0.35) : z + p * (w / 1.6);
+    box(alongZ ? 0.55 : 0.35, 0.14, alongZ ? 0.35 : 0.55, px, y + 0.55, pz, mat.cushion, false);
+  }
+}
+function bookshelf(x0, z0, x1, z1, y, h, face) {
+  // face: '+x' | '-x' | '+z' | '-z' — the open side of the shelf, where the books show
+  block(x0, y, z0, x1, y + h, z1, mat.darkWood);
+  const alongX = face[1] === 'z';
+  const s = face[0] === '+' ? 1 : -1;
+  const lo = alongX ? Math.min(x0, x1) : Math.min(z0, z1), len = alongX ? Math.abs(x1 - x0) : Math.abs(z1 - z0);
+  const front = alongX ? (s > 0 ? Math.max(z0, z1) : Math.min(z0, z1)) : (s > 0 ? Math.max(x0, x1) : Math.min(x0, x1));
+  const rows = Math.floor((h - 0.1) / 0.45);
+  for (let row = 0; row < rows; row++) {
+    const by = y + 0.1 + row * 0.45;
+    block(alongX ? x0 : front, by - 0.03, alongX ? front : z0, alongX ? x1 : front + s * 0.03, by, alongX ? front + s * 0.03 : z1, mat.lightWood, false);
+    let t = 0.05;
+    while (t < len - 0.1) {
+      const bw = rand(0.04, 0.08), bh = rand(0.22, 0.34);
+      const m = mat.book[Math.floor(rand(0, mat.book.length))];
+      if (alongX) box(bw, bh, 0.04, lo + t + bw / 2, by, front + s * 0.02, m, false);
+      else box(0.04, bh, bw, front + s * 0.02, by, lo + t + bw / 2, m, false);
+      t += bw + 0.012;
+    }
+  }
+}
+function plant(x, z, y = 0, s = 1) {
+  cyl(0.18 * s, 0.14 * s, 0.35 * s, x, y, z, mat.fabricRed);
+  const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.38 * s, 1), mat.leaf);
+  bush.position.set(x, y + 0.75 * s, z); bush.castShadow = true; scene.add(bush);
+  addCollider(x - 0.2, y, z - 0.2, x + 0.2, y + 1, z + 0.2);
+}
+function floorLamp(x, z, y = 0) {
+  cyl(0.15, 0.18, 0.04, x, y, z, mat.black);
+  cyl(0.015, 0.015, 1.45, x, y, z, mat.metal, 8);
+  cyl(0.14, 0.22, 0.28, x, y + 1.35, z, mat.lampShade);
+  addCollider(x - 0.15, y, z - 0.15, x + 0.15, y + 1.6, z + 0.15);
+}
+function rug(x0, z0, x1, z1, y, m) { block(x0, y, z0, x1, y + 0.012, z1, m, false).castShadow = false; }
+
+// Living room ---------------------------------------------------------
+// fireplace on the left wall
+block(-7.9, 0, 2.9, -7.4, 1.25, 4.7, mat.exterior);
+block(-7.88, 0.1, 3.4, -7.35, 0.85, 4.2, mat.black, false);
+{ const fire = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 8), mat.fire); fire.position.set(-7.55, 0.32, 3.8); scene.add(fire); }
+block(-7.95, 1.25, 2.8, -7.25, 1.33, 4.8, mat.darkWood);
+block(-7.9, 1.33, 3.0, -7.55, IH0, 4.6, mat.exterior, false);
+block(-7.54, 1.6, 3.05, -7.5, 2.3, 4.55, mat.black, false);     // TV above mantel
+block(-7.5, 1.64, 3.09, -7.49, 2.26, 4.51, mat.screen, false);
+sofa(-4.3, 3.8, -Math.PI / 2, 2.4, mat.fabricBlue);
+table(-5.8, 3.8, 0.7, 1.3, 0.42, mat.darkWood);
+rug(-6.7, 2.5, -4.9, 5.1, 0.035, mat.fabricRed);
+sofa(-5.8, 5.4, Math.PI, 1.6, mat.fabricGrey);
+floorLamp(-3.6, 5.5);
+bookshelf(-3.4, -0.9, -1.0, -0.55, 0, 1.9, '+z');
+plant(-0.6, 5.5); plant(-7.5, -0.5);
+chair(-2.2, 1.6, Math.PI * 0.8, 0, mat.fabricGreen);
+
+// Bathroom (ground) ---------------------------------------------------
+block(-7.9, 0, -5.9, -6.2, 0.6, -5.1, mat.porcelain);
+block(-7.8, 0.4, -5.8, -6.3, 0.58, -5.2, mat.plasterBlue, false);
+box(0.4, 0.42, 0.6, -4.45, 0, -3.2, mat.porcelain);                  // toilet
+box(0.2, 0.4, 0.6, -4.2, 0.42, -3.2, mat.porcelain, false);
+box(0.5, 0.85, 0.55, -7.62, 0, -2.4, mat.cabinet);                  // vanity
+box(0.36, 0.08, 0.4, -7.62, 0.85, -2.4, mat.porcelain, false);
+block(-7.9, 1.2, -2.8, -7.88, 2.0, -2.0, mat.metal, false);         // mirror
+rug(-6.1, -4.9, -5.1, -4.2, 0.035, mat.fabricBlue);
+
+// Study (ground) --------------------------------------------------------
+table(-2.2, -5.45, 1.6, 0.75, 0.76, mat.lightWood);
+box(0.6, 0.38, 0.04, -2.2, 0.8, -5.65, mat.black, false);
+box(0.56, 0.32, 0.01, -2.2, 0.83, -5.625, mat.screen, false);
+chair(-2.2, -4.6, Math.PI);
+bookshelf(-3.9, -5.6, -3.55, -2.0, 0, 1.9, '+x');
+cyl(0.3, 0.3, 0.02, -1.0, 0.035, -2.3, mat.fabricGreen, 24);
+floorLamp(-0.5, -5.5);
+
+// Hallway (ground) ----------------------------------------------------
+block(0.12, 0, 4.45, 0.5, 0.8, 5.35, mat.darkWood);             // console table
+plant(0.32, 4.9, 0.8, 0.5);
+rug(0.25, 3.8, 1.55, 5.8, 0.035, mat.fabricRed);
+
+// Dining room -----------------------------------------------------------
+table(5.5, 3.2, 2.2, 1.0);
+for (const dx of [-0.6, 0.6]) { chair(5.5 + dx, 2.4, 0); chair(5.5 + dx, 4.0, Math.PI); }
+chair(4.1, 3.2, Math.PI / 2); chair(6.9, 3.2, -Math.PI / 2);
+block(7.45, 0, 0.6, 7.9, 0.9, 1.9, mat.darkWood);
+cyl(0.1, 0.12, 0.25, 5.5, 0.75, 3.2, mat.white, 12);
+{ const flowers = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 1), mat.fabricPink); flowers.position.set(5.5, 1.1, 3.2); scene.add(flowers); }
+plant(3.5, 5.5);
+
+// Kitchen ---------------------------------------------------------------
+block(3.1, 0, -5.9, 7.9, 0.88, -5.3, mat.cabinet);
+block(3.08, 0.88, -5.92, 7.92, 0.92, -5.26, mat.counter, false);
+block(7.3, 0, -5.3, 7.9, 0.88, -1.2, mat.cabinet);
+block(7.26, 0.88, -5.3, 7.92, 0.92, -1.2, mat.counter, false);
+block(7.25, 0, -1.1, 7.9, 1.95, -0.2, mat.metal);                  // fridge
+block(7.24, 1.0, -1.08, 7.25, 1.9, -0.22, mat.black, false);
+block(6.8, 0.92, -5.85, 7.5, 0.94, -5.35, mat.black, false);       // hob
+for (const [bx, bz] of [[6.97, -5.72], [7.33, -5.72], [6.97, -5.48], [7.33, -5.48]])
+  cyl(0.08, 0.08, 0.012, bx, 0.94, bz, mat.metal, 16);
+block(6.7, 1.7, -5.9, 7.6, 2.2, -5.5, mat.metal, false);           // hood
+block(3.8, 0.88, -5.8, 4.4, 0.93, -5.4, mat.metal, false);         // sink
+block(3.1, 1.6, -5.9, 4.3, 2.3, -5.55, mat.cabinet, false);        // wall cabinets
+block(7.35, 1.6, -5.3, 7.9, 2.3, -2.4, mat.cabinet, false);
+block(4.4, 0, -3.3, 6.2, 0.9, -2.4, mat.cabinet);                  // island
+block(4.35, 0.9, -3.35, 6.25, 0.95, -2.35, mat.counter, false);
+for (const sx of [4.8, 5.8]) { cyl(0.18, 0.18, 0.05, sx, 0.7, -1.95, mat.darkWood); cyl(0.03, 0.03, 0.7, sx, 0, -1.95, mat.metal, 8); addCollider(sx - 0.2, 0, -2.15, sx + 0.2, 0.75, -1.75); }
+cyl(0.16, 0.1, 0.1, 5.3, 0.95, -2.85, mat.white, 16);
+for (let i = 0; i < 3; i++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), [mat.fabricRed, mat.fabricYellow, mat.fabricGreen][i]); f.position.set(5.26 + i * 0.05, 1.07, -2.85 + (i - 1) * 0.04); scene.add(f); }
+
+// Master bedroom ------------------------------------------------------
+bed(-2.5, 0.2, F1, 1.7, 2.2, 'z+', mat.fabricBlue);
+box(0.5, 0.55, 0.45, -3.7, F1, -0.65, mat.darkWood); box(0.5, 0.55, 0.45, -1.3, F1, -0.65, mat.darkWood);
+cyl(0.1, 0.14, 0.3, -3.7, F1 + 0.55, -0.65, mat.lampShade, 12); cyl(0.1, 0.14, 0.3, -1.3, F1 + 0.55, -0.65, mat.lampShade, 12);
+block(-7.9, F1, 3.9, -7.3, F1 + 2.1, 5.8, mat.lightWood);                     // wardrobe
+block(-7.31, F1 + 0.1, 4.84, -7.29, F1 + 2.0, 4.86, mat.darkWood, false);
+block(-0.6, F1, 3.8, -0.1, F1 + 0.8, 5.6, mat.lightWood);                     // dresser
+block(-0.12, F1 + 1.1, 4.2, -0.1, F1 + 1.9, 5.2, mat.metal, false);           // mirror
+rug(-4.0, 1.4, -1.0, 3.6, F1 + 0.01, mat.fabricGrey);
+chair(-6.2, 1.0, Math.PI / 4, F1, mat.fabricPink);
+plant(-7.4, -0.5, F1);
+
+// Bathroom 2 ------------------------------------------------------------
+block(-7.9, F1, -5.9, -6.8, F1 + 0.06, -4.8, mat.porcelain);                 // shower tray
+block(-6.82, F1, -5.9, -6.78, F1 + 2.0, -4.8, mat.glass).castShadow = false;
+block(-7.9, F1, -4.82, -7.2, F1 + 2.0, -4.78, mat.glass).castShadow = false;
+cyl(0.1, 0.1, 0.02, -7.4, F1 + 2.1, -5.4, mat.metal);
+box(0.4, 0.42, 0.6, -4.45, F1, -3.2, mat.porcelain);
+box(0.2, 0.4, 0.6, -4.2, F1 + 0.42, -3.2, mat.porcelain, false);
+box(0.5, 0.85, 0.55, -7.62, F1, -2.4, mat.cabinet);
+box(0.36, 0.08, 0.4, -7.62, F1 + 0.85, -2.4, mat.porcelain, false);
+block(-7.9, F1 + 1.2, -2.8, -7.88, F1 + 2.0, -2.0, mat.metal, false);
+
+// Kids room ----------------------------------------------------------------
+bed(-2.88, -4.9, F1, 1.0, 2.0, 'x+', mat.fabricYellow);
+table(-0.8, -2.2, 0.6, 1.2, 0.7, mat.white, F1);
+chair(-1.45, -2.2, Math.PI / 2, F1, mat.fabricRed);
+block(-3.9, F1, -2.0, -3.4, F1 + 0.5, -1.2, mat.fabricBlue);                   // toy box
+{ const ball = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), mat.fabricRed); ball.position.set(-1.8, F1 + 0.15, -4.2); ball.castShadow = true; scene.add(ball); }
+rug(-2.8, -3.8, -1.2, -2.6, F1 + 0.01, mat.fabricGreen);
+
+// Bedroom 2 -----------------------------------------------------------------
+bed(6.3, -3.2, F1, 1.4, 2.1, 'x-', mat.fabricGreen);
+box(0.45, 0.55, 0.45, 7.6, F1, -4.6, mat.darkWood);
+cyl(0.1, 0.14, 0.3, 7.6, F1 + 0.55, -4.6, mat.lampShade, 12);
+block(3.1, F1, -1.0, 5.0, F1 + 2.1, -0.1, mat.lightWood);                     // wardrobe
+table(4.1, -5.5, 1.4, 0.6, 0.75, mat.lightWood, F1);
+chair(4.1, -4.8, Math.PI, F1);
+
+// Playroom --------------------------------------------------------------------
+sofa(5.5, 0.6, 0, 2.0, mat.fabricRed, F1);
+block(4.6, F1, 3.1, 6.4, F1 + 0.45, 3.5, mat.darkWood);                        // TV unit
+block(4.9, F1 + 0.45, 3.28, 6.1, F1 + 1.15, 3.32, mat.black, false);
+block(4.94, F1 + 0.49, 3.265, 6.06, F1 + 1.11, 3.27, mat.screen, false);
+for (const [bx, bz, m] of [[3.8, 4.8, mat.fabricYellow], [7.2, 2.2, mat.fabricBlue]]) {
+  const bb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 10), m);
+  bb.scale.y = 0.65; bb.position.set(bx, F1 + 0.27, bz); bb.castShadow = true; scene.add(bb);
+  addCollider(bx - 0.4, F1, bz - 0.4, bx + 0.4, F1 + 0.55, bz + 0.4);
+}
+bookshelf(7.5, 4.0, 7.9, 5.8, F1, 1.4, '-x');
+rug(4.3, 1.4, 6.7, 2.9, F1 + 0.01, mat.fabricBlue);
+
+// Upstairs hall -------------------------------------------------------
+plant(0.45, 5.5, F1);
+block(0.15, F1, -5.8, 1.35, F1 + 0.45, -5.4, mat.darkWood);                   // bench
+plant(2.6, -5.5, F1, 0.8);
+
+// Balcony furniture
+chair(4.0, 7.3, Math.PI * 0.85, F1, mat.white);
+chair(5.2, 7.5, Math.PI * 1.1, F1, mat.white);
+table(4.6, 7.1, 0.6, 0.6, 0.55, mat.white, F1);
+plant(7.6, 7.6, F1, 0.8);
+
+/* ------------------------------------------------------------------
+   Garden: trees, fence, bushes, mailbox, clouds
+------------------------------------------------------------------ */
+function tree(x, z, s = 1) {
+  cyl(0.18 * s, 0.26 * s, 2.4 * s, x, 0, z, mat.trunk, 8);
+  const top = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6 * s, 1), Math.random() < .5 ? mat.leaf : mat.leafDark);
+  top.position.set(x, 3.1 * s, z); top.castShadow = true; scene.add(top);
+  const top2 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1 * s, 1), mat.leaf);
+  top2.position.set(x + 0.4 * s, 4.0 * s, z - 0.2 * s); top2.castShadow = true; scene.add(top2);
+  addCollider(x - 0.3 * s, 0, z - 0.3 * s, x + 0.3 * s, 2.4 * s, z + 0.3 * s);
+}
+for (const [x, z, s] of [[-12, 10, 1.2], [11, 12, 1], [-15, -4, 1.4], [15, -8, 1.1], [-6, -14, 1.3], [7, -15, 1], [18, 5, 1.2], [-19, 12, 0.9], [-4, 17, 0.9], [9, 20, 1.1]]) tree(x, z, s);
+for (let i = 0; i < 7; i++) {
+  const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), mat.leafDark);
+  b.position.set(-7.4 + i * 1.05, 0.35, 7.0); b.scale.y = 0.75; b.castShadow = true; scene.add(b);
+  if (i === 6) b.position.x = -0.4;
+}
+addCollider(-7.9, 0, 6.5, 0.1, 0.8, 7.5);
+// fence around the plot, with a gate gap at the path
+function fenceLine(x0, z0, x1, z1) {
+  const len = Math.hypot(x1 - x0, z1 - z0), n = Math.round(len / 0.5);
+  for (let i = 0; i <= n; i++) box(0.08, 1.0, 0.08, x0 + (x1 - x0) * i / n, 0, z0 + (z1 - z0) * i / n, mat.fence, false);
+  const horiz = Math.abs(x1 - x0) > 0.01;
+  for (const y of [0.35, 0.8]) block(horiz ? x0 : x0 - 0.02, y, horiz ? z0 - 0.02 : z0, horiz ? x1 : x0 + 0.02, y + 0.08, horiz ? z0 + 0.02 : z1, mat.fence, false);
+  addCollider(Math.min(x0, x1) - 0.05, 0, Math.min(z0, z1) - 0.05, Math.max(x0, x1) + 0.05, 1.0, Math.max(z0, z1) + 0.05);
+}
+const FX = 24, FZ0 = -20, FZ1 = 24;
+fenceLine(-FX, FZ1, 0.2, FZ1); fenceLine(2.0, FZ1, FX, FZ1);
+fenceLine(-FX, FZ0, FX, FZ0); fenceLine(-FX, FZ0, -FX, FZ1); fenceLine(FX, FZ0, FX, FZ1);
+box(0.1, 1.1, 0.1, 2.6, 0, 22.5, mat.darkWood); box(0.5, 0.35, 0.3, 2.6, 1.1, 22.5, mat.frontDoor);
+for (let i = 0; i < 8; i++) {
+  const c = new THREE.Group();
+  for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(new THREE.SphereGeometry(rand(2, 3.5), 10, 8), mat.cloud); p.position.set(k * 2.6, rand(-0.6, 0.6), rand(-1, 1)); c.add(p); }
+  c.position.set(rand(-120, 120), rand(38, 55), rand(-120, 120)); c.scale.y = 0.55; scene.add(c);
+}
+
+/* ------------------------------------------------------------------
+   Interior lights (point lights, one per room) + porch light
+------------------------------------------------------------------ */
+const roomLights = [];
+function ceilingLight(x, z, y) {
+  const fixture = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.08, 20), mat.bulb);
+  fixture.position.set(x, y - 0.04, z); scene.add(fixture);
+  const l = new THREE.PointLight(0xffe2b8, 0, 11, 1.6);
+  l.position.set(x, y - 0.35, z); scene.add(l);
+  roomLights.push(l);
+}
+for (const [x, z] of [[-4, 2.5], [-6, -3.5], [-2, -3.5], [1.2, 3.5], [1.0, -4.5], [5.5, -3], [5.5, 3.2]]) ceilingLight(x, z, 3.0);
+for (const [x, z] of [[-4, 2.5], [-6, -3.5], [-2, -3.5], [1.0, 3.5], [1.2, -4.8], [5.5, -3], [5.5, 3.2]]) ceilingLight(x, z, F1 + IH1);
+const porch = new THREE.PointLight(0xffd59a, 0, 9, 1.6); porch.position.set(1.1, 2.4, 6.9); scene.add(porch); roomLights.push(porch);
+
+/* ------------------------------------------------------------------
+   Rooms (for the HUD)
+------------------------------------------------------------------ */
+const rooms = [
+  [0, -8, 0, -1, 6, 'Living room'], [0, -8, -4, -6, -1, 'Bathroom'], [0, -4, 0, -6, -1, 'Study'],
+  [0, 0, 3, -6, 6, 'Hallway'], [0, 3, 8, -6, 0, 'Kitchen'], [0, 3, 8, 0, 6, 'Dining room'],
+  [1, -8, 0, -1, 6, 'Master bedroom'], [1, -8, -4, -6, -1, 'Upstairs bathroom'], [1, -4, 0, -6, -1, "Kids' room"],
+  [1, 0, 3, -6, 6, 'Upstairs hall'], [1, 3, 8, -6, 0, 'Guest bedroom'], [1, 3, 8, 0, 6, 'Playroom'],
+  [1, 3, 8.3, 6, 8.3, 'Balcony'],
+];
+function roomAt(p, feet) {
+  const level = feet > 2.2 ? 1 : 0;
+  for (const [lv, x0, x1, z0, z1, name] of rooms)
+    if (lv === level && p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1) return name;
+  if (level === 0 && Math.abs(p.x) < 8 && Math.abs(p.z) < 6) return 'Stairs';
+  return feet > 1 ? 'Stairs' : (p.z > 6 ? 'Front yard' : 'Garden');
+}
+
+/* ------------------------------------------------------------------
+   Player & physics
+------------------------------------------------------------------ */
+const player = { pos: new THREE.Vector3(1.1, 0, 16), vy: 0, onGround: true, yaw: 0, pitch: -0.05 };
+const RADIUS = 0.28, HEIGHT = 1.75, EYE = 1.62, STEP = 0.36, GRAVITY = 22, JUMP = 6.2;
+const WALK = 3.4, RUN = 6.2;
+
+function circleHitsBox(x, z, b) {
+  const cx = Math.max(b.min.x, Math.min(x, b.max.x)), cz = Math.max(b.min.z, Math.min(z, b.max.z));
+  const dx = x - cx, dz = z - cz;
+  return dx * dx + dz * dz < RADIUS * RADIUS;
+}
+function allBoxes() { return colliders.concat(doors.map(d => d.box)); }
+function blocked(x, z, feet, boxes) {
+  const lo = feet + STEP, hi = feet + HEIGHT;
+  for (const b of boxes) {
+    if (b.max.y <= lo || b.min.y >= hi) continue;
+    if (circleHitsBox(x, z, b)) return true;
+  }
+  return false;
+}
+function groundHeight(x, z, feet, boxes) {
+  let best = -Infinity;
+  for (const b of boxes) {
+    if (b.max.y > feet + STEP + 0.001 || b.max.y < best) continue;
+    // a slightly smaller footprint so you do not stand on the very edge of things
+    const r = RADIUS * 0.6;
+    if (x + r > b.min.x && x - r < b.max.x && z + r > b.min.z && z - r < b.max.z) best = b.max.y;
+  }
+  return best;
+}
+function ceilingAbove(x, z, feet, boxes) {
+  let low = Infinity;
+  for (const b of boxes) {
+    if (b.min.y < feet + HEIGHT - 0.25 || b.min.y > low) continue;
+    if (circleHitsBox(x, z, b)) low = b.min.y;
+  }
+  return low;
+}
+
+const keys = {};
+const touchMove = { x: 0, y: 0 };
+let runToggle = false;
+
+function update(dt) {
+  for (const d of doors) {
+    const target = d.open ? 1 : 0;
+    d.t += Math.sign(target - d.t) * Math.min(Math.abs(target - d.t), dt * 2.8);
+    const e = d.t * d.t * (3 - 2 * d.t);
+    d.pivot.rotation.y = d.base + d.swing * e * Math.PI * 0.48;
+    d.leaf.updateWorldMatrix(true, false);
+    d.box.setFromObject(d.leaf);
+  }
+  const boxes = allBoxes();
+
+  // input → horizontal velocity
+  let fx = 0, fz = 0;
+  if (keys.KeyW || keys.ArrowUp) fz += 1;
+  if (keys.KeyS || keys.ArrowDown) fz -= 1;
+  if (keys.KeyD || keys.ArrowRight) fx += 1;
+  if (keys.KeyA || keys.ArrowLeft) fx -= 1;
+  fx += touchMove.x; fz += touchMove.y;
+  const len = Math.hypot(fx, fz);
+  if (len > 1) { fx /= len; fz /= len; }
+  const speed = (keys.ShiftLeft || keys.ShiftRight || runToggle) ? RUN : WALK;
+  const sy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
+  const vx = (-sy * fz + cy * fx) * speed, vz = (-cy * fz - sy * fx) * speed;
+
+  // move per axis in small sub-steps so fast movement never tunnels through walls
+  const steps = Math.ceil(Math.max(Math.abs(vx), Math.abs(vz)) * dt / 0.1) || 1;
+  for (let i = 0; i < steps; i++) {
+    const p = player.pos;
+    const nx = p.x + vx * dt / steps;
+    if (!blocked(nx, p.z, p.y, boxes) || blocked(p.x, p.z, p.y, boxes)) p.x = nx;
+    const nz = p.z + vz * dt / steps;
+    if (!blocked(p.x, nz, p.y, boxes) || blocked(p.x, p.z, p.y, boxes)) p.z = nz;
+    // step up onto stairs / small ledges
+    const g = groundHeight(p.x, p.z, p.y, boxes);
+    if (player.onGround && g > p.y) p.y = g;
+  }
+
+  // vertical
+  const g = groundHeight(player.pos.x, player.pos.z, player.pos.y, boxes);
+  if (player.onGround && player.pos.y - g > 0 && player.pos.y - g < 0.45 && player.vy <= 0) {
+    player.pos.y = g;            // stick to the ground when walking down stairs
+  } else {
+    player.vy -= GRAVITY * dt;
+    let ny = player.pos.y + player.vy * dt;
+    const ceil = ceilingAbove(player.pos.x, player.pos.z, player.pos.y, boxes);
+    if (ny + HEIGHT > ceil) { ny = ceil - HEIGHT; player.vy = Math.min(player.vy, 0); }
+    if (ny <= g) { ny = g; player.vy = 0; player.onGround = true; } else player.onGround = false;
+    player.pos.y = ny;
+  }
+  if (player.pos.y < -5) player.pos.set(1.1, 0, 16);
+  player.pos.x = Math.max(-140, Math.min(140, player.pos.x));
+  player.pos.z = Math.max(-140, Math.min(140, player.pos.z));
+
+  camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z);
+  camera.rotation.set(player.pitch, player.yaw, 0);
+
+  // HUD
+  roomEl.textContent = roomAt(player.pos, player.pos.y);
+  const d = nearestDoor();
+  if (d) { hintEl.textContent = `${isTouch ? 'Tap E' : 'Press E'} to ${d.open ? 'close' : 'open'} the ${d.label}`; hintEl.classList.add('show'); }
+  else hintEl.classList.remove('show');
+}
+
+function jump() { if (player.onGround) { player.vy = JUMP; player.onGround = false; } }
+function nearestDoor() {
+  const eye = camera.position;
+  let best = null, bestD = 2.1;
+  const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd);
+  for (const d of doors) {
+    const to = d.center.clone().sub(eye);
+    if (Math.abs(to.y) > 1.4) continue;
+    const dist = Math.hypot(to.x, to.z);
+    if (dist < bestD && (dist < 0.9 || to.normalize().dot(fwd) > 0.2)) { best = d; bestD = dist; }
+  }
+  return best;
+}
+function useDoor() { const d = nearestDoor(); if (d) d.open = !d.open; }
+
+/* ------------------------------------------------------------------
+   Day / night
+------------------------------------------------------------------ */
+let night = false;
+function applyTime() {
+  const sky = night ? NIGHT_SKY : DAY_SKY;
+  scene.background.copy(sky); scene.fog.color.copy(sky);
+  hemi.intensity = night ? 0.18 : 1.1;
+  hemi.color.set(night ? 0x6a7fb8 : 0xdfefff);
+  sun.intensity = night ? 0.25 : 2.6;
+  sun.color.set(night ? 0x9fb4ff : 0xfff1dc);
+  for (const l of roomLights) l.intensity = night ? 14 : 3;
+  porch.intensity = night ? 6 : 0;
+  mat.cloud.color.set(night ? 0x3a4260 : 0xffffff); mat.cloud.emissiveIntensity = night ? 0.02 : 0.45;
+  document.getElementById('btnNight').textContent = night ? '☀️' : '🌙';
+}
+applyTime();
+
+/* ------------------------------------------------------------------
+   Input: keyboard + mouse (pointer lock) + touch
+------------------------------------------------------------------ */
+const overlay = document.getElementById('overlay');
+const roomEl = document.getElementById('room'), hintEl = document.getElementById('hint');
+const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+if (isTouch) { document.body.classList.add('touch'); document.getElementById('goLabel').textContent = 'Tap to enter'; }
+let playing = false;
+
+function start() {
+  playing = true;
+  overlay.classList.add('hidden');
+  document.body.classList.add('playing');
+  if (!isTouch && renderer.domElement.requestPointerLock) {
+    try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  }
+}
+function pause() {
+  playing = false;
+  overlay.classList.remove('hidden');
+  document.body.classList.remove('playing');
+  for (const k in keys) keys[k] = false;
+}
+overlay.addEventListener('click', start);
+document.addEventListener('pointerlockchange', () => {
+  if (document.pointerLockElement !== renderer.domElement && playing && !isTouch) pause();
+});
+renderer.domElement.addEventListener('click', () => {
+  if (playing && !isTouch && document.pointerLockElement !== renderer.domElement) start();
+});
+document.addEventListener('mousemove', e => {
+  if (!playing || document.pointerLockElement !== renderer.domElement) return;
+  player.yaw -= e.movementX * 0.0022;
+  player.pitch -= e.movementY * 0.0022;
+  player.pitch = Math.max(-1.5, Math.min(1.5, player.pitch));
+});
+document.addEventListener('keydown', e => {
+  if (!playing) return;
+  keys[e.code] = true;
+  if (e.code === 'Space') { jump(); e.preventDefault(); }
+  if (e.code === 'KeyE' && !e.repeat) useDoor();
+  if (e.code === 'KeyL' && !e.repeat) { night = !night; applyTime(); }
+  if (e.code.startsWith('Arrow')) e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+// touch: joystick + look-drag + buttons
+const stick = document.getElementById('stick'), knob = document.getElementById('knob');
+let stickId = null, lookId = null, lookLast = null;
+stick.addEventListener('touchstart', e => { stickId = e.changedTouches[0].identifier; moveStick(e.changedTouches[0]); e.preventDefault(); }, { passive: false });
+function moveStick(t) {
+  const r = stick.getBoundingClientRect();
+  let dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
+  const max = r.width / 2, l = Math.hypot(dx, dy);
+  if (l > max) { dx *= max / l; dy *= max / l; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`;
+  touchMove.x = dx / max; touchMove.y = -dy / max;
+}
+renderer.domElement.addEventListener('touchstart', e => {
+  for (const t of e.changedTouches) if (lookId === null) { lookId = t.identifier; lookLast = { x: t.clientX, y: t.clientY }; }
+}, { passive: true });
+window.addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickId) moveStick(t);
+    else if (t.identifier === lookId && playing) {
+      player.yaw -= (t.clientX - lookLast.x) * 0.005;
+      player.pitch -= (t.clientY - lookLast.y) * 0.005;
+      player.pitch = Math.max(-1.5, Math.min(1.5, player.pitch));
+      lookLast = { x: t.clientX, y: t.clientY };
+    }
+  }
+  if (playing) e.preventDefault();
+}, { passive: false });
+window.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickId) { stickId = null; touchMove.x = touchMove.y = 0; knob.style.transform = ''; }
+    if (t.identifier === lookId) lookId = null;
+  }
+});
+window.addEventListener('touchcancel', () => { stickId = lookId = null; touchMove.x = touchMove.y = 0; knob.style.transform = ''; });
+const tap = (id, fn) => document.getElementById(id).addEventListener('touchstart', e => { fn(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+tap('btnUse', useDoor);
+tap('btnJump', jump);
+tap('btnNight', () => { night = !night; applyTime(); });
+tap('btnRun', () => { runToggle = !runToggle; document.getElementById('btnRun').classList.toggle('on', runToggle); });
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ------------------------------------------------------------------
+   Loop
+------------------------------------------------------------------ */
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (playing) update(dt); else { camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); camera.rotation.set(player.pitch, player.yaw, 0); }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+update(0);
+frame();
+
+// small hook for automated testing / debugging from the console
+window.__house = {
+  player, doors, keys, update,
+  start() { playing = true; overlay.classList.add('hidden'); document.body.classList.add('playing'); },
+  teleport(x, y, z, yaw = player.yaw, pitch = 0) { player.pos.set(x, y, z); player.yaw = yaw; player.pitch = pitch; player.vy = 0; player.onGround = true; update(0); },
+  setNight(v) { night = v; applyTime(); },
+  useDoor,
+};
+</script>
+</body>
+</html>

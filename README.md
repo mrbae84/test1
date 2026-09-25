@@ -55,3 +55,31 @@ picks its best or worst segment, and the dice are re-rolled until they match.
 
 Gambling carries real risk. This repository exists only to demonstrate UI and
 animation work — please do not treat it as a real product.
+
+---
+
+# 🏠 3D House Walkthrough
+
+`house.html` is a separate, self-contained page: a two-storey 3D house you can walk
+into and explore in first person. It uses [Three.js](https://threejs.org/) from the
+jsDelivr CDN (needs an internet connection); everything else — geometry, textures,
+furniture — is generated in code.
+
+Open `house.html` in a modern browser, click **Click to enter**, and walk up the path
+to the front door.
+
+| Control | Action |
+| --- | --- |
+| `W` `A` `S` `D` / arrow keys | Walk |
+| Mouse | Look around |
+| `Shift` | Run |
+| `Space` | Jump |
+| `E` | Open / close the door you are facing |
+| `L` | Switch between day and night |
+| `Esc` | Pause |
+
+On phones and tablets an on-screen joystick, look-drag area and buttons appear instead.
+
+**Rooms:** living room with fireplace, kitchen with island, dining room, study and
+bathroom downstairs; walkable stairs up to a master bedroom, kids' room, guest bedroom,
+playroom, second bathroom and a balcony. There is also a fenced garden with trees.
