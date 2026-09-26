@@ -1266,6 +1266,7 @@ tbody tr:last-child td{border-bottom:0}
                 <button class="chip" data-filter="bomb">💣 Bomb</button>
                 <button class="chip" data-filter="wheel">🎡 Vòng Quay</button>
                 <button class="chip" data-filter="dice">🎲 Dice</button>
+                <button class="chip" data-filter="withdraw">🏧 Rút tiền</button>
               </div>
               <div class="grow"></div>
               <button class="btn btn-ghost btn-sm" id="clearHistory">🗑 Xoá lịch sử</button>
@@ -2405,12 +2406,18 @@ function runWithdraw() {
         : ''
     };
 
+    const detail = 'Rút tiền: ' + fmtVnd(gross) + ' · ' +
+      WD_CHANNELS[wdChannel].icon + ' ' + WD_CHANNELS[wdChannel].name.replace(/\s*\(.*\)$/, '') +
+      ' · ' + rec.id;
+
     if (blocked) {
       addTx('WITHDRAWAL (SIMULATED)', 0, 'DEMO · TỪ CHỐI');
+      addHistory('withdraw', detail, 0, 'reject', 0);
       toast('Lệnh rút bị từ chối ⛔', 'Số dư không đổi.', 'lose');
     } else {
       credit(-gross);
       addTx('WITHDRAWAL (SIMULATED · NO REAL PAYOUT)', -gross, 'DEMO · THÀNH CÔNG');
+      addHistory('withdraw', detail, 0, 'done', -gross);
       toast('Rút thành công 🏧',
         fmt(net) + ' VND (mô phỏng — không có tiền thật nào được chuyển).', 'gold');
       console.info('[LuckyBomb demo] Simulated withdrawal only — no real payout was made.');
@@ -2442,11 +2449,13 @@ function renderWithdraws() {
 /* ======================== 13. HISTORY & STATS ======================== */
 
 let histFilter = 'all';
-const GAME_LABEL = { bomb: '💣 Bomb', wheel: '🎡 Vòng Quay', dice: '🎲 Dice' };
+const GAME_LABEL = { bomb: '💣 Bomb', wheel: '🎡 Vòng Quay', dice: '🎲 Dice', withdraw: '🏧 Rút tiền' };
 
 function resultPill(r) {
-  if (r === 'win')  return '<span class="pill pill-ok">THẮNG</span>';
-  if (r === 'push') return '<span class="pill pill-gold">HOÀ</span>';
+  if (r === 'win')    return '<span class="pill pill-ok">THẮNG</span>';
+  if (r === 'push')   return '<span class="pill pill-gold">HOÀ</span>';
+  if (r === 'done')   return '<span class="pill pill-ok">THÀNH CÔNG</span>';
+  if (r === 'reject') return '<span class="pill pill-warn">TỪ CHỐI</span>';
   return '<span class="pill pill-warn">THUA</span>';
 }
 
@@ -2465,7 +2474,7 @@ function renderHistory() {
       '<td class="tiny muted">' + timeLabel(h.t) + '</td>' +
       '<td>' + (GAME_LABEL[h.game] || h.game) + '</td>' +
       '<td class="tiny muted">' + h.detail + '</td>' +
-      '<td class="mono">' + fmt(h.bet) + '</td>' +
+      '<td class="mono">' + (h.bet ? fmt(h.bet) : '—') + '</td>' +
       '<td>' + resultPill(h.result) + '</td>' +
       '<td>' + deltaCell(h.delta) + '</td>' +
     '</tr>'
@@ -2477,7 +2486,7 @@ function renderHistory() {
     '<tr>' +
       '<td class="tiny muted">' + timeLabel(h.t) + '</td>' +
       '<td>' + (GAME_LABEL[h.game] || h.game) + '</td>' +
-      '<td class="mono">' + fmt(h.bet) + '</td>' +
+      '<td class="mono">' + (h.bet ? fmt(h.bet) : '—') + '</td>' +
       '<td>' + resultPill(h.result) + '</td>' +
       '<td>' + deltaCell(h.delta) + '</td>' +
     '</tr>'
@@ -2487,7 +2496,9 @@ function renderHistory() {
 
 function renderStats() {
   if (!user) return;
-  const h = user.history;
+  /* Withdrawals share the history list but are not rounds, so they stay out
+     of the play counts and the profit figure. */
+  const h = user.history.filter((x) => x.game !== 'withdraw');
   const plays = h.length;
   const wins = h.filter((x) => x.result === 'win').length;
   const losses = h.filter((x) => x.result === 'lose').length;
