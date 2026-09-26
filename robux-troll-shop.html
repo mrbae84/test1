@@ -1,484 +1,494 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ROBUX TROLL SHOP</title>
+<title>SHOP GAME VUI</title>
 <style>
   :root{
-    --bg:#120a24;
-    --bg2:#1d0f3d;
-    --panel:#241653;
-    --panel2:#2e1c66;
-    --ink:#f4ecff;
-    --muted:#b9a9e6;
-    --accent:#ff5fa2;
-    --accent2:#ffd23f;
-    --lime:#7cf88a;
-    --cyan:#54e0ff;
-    --danger:#ff4d6d;
-    --radius:18px;
-    --shadow:0 18px 50px rgba(0,0,0,.45);
-    font-synthesis:none;
+    --bg:#0d1020;
+    --bg2:#151a33;
+    --panel:#1b2140;
+    --panel2:#232b52;
+    --ink:#f2f5ff;
+    --muted:#9aa6d6;
+    --red:#e11d48;
+    --red2:#ff3b6b;
+    --gold:#ffd23f;
+    --green:#22c55e;
+    --cyan:#38bdf8;
+    --purple:#a855f7;
+    --radius:16px;
+    --shadow:0 14px 40px rgba(0,0,0,.5);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    font-family:"Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-family:"Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
     color:var(--ink);
     background:
-      radial-gradient(1200px 600px at 80% -10%, #3a1d7a 0%, transparent 60%),
-      radial-gradient(900px 500px at -10% 20%, #7a1d5a 0%, transparent 55%),
+      radial-gradient(900px 500px at 85% -5%, #3b1560 0%, transparent 55%),
+      radial-gradient(800px 500px at -10% 10%, #7a1030 0%, transparent 55%),
       linear-gradient(160deg,var(--bg),var(--bg2));
-    min-height:100vh;
-    overflow-x:hidden;
+    min-height:100vh;overflow-x:hidden;
   }
 
-  /* ---- top safety banner ---- */
-  .safety{
-    position:sticky;top:0;z-index:50;
-    background:repeating-linear-gradient(45deg,#ffd23f,#ffd23f 22px,#111 22px,#111 44px);
-    color:#111;
-    text-align:center;
-    font-weight:900;
-    letter-spacing:.5px;
-    padding:0;
-  }
-  .safety .inner{
-    background:rgba(17,17,17,.85);
-    color:#ffd23f;
-    margin:0 auto;
-    padding:10px 16px;
-    font-size:clamp(12px,2.6vw,15px);
-    text-transform:uppercase;
-  }
-  .safety .inner span{color:#fff}
+  /* safety banner */
+  .safety{position:sticky;top:0;z-index:60;
+    background:repeating-linear-gradient(45deg,var(--gold),var(--gold) 20px,#111 20px,#111 40px)}
+  .safety .inner{background:rgba(15,15,15,.9);color:var(--gold);text-align:center;
+    padding:9px 14px;font-weight:800;font-size:clamp(11px,2.6vw,14px);text-transform:uppercase;letter-spacing:.3px}
+  .safety .inner span{color:#fff;font-weight:600;text-transform:none}
 
-  .wrap{max-width:1080px;margin:0 auto;padding:16px}
+  /* top bar */
+  .topbar{background:linear-gradient(90deg,var(--red),#9f1239);box-shadow:var(--shadow)}
+  .topbar .row{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:12px;
+    padding:12px 16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .badge{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#ff9f1c);
+    display:grid;place-items:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,.35);transform:rotate(-4deg)}
+  .brand h1{margin:0;font-size:clamp(18px,4.4vw,26px);font-weight:900;letter-spacing:.5px;
+    text-shadow:1px 2px 0 rgba(0,0,0,.35)}
+  .brand small{display:block;font-size:11px;color:#ffe1e8;font-weight:600;letter-spacing:1px}
+  .top-tags{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .tag{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:999px;
+    padding:5px 11px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px}
 
-  header.hero{
-    text-align:center;
-    padding:30px 12px 12px;
-    position:relative;
-  }
-  .logo{
-    display:inline-flex;align-items:center;gap:14px;
-    padding:10px 20px;border-radius:999px;
-    background:linear-gradient(90deg,var(--accent),#a15bff);
-    box-shadow:var(--shadow);
-    transform:rotate(-1.2deg);
-  }
-  .logo .cube{
-    width:38px;height:38px;border-radius:9px;
-    background:linear-gradient(135deg,#fff,#ffd23f);
-    display:grid;place-items:center;font-size:22px;
-    animation:spin 6s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .logo h1{margin:0;font-size:clamp(22px,5vw,34px);letter-spacing:1px;
-    text-shadow:2px 2px 0 rgba(0,0,0,.35)}
-  .tagline{margin:14px auto 4px;max-width:640px;color:var(--muted);font-size:15px}
-  .disclaimer-pill{
-    display:inline-block;margin-top:10px;padding:6px 14px;border-radius:999px;
-    background:rgba(255,77,109,.18);border:1px dashed var(--danger);
-    color:#ffb3c1;font-size:13px;font-weight:700}
+  .wrap{max-width:1120px;margin:0 auto;padding:16px}
 
-  .balance{
-    margin:22px auto 0;max-width:520px;
-    background:linear-gradient(135deg,var(--panel2),var(--panel));
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:var(--radius);padding:16px 20px;
-    display:flex;align-items:center;justify-content:space-between;
-    box-shadow:var(--shadow)}
-  .balance .label{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:1px}
-  .balance .amount{font-size:clamp(24px,6vw,34px);font-weight:900;color:var(--accent2);
-    display:flex;align-items:center;gap:8px}
-  .coin{width:26px;height:26px;border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#fff6c2,#ffb700);
-    box-shadow:0 0 0 3px rgba(255,183,0,.35), inset -3px -3px 0 rgba(0,0,0,.15)}
+  /* wallet / hero */
+  .hero{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:720px){.hero{grid-template-columns:1fr}}
+  .banner{background:linear-gradient(135deg,#7c3aed,#db2777);border-radius:var(--radius);
+    padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .banner h2{margin:0 0 6px;font-size:clamp(20px,4.6vw,30px);text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+  .banner p{margin:0;color:#f3e8ff;font-size:14px;max-width:440px}
+  .banner .marq{margin-top:14px;background:rgba(0,0,0,.25);border-radius:10px;padding:8px 12px;
+    font-size:13px;color:var(--gold);font-weight:700;white-space:nowrap;overflow:hidden}
+  .banner .marq span{display:inline-block;animation:marq 14s linear infinite}
+  @keyframes marq{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+  .banner .float{position:absolute;right:-10px;bottom:-10px;font-size:120px;opacity:.15}
 
-  h2.section{
-    font-size:clamp(20px,4.5vw,28px);
-    margin:38px 0 6px;text-align:center;
-    text-shadow:2px 2px 0 rgba(0,0,0,.3)}
-  .section-sub{text-align:center;color:var(--muted);margin:0 0 18px;font-size:14px}
+  .wallet{background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+  .wallet .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+  .wallet .amount{font-size:clamp(24px,6vw,34px);font-weight:900;color:var(--gold);display:flex;align-items:center;gap:8px}
+  .gem{width:24px;height:24px;transform:rotate(45deg);border-radius:5px;
+    background:linear-gradient(135deg,#a5f3fc,#0ea5e9);box-shadow:0 0 12px rgba(56,189,248,.6)}
 
-  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  h2.section{font-size:clamp(19px,4.4vw,26px);margin:34px 0 4px;display:flex;align-items:center;gap:10px}
+  h2.section .bar{width:6px;height:26px;border-radius:3px;background:linear-gradient(var(--gold),var(--red))}
+  .section-sub{color:var(--muted);margin:0 0 16px;font-size:13.5px}
 
-  .card{
-    background:linear-gradient(160deg,var(--panel),var(--panel2));
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:var(--radius);padding:18px;
-    box-shadow:var(--shadow);
-    display:flex;flex-direction:column;gap:8px;
-    transition:transform .15s ease, box-shadow .15s ease;
-    position:relative;overflow:hidden}
-  .card:hover{transform:translateY(-4px) rotate(.3deg)}
-  .card .robux{font-size:26px;font-weight:900;color:var(--accent2);display:flex;align-items:center;gap:8px}
-  .card .desc{color:var(--muted);font-size:14px;min-height:20px}
-  .card .price{font-weight:800;color:var(--cyan);font-size:15px}
-  .ribbon{position:absolute;top:12px;right:-40px;transform:rotate(35deg);
-    background:var(--accent);color:#fff;font-size:11px;font-weight:800;
-    padding:4px 44px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 
-  .btn{
-    cursor:pointer;border:none;border-radius:12px;
-    padding:11px 16px;font-weight:800;font-family:inherit;font-size:14px;
-    background:linear-gradient(90deg,var(--accent),#a15bff);color:#fff;
-    box-shadow:0 6px 0 rgba(0,0,0,.25);transition:transform .08s, box-shadow .08s}
-  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
-  .btn.gold{background:linear-gradient(90deg,#ffd23f,#ff9f1c);color:#3a2400}
-  .btn.lime{background:linear-gradient(90deg,#7cf88a,#22c55e);color:#08320f}
-  .btn.ghost{background:rgba(255,255,255,.08);color:var(--ink);box-shadow:0 6px 0 rgba(0,0,0,.2)}
-  .btn.wide{width:100%}
+  .card{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:7px;
+    position:relative;overflow:hidden;transition:transform .15s, box-shadow .15s}
+  .card:hover{transform:translateY(-4px);box-shadow:0 20px 46px rgba(0,0,0,.55)}
+  .card .thumb{font-size:34px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+  .card .name{font-weight:800;font-size:15px;line-height:1.3}
+  .card .meta{color:var(--muted);font-size:12.5px;min-height:16px}
+  .card .price{font-weight:900;color:var(--gold);font-size:16px;margin-top:2px}
+  .card .old{color:#7d88b8;text-decoration:line-through;font-size:12px;font-weight:600;margin-left:6px}
+  .ribbon{position:absolute;top:12px;right:-38px;transform:rotate(35deg);background:var(--red);color:#fff;
+    font-size:10px;font-weight:800;padding:4px 42px;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+  .hot{background:linear-gradient(90deg,var(--gold),#ff9f1c);color:#3a2400}
+
+  .btn{cursor:pointer;border:none;border-radius:11px;padding:10px 14px;font-weight:800;font-family:inherit;
+    font-size:14px;background:linear-gradient(90deg,var(--red),var(--red2));color:#fff;
+    box-shadow:0 5px 0 rgba(0,0,0,.28);transition:transform .08s, box-shadow .08s}
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.28)}
+  .btn.gold{background:linear-gradient(90deg,var(--gold),#ff9f1c);color:#3a2400}
+  .btn.green{background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .btn.ghost{background:rgba(255,255,255,.08)}
+  .btn.wide{width:100%;margin-top:auto}
 
   /* payment methods */
-  .methods{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-  .method{
-    background:var(--panel);border:1px solid rgba(255,255,255,.08);
-    border-radius:var(--radius);padding:16px;text-align:center;
-    box-shadow:var(--shadow)}
-  .method .icon{font-size:34px;margin-bottom:6px}
-  .method h3{margin:6px 0 4px;font-size:16px}
-  .method p{margin:0;color:var(--muted);font-size:13px}
+  .methods{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .method{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);
+    padding:15px;text-align:center;box-shadow:var(--shadow)}
+  .method .ic{font-size:30px}
+  .method h3{margin:6px 0 3px;font-size:15px}
+  .method p{margin:0;color:var(--muted);font-size:12.5px}
 
-  /* fake QR */
-  .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
-  .qr{width:150px;height:150px;image-rendering:pixelated;border-radius:10px;
-    border:8px solid #fff;box-shadow:var(--shadow);background:#fff}
-  .qr-note{color:var(--muted);font-size:12px;max-width:220px;text-align:center}
+  .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .qr{width:128px;height:128px;image-rendering:pixelated;border-radius:10px;border:7px solid #fff;
+    box-shadow:var(--shadow);background:#fff}
 
-  /* fruits */
-  .fruit .robux{color:var(--lime)}
-  .egg-icon{font-size:30px}
+  /* lucky wheel */
+  .luck{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;
+    background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+  @media(max-width:560px){.luck{grid-template-columns:1fr;justify-items:center;text-align:center}}
+  .wheel-box{position:relative;width:200px;height:200px}
+  .wheel{width:200px;height:200px;border-radius:50%;border:8px solid var(--gold);
+    box-shadow:0 0 0 4px #1b2140, var(--shadow);transition:transform 4s cubic-bezier(.15,.9,.25,1)}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+    border-left:14px solid transparent;border-right:14px solid transparent;border-top:26px solid var(--red);
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));z-index:2}
+  .luck h3{margin:0 0 6px;font-size:20px}
+  .luck p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
 
   /* inventory */
-  .inventory{
-    margin:26px auto 0;max-width:640px;
-    background:rgba(0,0,0,.25);border:1px dashed rgba(255,255,255,.18);
-    border-radius:var(--radius);padding:16px;text-align:center}
-  .inventory h3{margin:0 0 10px}
-  .inv-slots{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:56px}
-  .inv-slot{width:52px;height:52px;border-radius:12px;background:var(--panel2);
-    display:grid;place-items:center;font-size:26px;border:1px solid rgba(255,255,255,.1);
-    animation:pop .4s ease}
+  .inv{margin-top:22px;background:rgba(0,0,0,.25);border:1px dashed rgba(255,255,255,.18);
+    border-radius:var(--radius);padding:16px}
+  .inv h3{margin:0 0 10px;font-size:16px}
+  .inv-slots{display:flex;flex-wrap:wrap;gap:10px;min-height:52px}
+  .inv-slot{min-width:52px;height:52px;padding:0 8px;border-radius:12px;background:var(--panel2);
+    display:flex;align-items:center;gap:6px;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,.1);
+    animation:pop .35s ease}
+  .inv-slot small{font-size:11px;color:var(--muted)}
   @keyframes pop{0%{transform:scale(.2);opacity:0}100%{transform:scale(1);opacity:1}}
 
+  /* trust row */
+  .trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:22px}
+  .trust .t{background:var(--panel);border:1px solid rgba(255,255,255,.07);border-radius:14px;
+    padding:14px;text-align:center}
+  .trust .t .n{font-size:22px;font-weight:900;color:var(--gold)}
+  .trust .t .l{font-size:12px;color:var(--muted);margin-top:2px}
+
   /* modal */
-  .overlay{position:fixed;inset:0;background:rgba(5,2,15,.78);backdrop-filter:blur(3px);
-    display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .overlay{position:fixed;inset:0;background:rgba(4,6,16,.8);backdrop-filter:blur(3px);display:none;
+    align-items:center;justify-content:center;z-index:100;padding:16px}
   .overlay.show{display:flex}
-  .modal{
-    background:linear-gradient(160deg,var(--panel2),var(--panel));
-    border:1px solid rgba(255,255,255,.12);border-radius:22px;
-    max-width:460px;width:100%;padding:24px;box-shadow:var(--shadow);
-    animation:pop .25s ease;position:relative}
-  .modal h2{margin:0 0 4px;font-size:22px}
-  .modal .sim-tag{display:inline-block;background:var(--danger);color:#fff;
-    font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;margin-bottom:12px}
-  .field{margin:10px 0}
+  .modal{background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid rgba(255,255,255,.12);
+    border-radius:20px;max-width:440px;width:100%;padding:22px;box-shadow:var(--shadow);
+    animation:pop .22s ease;position:relative}
+  .modal h2{margin:0 0 4px;font-size:20px}
+  .sim-tag{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:800;
+    padding:3px 10px;border-radius:999px;margin-bottom:10px}
+  .field{margin:9px 0}
   .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
   .field input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
     background:rgba(0,0,0,.25);color:var(--ink);font-family:inherit;font-size:14px}
-  .field input::placeholder{color:#8a7bb8}
-  .fine{font-size:11px;color:var(--muted);margin-top:10px;text-align:center}
-  .modal-close{position:absolute;top:12px;right:14px;cursor:pointer;font-size:20px;
-    color:var(--muted);background:none;border:none}
+  .field input::placeholder{color:#7d88b8}
+  .fine{font-size:11px;color:var(--muted);margin-top:10px;text-align:center;line-height:1.5}
+  .modal-close{position:absolute;top:10px;right:12px;cursor:pointer;font-size:20px;color:var(--muted);
+    background:none;border:none}
 
-  /* troll result */
-  .troll{
-    position:fixed;inset:0;z-index:120;display:none;
-    align-items:center;justify-content:center;text-align:center;padding:20px;
-    background:radial-gradient(circle at center,#3a0d5a,#0a0418)}
-  .troll.show{display:flex;flex-direction:column;gap:14px}
-  .troll .big{
-    font-size:clamp(30px,9vw,72px);font-weight:900;line-height:1.05;
-    background:linear-gradient(90deg,#ffd23f,#ff5fa2,#54e0ff);
+  /* result */
+  .result{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;
+    text-align:center;padding:20px;background:radial-gradient(circle at center,#4a0d2c,#0a0418)}
+  .result.show{display:flex;flex-direction:column;gap:14px}
+  .result .big{font-size:clamp(26px,8vw,60px);font-weight:900;line-height:1.06;
+    background:linear-gradient(90deg,var(--gold),var(--red2),var(--cyan));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 4px 30px rgba(255,95,162,.4);
-    animation:wobble 1.2s ease infinite}
-  @keyframes wobble{0%,100%{transform:rotate(-2deg) scale(1)}50%{transform:rotate(2deg) scale(1.04)}}
-  .troll .txid{color:var(--muted);font-size:13px;font-family:monospace}
-  .troll .sub{color:#ffb3c1;max-width:520px;font-size:15px}
+    text-shadow:0 4px 30px rgba(255,95,162,.35);animation:wob 1.2s ease infinite}
+  @keyframes wob{0%,100%{transform:rotate(-2deg) scale(1)}50%{transform:rotate(2deg) scale(1.04)}}
+  .result .sub{color:#ffd6e2;max-width:520px;font-size:15px}
+  .result .txid{color:var(--muted);font-size:12.5px;font-family:monospace}
 
-  footer{color:var(--muted);text-align:center;padding:40px 16px 60px;font-size:13px;line-height:1.6}
-  footer strong{color:var(--accent2)}
+  footer{color:var(--muted);text-align:center;padding:36px 16px 60px;font-size:12.5px;line-height:1.7}
+  footer strong{color:var(--gold)}
 
-  /* confetti */
-  .confetti{position:fixed;top:-10px;width:10px;height:16px;z-index:130;
-    pointer-events:none;border-radius:2px;opacity:.95}
-
-  .toast{
-    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);
-    background:#111;color:#fff;border:1px solid rgba(255,255,255,.18);
-    padding:12px 18px;border-radius:12px;font-size:14px;z-index:140;
-    box-shadow:var(--shadow);transition:transform .3s ease;max-width:90vw;text-align:center}
+  .confetti{position:fixed;top:-10px;width:10px;height:16px;z-index:130;pointer-events:none;border-radius:2px;opacity:.95}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(120%);background:#111;color:#fff;
+    border:1px solid rgba(255,255,255,.18);padding:12px 18px;border-radius:12px;font-size:14px;z-index:140;
+    box-shadow:var(--shadow);transition:transform .3s;max-width:90vw;text-align:center}
   .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
 <div class="safety">
-  <div class="inner">⚠️ PARODY / FAKE — NO REAL PURCHASES ⚠️ &nbsp; <span>This whole page is a joke. Nothing is charged, stored, or sent anywhere.</span></div>
+  <div class="inner">⚠️ WEBSITE DEMO / GIẢ LẬP — KHÔNG BÁN HÀNG THẬT ⚠️ &nbsp;
+    <span>Đây là trang vui để minh hoạ. Không thu tiền, không lưu thông tin, không gửi dữ liệu đi đâu cả.</span></div>
+</div>
+
+<div class="topbar">
+  <div class="row">
+    <div class="brand">
+      <div class="badge">🎮</div>
+      <div>
+        <h1>SHOP GAME VUI</h1>
+        <small>NẠP GAME • ACC GAME • DỊCH VỤ • UY TÍN (GIẢ LẬP)</small>
+      </div>
+    </div>
+    <div class="top-tags">
+      <span class="tag">⚡ Tự động 24/7</span>
+      <span class="tag">🛡️ Bảo hành trọn đời*</span>
+      <span class="tag">💬 Hỗ trợ nhiệt tình</span>
+    </div>
+  </div>
 </div>
 
 <div class="wrap">
 
-  <header class="hero">
-    <div class="logo">
-      <div class="cube">🧊</div>
-      <h1>ROBUX TROLL SHOP</h1>
+  <div class="hero">
+    <div class="banner">
+      <div class="float">🕹️</div>
+      <h2>NẠP GAME GIÁ RẺ NHẤT VŨ TRỤ ẢO</h2>
+      <p>Nạp kim cương, mua acc VIP, thuê cày rank — nhanh như chớp, rẻ như cho, và tuyệt đối không có thật.</p>
+      <div class="marq"><span>🔥 KM sốc: nạp 10.000đ tặng 0 kim cương • 🏆 Top 1 uy tín do chính shop tự phong • 🎁 Đăng nhập nhận ngay 1 quả trứng ảo • ⚠️ Mọi thứ ở đây đều là giả lập</span></div>
     </div>
-    <p class="tagline">The premier destination for currency that does not exist, purchased with money that also does not exist.</p>
-    <div class="disclaimer-pill">100% fictional • not affiliated with any real game or company</div>
-
-    <div class="balance">
+    <div class="wallet">
       <div>
-        <div class="label">Your Fake Balance</div>
-        <div class="amount"><span class="coin"></span><span id="balance">0</span> ROBUX-ish</div>
+        <div class="label">Số dư ví (ảo)</div>
+        <div class="amount"><span class="gem"></span><span id="balance">0</span> Kim Cương Ảo</div>
       </div>
-      <button class="btn gold" onclick="addBalance()">Claim Free Nothing</button>
+      <div class="label" id="wallet-vnd">Ví tiền: 0 VNĐ (Tiền Cổ Tích)</div>
+      <button class="btn gold" onclick="napFree()">🎁 Nhận quà miễn phí</button>
     </div>
-  </header>
+  </div>
 
-  <!-- PACKAGES -->
-  <h2 class="section">💸 Buy ROBUX-ish 💸</h2>
-  <p class="section-sub">Totally made-up currency. Prices in Monopoly dollars.</p>
-  <div class="grid" id="packages"></div>
+  <!-- NAP KIM CUONG -->
+  <h2 class="section"><span class="bar"></span>💎 Nạp Kim Cương</h2>
+  <p class="section-sub">Kim Cương Ảo — loại tiền trong game không tồn tại. Thanh toán bằng Tiền Cổ Tích.</p>
+  <div class="grid" id="topups"></div>
 
-  <!-- PAYMENT METHODS -->
-  <h2 class="section">🪙 Payment Methods</h2>
-  <p class="section-sub">All equally accepted, because none of them work.</p>
+  <!-- ACC GAME -->
+  <h2 class="section"><span class="bar"></span>👾 Tài Khoản Game</h2>
+  <p class="section-sub">Tên game là hư cấu 100%, không liên quan game thật nào. Mua xong nhận... một dòng chữ.</p>
+  <div class="grid" id="accounts"></div>
+
+  <!-- DICH VU -->
+  <h2 class="section"><span class="bar"></span>🛠️ Dịch Vụ Cày Thuê</h2>
+  <p class="section-sub">Đội ngũ "chiến thần" ảo cày hộ bạn. Kết quả: không đổi gì cả, vì game không có thật.</p>
+  <div class="grid" id="services"></div>
+
+  <!-- THANH TOAN -->
+  <h2 class="section"><span class="bar"></span>💳 Phương Thức Thanh Toán</h2>
+  <p class="section-sub">Tất cả đều được chấp nhận như nhau, vì chẳng cái nào hoạt động.</p>
   <div class="methods">
-    <div class="method"><div class="icon">💳</div><h3>Imaginary Credit Card</h3><p>16 digits of pure fiction.</p></div>
-    <div class="method"><div class="icon">🎩</div><h3>Monopoly Money</h3><p>Passes GO, collects $200, buys 0 Robux.</p></div>
-    <div class="method"><div class="icon">🤝</div><h3>"Trust Me Bro" Wallet</h3><p>Balance: infinite. Reliability: zero.</p></div>
+    <div class="method"><div class="ic">📱</div><h3>Ví MoMoMo</h3><p>Chuyển tiền cho... không ai cả.</p></div>
+    <div class="method"><div class="ic">🏦</div><h3>Bank Ảo Online</h3><p>Số tài khoản: 000 GIẢ LẬP 000.</p></div>
+    <div class="method"><div class="ic">🎟️</div><h3>Thẻ Cào Vietteo</h3><p>Nhập mã: chắc chắn sai.</p></div>
     <div class="method">
       <div class="qr-wrap">
-        <div class="icon">📷</div>
-        <h3>Fake QR Code</h3>
-        <svg class="qr" viewBox="0 0 21 21" id="qr" role="img" aria-label="Non-functional decorative QR code"></svg>
-        <p class="qr-note">Scanning this leads absolutely nowhere. It's just CSS-flavored squares.</p>
+        <div class="ic">📷</div>
+        <h3>Quét Mã QR</h3>
+        <svg class="qr" viewBox="0 0 21 21" id="qr" role="img" aria-label="Mã QR trang trí, không dẫn đến đâu"></svg>
+        <p style="max-width:180px">Quét cái này không ra gì đâu. Chỉ là ô vuông vẽ bằng SVG.</p>
       </div>
     </div>
   </div>
 
-  <!-- FRUITS -->
-  <h2 class="section">🍌 Definitely-Not-Blox Fruits 🍞</h2>
-  <p class="section-sub">Original parody items. Any resemblance to real game fruit is a coincidence and also a lie.</p>
-  <div class="grid" id="fruits"></div>
-
-  <!-- STEAL AN EGG -->
-  <h2 class="section">🥚 The Egg Heist 🥚</h2>
-  <p class="section-sub">A victimless crime, because the egg is imaginary.</p>
-  <div style="text-align:center">
-    <button class="btn lime" style="font-size:18px;padding:14px 26px" onclick="stealEgg()">🥚 STEAL AN EGG 🥚</button>
+  <!-- VONG QUAY -->
+  <h2 class="section"><span class="bar"></span>🎡 Vòng Quay May Mắn</h2>
+  <p class="section-sub">Quay trúng gì cũng chỉ là chữ. Nhưng vui.</p>
+  <div class="luck">
+    <div class="wheel-box">
+      <div class="pointer"></div>
+      <div class="wheel" id="wheel"></div>
+    </div>
+    <div>
+      <h3>Quay là trúng (chữ)!</h3>
+      <p>Miễn phí, quay bao nhiêu lần cũng được. Phần thưởng bay vào túi đồ ảo của bạn.</p>
+      <button class="btn wide" style="max-width:220px" onclick="spinWheel()">🎯 QUAY NGAY</button>
+    </div>
   </div>
 
-  <div class="inventory">
-    <h3>🎒 Your Fictional Inventory</h3>
-    <div class="inv-slots" id="inv"><span style="color:var(--muted)">Empty. Tragically.</span></div>
+  <!-- TUI DO -->
+  <div class="inv">
+    <h3>🎒 Túi Đồ Ảo Của Bạn</h3>
+    <div class="inv-slots" id="inv"><span style="color:var(--muted)">Trống trơn. Buồn ghê.</span></div>
+  </div>
+
+  <!-- TRUST -->
+  <div class="trust">
+    <div class="t"><div class="n">99.999+</div><div class="l">Đơn ảo đã "hoàn thành"</div></div>
+    <div class="t"><div class="n">4.9⭐</div><div class="l">Đánh giá tự cho</div></div>
+    <div class="t"><div class="n">0đ</div><div class="l">Tiền thật đã thu</div></div>
+    <div class="t"><div class="n">24/7</div><div class="l">Bot rảnh rỗi trực</div></div>
   </div>
 
 </div>
 
-<!-- CHECKOUT MODAL -->
+<!-- MODAL -->
 <div class="overlay" id="overlay">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
-    <span class="sim-tag">PURCHASE SIMULATION</span>
-    <h2 id="modal-title">Checkout</h2>
+    <button class="modal-close" onclick="closeModal()" aria-label="Đóng">✕</button>
+    <span class="sim-tag">GIAO DỊCH GIẢ LẬP</span>
+    <h2>Thanh Toán (Giả)</h2>
     <p style="color:var(--muted);margin:0 0 8px" id="modal-item">—</p>
 
-    <div class="field">
-      <label>Imaginary Card Number</label>
-      <input type="text" placeholder="0000 0000 0000 FAKE" autocomplete="off" inputmode="none" />
-    </div>
-    <div class="field">
-      <label>Made-Up Expiry</label>
-      <input type="text" placeholder="99 / 9999" autocomplete="off" />
-    </div>
-    <div class="field">
-      <label>Fictional Secret Code</label>
-      <input type="text" placeholder="LOL" autocomplete="off" />
-    </div>
+    <div class="field"><label>Tên nhân vật (bịa cũng được)</label>
+      <input type="text" placeholder="VD: TượngĐàiHuyềnThoại" autocomplete="off" /></div>
+    <div class="field"><label>Số thẻ tưởng tượng</label>
+      <input type="text" placeholder="0000 0000 0000 GIẢ" autocomplete="off" inputmode="none" /></div>
+    <div class="field"><label>Mã bí mật hư cấu</label>
+      <input type="text" placeholder="123" autocomplete="off" /></div>
 
-    <button class="btn wide" style="margin-top:12px;font-size:16px" onclick="confirmPurchase()">Complete Fake Purchase</button>
-    <p class="fine">🔒 Nothing you type here is read, stored, sent, or remembered. These fields do literally nothing.</p>
+    <button class="btn wide" style="margin-top:12px;font-size:16px" onclick="confirmBuy()">Xác Nhận Mua (Giả)</button>
+    <p class="fine">🔒 Những gì bạn gõ ở đây KHÔNG được đọc, lưu, hay gửi đi đâu. Các ô này không làm gì cả.</p>
   </div>
 </div>
 
-<!-- TROLL RESULT -->
-<div class="troll" id="troll">
-  <div class="big">LOL, YOU GOT TROLLED</div>
-  <div class="sub">THIS NEVER CHARGED ANYTHING. Your imaginary card is safe. So is your real one, which we never touched.</div>
-  <div class="txid" id="txid">TX-ID: —</div>
-  <button class="btn gold" onclick="closeTroll()" style="margin-top:8px">Get Trolled Again</button>
+<!-- RESULT -->
+<div class="result" id="result">
+  <div class="big" id="result-big">HÊ HÊ, BỊ LỪA RỒI 😂</div>
+  <div class="sub" id="result-sub">GIAO DỊCH NÀY KHÔNG HỀ TRỪ TIỀN. Thẻ tưởng tượng của bạn an toàn. Thẻ thật cũng vậy, vì shop không đụng tới.</div>
+  <div class="txid" id="txid">Mã GD: —</div>
+  <button class="btn gold" onclick="closeResult()" style="margin-top:6px">Chơi lại phát nữa</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <footer>
-  <strong>ROBUX TROLL SHOP</strong> — a parody / joke page.<br />
-  No real money, currency, accounts, or Robux are involved. Not affiliated with, endorsed by, or connected to Roblox Corporation or any real company or game.<br />
-  No data is collected, transmitted, stored, or tracked. No cookies, no analytics, no backend, no external requests. Everything happens locally in your browser and vanishes on refresh.
+  <strong>SHOP GAME VUI</strong> — trang web vui / giả lập.<br />
+  Không có tiền thật, kim cương thật, tài khoản game thật hay dịch vụ thật nào ở đây. Không liên kết với bất kỳ game, ví điện tử, ngân hàng hay công ty có thật nào — mọi tên gọi đều là hư cấu.<br />
+  Không thu thập, truyền tải, lưu trữ hay theo dõi bất kỳ dữ liệu nào. Không cookie, không backend, không gọi mạng. Mọi thứ chạy trong trình duyệt và biến mất khi bạn tải lại trang. (*"Bảo hành trọn đời" cũng là giả nốt.)
 </footer>
 
 <script>
-  /* ---------- state ---------- */
-  let balance = 0;
-  const fmt = n => n.toLocaleString('en-US');
-
-  function setBalance(n){ balance = n; document.getElementById('balance').textContent = fmt(balance); }
-  function addBalance(){
-    const gain = Math.floor(Math.random()*3); // usually 0 — it's free nothing
-    setBalance(balance + gain);
-    toast(gain === 0 ? 'You received 0 ROBUX-ish. As promised.' : `Wow, ${gain} whole ROBUX-ish. Don't spend it all.`);
-    confettiBurst(12);
+  let gems = 0, vnd = 0;
+  const fmt = n => n.toLocaleString('vi-VN');
+  function render(){
+    document.getElementById('balance').textContent = fmt(gems);
+    document.getElementById('wallet-vnd').textContent = 'Ví tiền: ' + fmt(vnd) + ' VNĐ (Tiền Cổ Tích)';
+  }
+  function napFree(){
+    const g = Math.floor(Math.random()*3);
+    gems += g; render();
+    toast(g===0 ? 'Bạn nhận được 0 kim cương. Đúng như cam kết 😌' : 'Ồ, được tận '+g+' kim cương. Đừng tiêu hết nhé!');
+    confetti(12);
   }
 
-  /* ---------- packages ---------- */
-  const packages = [
-    {amt:'80', desc:'Probably 80', price:'§4.99 Monopoly dollars', ribbon:''},
-    {amt:'4,500', desc:'Definitely Not Real', price:'§39.99 Monopoly dollars', ribbon:'HOT'},
-    {amt:'999,999', desc:'CEO Mistake', price:'§0.01 (pricing bug)', ribbon:'OOPS'},
-    {amt:'12', desc:'The Sad Little Bundle', price:'§1.00 in buttons', ribbon:''},
-    {amt:'42', desc:'The Answer To Everything', price:'§ a firm handshake', ribbon:''},
-    {amt:'∞', desc:'Infinity (rounding error)', price:'§ your undying trust', ribbon:'META'},
+  /* topups */
+  const topups = [
+    {ic:'💎', name:'80 Kim Cương', meta:'Gói "chắc là 80"', price:'4.999đ Cổ Tích', old:'9.999đ', rib:''},
+    {ic:'💎', name:'560 Kim Cương', meta:'Gói phổ biến nhất (shop tự nghĩ)', price:'49.999đ Cổ Tích', old:'99.999đ', rib:'HOT'},
+    {ic:'💎', name:'4.500 Kim Cương', meta:'Chắc chắn không có thật', price:'399.999đ Cổ Tích', old:'', rib:''},
+    {ic:'👑', name:'999.999 Kim Cương', meta:'Sếp bấm nhầm giá', price:'1đ Cổ Tích', old:'∞đ', rib:'LỖI'},
   ];
-  const pkgEl = document.getElementById('packages');
-  packages.forEach(p=>{
-    const c = document.createElement('div');
-    c.className='card';
-    c.innerHTML = `
-      ${p.ribbon?`<div class="ribbon">${p.ribbon}</div>`:''}
-      <div class="robux"><span class="coin"></span>${p.amt}</div>
-      <div class="desc">${p.desc}</div>
-      <div class="price">${p.price}</div>
-      <button class="btn wide" style="margin-top:6px">Fake Buy</button>`;
-    c.querySelector('button').onclick = ()=>openModal(`${p.amt} ROBUX-ish — ${p.desc}`, ()=>{
-      const parsed = parseInt(p.amt.replace(/[^0-9]/g,''),10);
-      if(!isNaN(parsed)) setBalance(balance + parsed);
+  fill('topups', topups, it=>{ const n=parseInt(it.name.replace(/[^0-9]/g,''),10); if(!isNaN(n)) gems+=n; render(); });
+
+  /* accounts */
+  const accs = [
+    {ic:'🎲', name:'ACC Random Rác', meta:'Tướng: 0. Trang phục: mơ đi.', price:'20.000đ Cổ Tích', old:'', rib:''},
+    {ic:'💠', name:'ACC VIP Ảo Diệu', meta:'Full skin tưởng tượng', price:'500.000đ Cổ Tích', old:'999.999đ', rib:'HOT'},
+    {ic:'⚔️', name:'ACC "Thách Đấu" Giả', meta:'Rank cao nhất trong trí tưởng tượng', price:'1.234.567đ Cổ Tích', old:'', rib:''},
+    {ic:'🥚', name:'ACC Trứng Bí Ẩn', meta:'Mở ra có thể là... bụi', price:'8.888đ Cổ Tích', old:'', rib:'MỚI'},
+  ];
+  fill('accounts', accs, it=>invAdd(it.ic, it.name));
+
+  /* services */
+  const svcs = [
+    {ic:'🏋️', name:'Cày Thuê Lên Rank', meta:'Từ Đồng lên... vẫn Đồng', price:'150.000đ Cổ Tích', old:'', rib:''},
+    {ic:'📈', name:'Cày Level Thần Tốc', meta:'Nhanh tới mức không nhúc nhích', price:'99.000đ Cổ Tích', old:'', rib:'HOT'},
+    {ic:'🔓', name:'Mở Khoá Nhân Vật', meta:'Nhân vật cũng hư cấu nốt', price:'59.000đ Cổ Tích', old:'', rib:''},
+    {ic:'🎯', name:'Nhiệm Vụ Hộ', meta:'Làm hộ nhiệm vụ không tồn tại', price:'29.000đ Cổ Tích', old:'', rib:''},
+  ];
+  fill('services', svcs, it=>invAdd(it.ic, it.name));
+
+  function fill(id, items, reward){
+    const el = document.getElementById(id);
+    items.forEach(it=>{
+      const c = document.createElement('div');
+      c.className='card';
+      c.innerHTML = `${it.rib?`<div class="ribbon ${it.rib==='HOT'||it.rib==='LỖI'?'hot':''}">${it.rib}</div>`:''}
+        <div class="thumb">${it.ic}</div>
+        <div class="name">${it.name}</div>
+        <div class="meta">${it.meta}</div>
+        <div class="price">${it.price}${it.old?`<span class="old">${it.old}</span>`:''}</div>
+        <button class="btn wide">Mua ngay (giả)</button>`;
+      c.querySelector('button').onclick = ()=>openModal(it.name, ()=>reward(it));
+      el.appendChild(c);
     });
-    pkgEl.appendChild(c);
-  });
+  }
 
-  /* ---------- fruits ---------- */
-  const fruits = [
-    {emoji:'🍌', name:'Permanent "Banana Banana"', desc:'Twice the banana. No known powers.'},
-    {emoji:'🍞', name:'Permanent "Toaster Toaster"', desc:'Turns you into warm bread. Permanently. Sorry.'},
-    {emoji:'🥚', name:'Mystery Egg', desc:'Could hatch anything. Probably lint.'},
-    {emoji:'🥚', name:'Suspicious Egg', desc:'It is watching you. Do not trust the egg.'},
-  ];
-  const fruitEl = document.getElementById('fruits');
-  fruits.forEach(f=>{
-    const c=document.createElement('div');
-    c.className='card fruit';
-    c.innerHTML=`
-      <div class="robux"><span class="egg-icon">${f.emoji}</span></div>
-      <div class="robux" style="font-size:18px">${f.name}</div>
-      <div class="desc">${f.desc}</div>
-      <button class="btn wide lime" style="margin-top:6px">Fake Claim</button>`;
-    c.querySelector('button').onclick=()=>openModal(f.name, ()=>addToInventory(f.emoji));
-    fruitEl.appendChild(c);
-  });
-
-  /* ---------- inventory + egg heist ---------- */
+  /* inventory */
   const inv = document.getElementById('inv');
-  let invStarted=false;
-  function addToInventory(emoji){
+  let invStarted = false;
+  function invAdd(ic, label){
     if(!invStarted){ inv.innerHTML=''; invStarted=true; }
-    const slot=document.createElement('div');
-    slot.className='inv-slot';
-    slot.textContent=emoji;
-    inv.appendChild(slot);
-  }
-  function stealEgg(){
-    addToInventory('🥚');
-    confettiBurst(20);
-    toast('EGG ACQUIRED — unfortunately this is just HTML.');
+    const s = document.createElement('div');
+    s.className='inv-slot';
+    s.innerHTML = `${ic}<small>${label.length>14?label.slice(0,13)+'…':label}</small>`;
+    inv.appendChild(s);
   }
 
-  /* ---------- modal ---------- */
-  const overlay=document.getElementById('overlay');
-  let pendingReward=null;
-  function openModal(itemName, reward){
-    document.getElementById('modal-item').textContent = 'Item: ' + itemName;
-    document.getElementById('modal-title').textContent = 'Fake Checkout';
-    pendingReward = reward || null;
+  /* lucky wheel */
+  const prizes = ['0đ','Trứng ảo 🥚','1 Kim Cương','Cục bụi','Lời cảm ơn','Vé hụt','Skin tàng hình','Rank Đồng'];
+  const wheelColors = ['#e11d48','#f59e0b','#22c55e','#38bdf8','#a855f7','#ec4899','#eab308','#14b8a6'];
+  (function buildWheel(){
+    const w = document.getElementById('wheel');
+    const seg = 360/prizes.length;
+    const stops = prizes.map((_,i)=>`${wheelColors[i%wheelColors.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
+    w.style.background = `conic-gradient(${stops})`;
+  })();
+  let spinning=false, rot=0;
+  function spinWheel(){
+    if(spinning) return; spinning=true;
+    const idx = Math.floor(Math.random()*prizes.length);
+    const seg = 360/prizes.length;
+    rot += 360*5 + (360 - (idx*seg + seg/2));
+    const w = document.getElementById('wheel');
+    w.style.transform = `rotate(${rot}deg)`;
+    setTimeout(()=>{
+      spinning=false;
+      const p = prizes[idx];
+      toast('🎉 Bạn quay trúng: ' + p + ' (là chữ thôi nhé)');
+      invAdd('🎁', p);
+      confetti(30);
+    }, 4100);
+  }
+
+  /* modal */
+  const overlay = document.getElementById('overlay');
+  let pending=null;
+  function openModal(item, reward){
+    document.getElementById('modal-item').textContent = 'Sản phẩm: ' + item;
+    pending = reward || null;
     overlay.classList.add('show');
   }
   function closeModal(){ overlay.classList.remove('show'); }
   overlay.addEventListener('click', e=>{ if(e.target===overlay) closeModal(); });
 
-  const errors = [
-    'Error 404: Wallet not found (you never had one).',
-    'Error 0: Everything is fine, we just like alarming numbers.',
-    'Error 🥚: The egg refused this transaction.',
-    'Error 999999: Too much imaginary money detected.',
-  ];
-  function confirmPurchase(){
+  const bigs = ['HÊ HÊ, BỊ LỪA RỒI 😂','ĐÙA TÍ THÔI 🤣','KHÔNG TRỪ ĐỒNG NÀO ĐÂU 😎','BÌNH TĨNH, GIẢ LẬP MÀ 🫢'];
+  const errs = ['Lỗi 404: Không tìm thấy ví (vì bạn chưa từng có).',
+    'Lỗi 0: Mọi thứ ổn, shop chỉ thích hiện số cho ghê.',
+    'Lỗi 🥚: Quả trứng từ chối giao dịch này.',
+    'Lỗi 999999: Phát hiện quá nhiều tiền tưởng tượng.'];
+  function confirmBuy(){
     closeModal();
-    if(typeof pendingReward==='function'){ try{ pendingReward(); }catch(e){} }
-    const txid = 'TX-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random()*9999).toString().padStart(4,'0');
-    document.getElementById('txid').textContent = 'TX-ID: ' + txid + '  •  ' + errors[Math.floor(Math.random()*errors.length)];
-    document.getElementById('troll').classList.add('show');
-    confettiBurst(80);
+    if(typeof pending==='function'){ try{ pending(); }catch(e){} }
+    const txid = 'GD-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random()*9999).toString().padStart(4,'0');
+    document.getElementById('result-big').textContent = bigs[Math.floor(Math.random()*bigs.length)];
+    document.getElementById('txid').textContent = 'Mã GD: ' + txid + '  •  ' + errs[Math.floor(Math.random()*errs.length)];
+    document.getElementById('result').classList.add('show');
+    confetti(80);
   }
-  function closeTroll(){ document.getElementById('troll').classList.remove('show'); }
+  function closeResult(){ document.getElementById('result').classList.remove('show'); }
 
-  /* ---------- confetti ---------- */
-  const colors=['#ff5fa2','#ffd23f','#7cf88a','#54e0ff','#a15bff','#fff'];
-  function confettiBurst(count){
+  /* confetti */
+  const colors=['#e11d48','#ffd23f','#22c55e','#38bdf8','#a855f7','#fff'];
+  function confetti(count){
     for(let i=0;i<count;i++){
-      const el=document.createElement('div');
-      el.className='confetti';
+      const el=document.createElement('div'); el.className='confetti';
       el.style.left=Math.random()*100+'vw';
       el.style.background=colors[Math.floor(Math.random()*colors.length)];
       el.style.transform='rotate('+Math.random()*360+'deg)';
       document.body.appendChild(el);
       const fall=2000+Math.random()*1500;
-      el.animate([
-        {transform:`translateY(-20px) rotate(0deg)`,opacity:1},
-        {transform:`translateY(${window.innerHeight+40}px) rotate(${720+Math.random()*360}deg)`,opacity:.9}
-      ],{duration:fall,easing:'cubic-bezier(.3,.6,.7,1)'});
+      el.animate([{transform:'translateY(-20px) rotate(0)',opacity:1},
+        {transform:`translateY(${innerHeight+40}px) rotate(${720+Math.random()*360}deg)`,opacity:.9}],
+        {duration:fall,easing:'cubic-bezier(.3,.6,.7,1)'});
       setTimeout(()=>el.remove(),fall);
     }
   }
 
-  /* ---------- toast ---------- */
-  let toastTimer=null;
+  /* toast */
+  let tt=null;
   function toast(msg){
     const t=document.getElementById('toast');
     t.textContent=msg; t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+    clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),2800);
   }
 
-  /* ---------- decorative "QR" (deterministic pattern, encodes nothing) ---------- */
-  (function buildQR(){
-    const svg=document.getElementById('qr');
-    const N=21;
-    const rects=[];
-    // pseudo-random but fixed pattern; purely decorative, no data
-    let seed=1337;
-    const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
-    for(let y=0;y<N;y++){
-      for(let x=0;x<N;x++){
-        if(rnd()>0.5) rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="#111"/>`);
-      }
-    }
-    // three finder-pattern squares so it "reads" as a QR at a glance
-    function finder(ox,oy){
-      return `<rect x="${ox}" y="${oy}" width="7" height="7" fill="#111"/>
-              <rect x="${ox+1}" y="${oy+1}" width="5" height="5" fill="#fff"/>
-              <rect x="${ox+2}" y="${oy+2}" width="3" height="3" fill="#111"/>`;
-    }
-    svg.innerHTML =
-      `<rect x="0" y="0" width="${N}" height="${N}" fill="#fff"/>` +
-      rects.join('') +
-      finder(0,0) + finder(N-7,0) + finder(0,N-7);
+  /* decorative QR (encodes nothing) */
+  (function qr(){
+    const svg=document.getElementById('qr'); const N=21; const r=[]; let s=2024;
+    const rnd=()=>{ s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff; };
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++) if(rnd()>0.5) r.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="#111"/>`);
+    const f=(ox,oy)=>`<rect x="${ox}" y="${oy}" width="7" height="7" fill="#111"/>
+      <rect x="${ox+1}" y="${oy+1}" width="5" height="5" fill="#fff"/>
+      <rect x="${ox+2}" y="${oy+2}" width="3" height="3" fill="#111"/>`;
+    svg.innerHTML = `<rect width="${N}" height="${N}" fill="#fff"/>` + r.join('') + f(0,0)+f(N-7,0)+f(0,N-7);
   })();
+
+  render();
 </script>
 </body>
 </html>
