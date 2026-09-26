@@ -30,7 +30,7 @@ claims that a payment was made.
 | **Vòng Quay May Mắn** | 12-segment CSS wheel (0x, 0.5x, 1x, 1.5x, 2x, 3x, 5x) with an animated spin. |
 | **Dice Roll** | Three dice — `THREE WHITE` (triple, 10x), `ODD` (1.8x), `EVEN` (1.8x). |
 | **Nạp tiền** | Preset and custom amounts, fake QR graphic, simulated top-up, demo transaction log. |
-| **Rút tiền** | Staged "processing" sequence ending in a receipt; generated read-only destination account, fictional 2% fee. |
+| **Rút tiền** | Staged "processing" sequence ending in a receipt; three fictional payout channels (LuckyBank, BomPay, QuickCard), generated read-only destination account, 2% fee. |
 | **History / Account** | Per-game filters, virtual win/loss stats, account management. |
 
 ## Command chat

@@ -519,12 +519,11 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 .receipt .rrow span{color:var(--muted);white-space:nowrap}
 .receipt .rrow b{font-weight:800;text-align:right;overflow-wrap:break-word}
 .receipt .rstamp{
-  margin:14px auto 0;width:max-content;max-width:100%;
-  transform:rotate(-4deg);
-  padding:7px 14px;border-radius:9px;text-align:center;
-  font-weight:900;font-size:11.5px;letter-spacing:1px;
-  background:rgba(255,45,85,.92);color:#fff;border:3px solid rgba(255,255,255,.9);
-  box-shadow:0 8px 22px rgba(0,0,0,.5);
+  margin:13px auto 0;width:max-content;max-width:100%;
+  padding:4px 12px;border-radius:999px;text-align:center;
+  font-weight:900;font-size:9.5px;letter-spacing:.8px;
+  background:rgba(255,45,85,.16);color:#ffb4c4;
+  border:1px solid rgba(255,45,85,.5);
 }
 .wd-summary{display:flex;flex-direction:column;gap:2px;padding:13px 15px;border-radius:14px;background:rgba(0,0,0,.34);border:1px solid var(--stroke)}
 .wd-summary .wr{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:5px 0;font-size:13px}
@@ -1160,15 +1159,7 @@ tbody tr:last-child td{border-bottom:0}
         <div class="stack">
           <div class="row">
             <div class="section-title"><span class="dot"></span> 🏧 Rút tiền</div>
-            <span class="pill pill-warn">SIMULATED — NO REAL MONEY</span>
-          </div>
-
-          <div class="warn-box">
-            <b>DEMO WITHDRAWAL — KHÔNG CÓ TIỀN THẬT NÀO ĐƯỢC CHUYỂN ĐI.</b><br />
-            Lệnh rút ở đây chỉ trừ <b>số dư ảo</b> trong trình duyệt của bạn rồi in ra một biên lai hư cấu.
-            Không có ngân hàng, không có ví điện tử, không có cổng thanh toán nào được liên hệ.<br />
-            Trang này <b>không hỏi và không lưu</b> thông tin tài khoản thật —
-            số tài khoản bên dưới là dãy số demo tự sinh, <b>đừng nhập số tài khoản thật của bạn ở bất kỳ đâu</b>.
+            <span class="pill pill-warn">DEMO</span>
           </div>
 
           <div class="dep-grid">
@@ -1189,33 +1180,32 @@ tbody tr:last-child td{border-bottom:0}
 
               <div class="wd-summary">
                 <div class="wr"><span>Số tiền rút</span><b class="mono" id="wdGross">100,000</b></div>
-                <div class="wr"><span>Phí hư cấu (2%, tối thiểu 5,000)</span><b class="mono red" id="wdFee">-5,000</b></div>
+                <div class="wr"><span>Phí giao dịch (2%, tối thiểu 5,000)</span><b class="mono red" id="wdFee">-5,000</b></div>
                 <div class="wr total"><span>Thực nhận</span><b class="mono" id="wdNet">95,000</b></div>
               </div>
 
               <div class="field">
-                <label>Kênh nhận (hư cấu) / Payout channel</label>
+                <label>Kênh nhận</label>
                 <div class="channel-grid" id="wdChannels">
-                  <button class="channel active" data-ch="bank"><span class="che">🏦</span><span class="chn">HƯ CẤU Bank</span></button>
-                  <button class="channel" data-ch="wallet"><span class="che">📱</span><span class="chn">DemoPay Ví</span></button>
-                  <button class="channel" data-ch="card"><span class="che">🎟️</span><span class="chn">Thẻ cào DEMO</span></button>
+                  <button class="channel active" data-ch="bank"><span class="che">🏦</span><span class="chn">LuckyBank</span></button>
+                  <button class="channel" data-ch="wallet"><span class="che">📱</span><span class="chn">BomPay Ví</span></button>
+                  <button class="channel" data-ch="card"><span class="che">🎟️</span><span class="chn">QuickCard</span></button>
                 </div>
               </div>
 
               <div class="field">
-                <label>Tài khoản nhận (dãy số demo tự sinh)</label>
-                <div class="readonly-field"><span id="wdAccount">DEMO 0000-0000-00</span><span class="tag">KHÔNG PHẢI STK THẬT</span></div>
+                <label>Tài khoản nhận</label>
+                <div class="readonly-field"><span id="wdAccount">DEMO 0000-0000-00</span><span class="tag">DEMO</span></div>
               </div>
 
               <div class="field">
-                <label for="wdName">Tên người nhận (tuỳ chọn, hư cấu)</label>
+                <label for="wdName">Tên người nhận (tuỳ chọn)</label>
                 <input id="wdName" class="input" type="text" maxlength="32" placeholder="VD: NGUYEN VAN DEMO" />
               </div>
 
-              <button class="btn btn-primary btn-block btn-lg wrap" id="wdSubmit">🏧 RÚT TIỀN ẢO</button>
+              <button class="btn btn-primary btn-block btn-lg wrap" id="wdSubmit">🏧 RÚT TIỀN</button>
               <div class="tiny center" style="color:#ffb4c4">
-                Tối thiểu 100,000 · tối đa 5,000,000 mỗi lệnh (giới hạn hư cấu).
-                Không có khoản tiền thật nào rời khỏi bất kỳ tài khoản nào.
+                Tối thiểu 100,000 · tối đa 5,000,000 mỗi lệnh.
               </div>
             </div>
 
@@ -1231,7 +1221,7 @@ tbody tr:last-child td{border-bottom:0}
 
               <hr class="sep" />
 
-              <div class="section-title" style="font-size:15px"><span class="dot"></span> Lệnh rút gần đây (demo)</div>
+              <div class="section-title" style="font-size:15px"><span class="dot"></span> Lệnh rút gần đây</div>
               <div class="table-wrap">
                 <table>
                   <thead><tr><th>Mã lệnh</th><th>Thời gian</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
@@ -1295,7 +1285,7 @@ tbody tr:last-child td{border-bottom:0}
               <div class="acct-av" id="acctAv">U</div>
               <div class="grow">
                 <h3 id="acctName">player</h3>
-                <div class="small muted">Tài khoản demo hư cấu · lưu trong localStorage</div>
+                <div class="small muted">Tài khoản lưu trong trình duyệt này</div>
               </div>
               <div class="row" style="gap:6px">
                 <span class="pill pill-ok" id="acctMode">CHẾ ĐỘ: BÌNH THƯỜNG</span>
@@ -2292,9 +2282,9 @@ const WD_MAX = 5000000;
 const WD_FEE_PCT = 0.02;
 const WD_FEE_MIN = 5000;
 const WD_CHANNELS = {
-  bank:   { icon: '🏦', name: 'HƯ CẤU Bank (ngân hàng hư cấu)' },
-  wallet: { icon: '📱', name: 'DemoPay Ví (ví hư cấu)' },
-  card:   { icon: '🎟️', name: 'Thẻ cào DEMO (hư cấu)' }
+  bank:   { icon: '🏦', name: 'LuckyBank' },
+  wallet: { icon: '📱', name: 'BomPay Ví' },
+  card:   { icon: '🎟️', name: 'QuickCard' }
 };
 
 let wdAmount  = WD_MIN;
@@ -2366,11 +2356,11 @@ function wdReceipt(o) {
       '<div class="rrow"><span>Người nhận</span><b>' + o.name + '</b></div>' +
       '<div class="rrow"><span>Tài khoản</span><b class="mono">' + o.account + '</b></div>' +
       '<div class="rrow"><span>Số tiền rút</span><b class="mono">' + fmt(o.gross) + '</b></div>' +
-      '<div class="rrow"><span>Phí hư cấu</span><b class="mono red">-' + fmt(o.fee) + '</b></div>' +
+      '<div class="rrow"><span>Phí giao dịch</span><b class="mono red">-' + fmt(o.fee) + '</b></div>' +
       '<div class="rrow"><span>Thực nhận</span><b class="mono ' + (o.ok ? 'green' : 'muted') + '">' +
         (o.ok ? fmt(o.net) + ' VND' : '0 — không có gì được chuyển') + '</b></div>' +
       (o.reason ? '<div class="rrow"><span>Lý do</span><b>' + o.reason + '</b></div>' : '') +
-      '<div class="rstamp">DEMO — KHÔNG CÓ TIỀN THẬT / NO REAL MONEY</div>' +
+      '<div class="rstamp">BIÊN LAI DEMO — KHÔNG CÓ TIỀN THẬT</div>' +
     '</div>';
 }
 
@@ -2418,8 +2408,7 @@ function runWithdraw() {
       credit(-gross);
       addTx('WITHDRAWAL (SIMULATED · NO REAL PAYOUT)', -gross, 'DEMO · THÀNH CÔNG');
       addHistory('withdraw', detail, 0, 'done', -gross);
-      toast('Rút thành công 🏧',
-        fmt(net) + ' VND (mô phỏng — không có tiền thật nào được chuyển).', 'gold');
+      toast('Rút thành công 🏧', fmt(net) + ' VND · biên lai demo', 'gold');
       console.info('[LuckyBomb demo] Simulated withdrawal only — no real payout was made.');
     }
 
