@@ -63,3 +63,8 @@ animation work — please do not treat it as a real product.
 [`unrot/index.html`](unrot/index.html) is a separate single-file screen-time habit app
 (earn Brain Coins by doing real-life things, spend them on scroll time). See
 [`unrot/README.md`](unrot/README.md).
+
+- **Installable web app:** served over https it installs to the home screen and works offline.
+  `.github/workflows/pages.yml` publishes it to GitHub Pages at `/test1/unrot/`.
+- **iPhone app:** [`ios/`](ios/README.md) wraps the same page in a native app. Its Screen Time
+  build really blocks the apps you pick until you spend Brain Coins.

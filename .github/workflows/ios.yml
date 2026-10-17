@@ -1,0 +1,73 @@
+# Builds both iOS projects (free + Screen Time) for the simulator, without code signing,
+# so every push proves the Swift code and the XcodeGen specs still compile.
+name: iOS
+
+on:
+  push:
+    paths:
+      - "ios/**"
+      - "unrot/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - "unrot/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    # bash -eo pipefail: any failing command (also inside a pipe) fails the step.
+    shell: bash
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Unrot
+            spec: project.yml
+            project: Unrot.xcodeproj
+          - name: UnrotScreenTime
+            spec: project.screentime.yml
+            project: UnrotScreenTime.xcodeproj
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Show tool versions
+        run: |
+          xcodebuild -version
+          xcodegen --version
+
+      - name: Generate ${{ matrix.project }}
+        working-directory: ios
+        run: xcodegen generate --spec ${{ matrix.spec }}
+
+      - name: Build ${{ matrix.project }} (iOS Simulator, unsigned)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ${{ matrix.project }} \
+            -scheme Unrot \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            -derivedDataPath build/${{ matrix.name }} \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build-${{ matrix.name }}.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.name }}
+          path: ios/build-${{ matrix.name }}.log
+          if-no-files-found: ignore

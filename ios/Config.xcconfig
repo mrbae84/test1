@@ -1,0 +1,25 @@
+// Config.xcconfig
+// Settings shared by every target of BOTH Xcode projects (Unrot and UnrotScreenTime).
+// This is the only file you need to edit before building on your own iPhone.
+//
+// 1) BUNDLE_PREFIX
+//    A reverse-domain prefix that is unique to you, for example com.janedoe or io.github.janedoe.
+//    Only letters, digits, hyphens and dots. Apple refuses bundle IDs that someone else already
+//    registered, so do NOT keep "com.yourname".
+//    It builds every identifier:
+//      app                 $(BUNDLE_PREFIX).unrot
+//      extensions          $(BUNDLE_PREFIX).unrot.monitor / .unrot.shield / .unrot.shieldaction
+//      App Group           group.$(BUNDLE_PREFIX).unrot   (Screen Time build only)
+BUNDLE_PREFIX = com.yourname
+
+// 2) DEVELOPMENT_TEAM
+//    Your 10-character Apple Team ID, e.g. AB12CD34EF.
+//    You can leave this empty and pick your team in Xcode (target > Signing & Capabilities > Team),
+//    but Xcode stores that choice inside the generated .xcodeproj, and running `xcodegen` again
+//    throws it away. Putting the ID here makes it permanent.
+//    Where to find it: Xcode > Settings > Accounts > select your Apple ID > the team row shows the
+//    ID, or https://developer.apple.com/account > Membership details (paid accounts).
+DEVELOPMENT_TEAM =
+
+// Automatic signing lets Xcode create provisioning profiles for you. Leave it as is.
+CODE_SIGN_STYLE = Automatic

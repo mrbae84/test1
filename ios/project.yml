@@ -1,0 +1,24 @@
+# project.yml - FREE build  ->  Unrot.xcodeproj
+#
+#   cd ios && xcodegen generate            (project.yml is XcodeGen's default spec)
+#
+# Works with a free Apple ID ("Personal Team"). It has no Family Controls entitlement, no App
+# Group and no extensions, because Apple refuses those capabilities for free signing.
+# The web app runs exactly as in a browser: scroll time is on the honour system.
+#
+# Everything shared with the Screen Time build lives in project.common.yml.
+# For real app blocking use project.screentime.yml instead (see README.md).
+
+name: Unrot
+
+include:
+  - project.common.yml
+
+settings:
+  base:
+    UNROT_SCREEN_TIME: "NO"
+
+targets:
+  Unrot:
+    info:
+      path: Generated/Unrot/Info.plist
