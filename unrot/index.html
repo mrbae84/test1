@@ -272,7 +272,7 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .empty{padding:22px 8px;text-align:center;color:#9a9a9a;font-size:16px}
 
 /* ---------------- stats ---------------- */
-.reclaim{padding:calc(var(--safe-t) + 48px) 24px 0;text-align:center;font-size:25px;line-height:1.2;font-weight:500;letter-spacing:-.3px}
+.reclaim{padding:calc(var(--safe-t) + 58px) 24px 0;text-align:center;font-size:25px;line-height:1.2;font-weight:500;letter-spacing:-.3px}
 .reclaim strong{color:#5bb833;font-weight:800}
 .bank{position:relative;margin-top:46px;aspect-ratio:343/240;border-radius:22px;overflow:hidden;color:#fff;box-shadow:0 10px 30px rgba(40,120,60,.18)}
 .bank .scene{position:absolute;inset:0;width:100%;height:100%}
@@ -348,7 +348,7 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .plot .grid{position:absolute;left:0;right:0;border-top:1px solid #f1f1f1}
 .plot .colw{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;height:100%;padding-bottom:16px}
 .plot .b{border-radius:var(--br,10px);background:var(--c);min-height:4px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
-.plot .b.z{background:var(--p);height:2px !important;border-radius:1px}
+.plot .b.z{background:var(--p);height:2px !important;min-height:0;border-radius:1px}
 .plot .lb{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:9.5px;line-height:12px;color:#9a9a9a;white-space:nowrap}
 .plot .axis{position:relative;width:22px;font-size:9.5px;color:#9a9a9a}
 .plot .axis span{position:absolute;right:0;transform:translateY(50%)}
@@ -360,7 +360,7 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 /* ---------------- challenges ---------------- */
 .ch-title{padding:calc(var(--safe-t) + 58px) 24px 0;font-size:35px;font-weight:800;letter-spacing:-.5px}
 .ch-label{margin:29px 24px 16px;font-size:14px;font-weight:600;color:#7a7a7a;letter-spacing:.4px}
-.ch-card{position:relative;display:block;width:calc(100% - 48px);margin:0 24px;aspect-ratio:326/180;border-radius:26px;overflow:hidden;color:#fff;text-align:left}
+.ch-card{position:relative;display:block;width:calc(100% - 48px);margin:0 24px;height:180px;border-radius:26px;overflow:hidden;color:#fff;text-align:left}
 .ch-card .scene{position:absolute;inset:0;width:100%;height:100%}
 .ch-card .tx{position:absolute;left:20px;bottom:21px}
 .ch-card b{display:block;font-size:24px;font-weight:800;line-height:1.2;letter-spacing:-.3px}
@@ -400,9 +400,9 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .srow.danger b{color:#ff3b30}
 .spill{display:inline-flex;align-items:center;height:25px;padding:0 11px;border-radius:8px;background:#e4f3db;color:#58b40f;font-size:14px;font-weight:600;white-space:nowrap}
 .apps-stack{display:flex;align-items:center}
-.apps-stack i{width:24px;height:24px;border-radius:7px;margin-left:-8px;border:1.5px solid #fff;display:grid;place-items:center;color:#fff;font-style:normal;font-size:12px;font-weight:700}
+.apps-stack i{width:21px;height:21px;border-radius:6px;margin-left:-7px;border:1px solid #fff;display:grid;place-items:center;color:#fff;font-style:normal;font-size:12px;font-weight:700}
 .apps-stack i:first-child{margin-left:0}
-.apps-stack span{margin-left:4px;font-size:16px;font-weight:600}
+.apps-stack span{margin-left:3px;font-size:15px;font-weight:700}
 .note{position:relative;display:flex;gap:10px;align-items:center;margin:0;padding:13px 18px 10px;color:#8a8a8a;font-size:13px;line-height:1.2;background:#fff}
 .note::before{content:"";position:absolute;left:72px;right:0;top:0;border-top:.5px solid #d9d9d9}
 .note svg{width:16px;height:16px;margin:0 0 0 6px;color:#9a9a9a;flex:none}
@@ -444,6 +444,7 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .x-btn svg path{stroke-width:2.2}
 .sheet>.x-btn{position:sticky;top:calc(var(--safe-t) + 48px);right:auto;flex:none;align-self:flex-end;margin:calc(var(--safe-t) + 48px) 20px calc(-84px - var(--safe-t)) 0}
 .cat-head{position:relative;flex:none;height:270px;background:var(--hb)}
+.cat-head,.act-head{overflow-x:clip}
 .cat-head.compact{height:139px}
 .curve{position:absolute;left:-11%;right:-11%;bottom:-1px;height:40px;border-radius:50% 50% 0 0/100% 100% 0 0;background:#fff}
 .cat-mascot{position:absolute;left:50%;bottom:-28px;width:164px;transform:translateX(-50%);z-index:2}
@@ -479,7 +480,8 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .opt .pill{font-style:normal;flex:none}
 .opt span .coin{width:13px;height:13px}
 .opt .chev{display:block;width:16px;height:16px;color:#8a8a8a;flex:none}
-.act-foot{position:sticky;bottom:0;padding:12px 16px max(44px, calc(var(--safe-b) + 10px));background:linear-gradient(rgba(255,255,255,0),#fff 22%)}
+@media (max-width:360px){.opt{gap:10px;padding:12px}.opt .pill{padding:0 10px}}
+.act-foot{position:sticky;bottom:0;padding:24px 16px max(44px, calc(var(--safe-b) + 10px));background:linear-gradient(rgba(255,255,255,0),#fff 20px)}
 .link-green{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-bottom:8px;color:#58b22d;font-size:16px;font-weight:600}
 .link-green svg{width:18px;height:18px}
 
@@ -494,7 +496,7 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .q-chat .bm{width:82px;flex:none}
 .q-chat .bm svg{width:100%;height:auto}
 .bubble{flex:0 1 auto;max-width:180px;padding:16px;border:1.5px solid #d4d4d4;border-radius:32px;font-size:18.5px;font-weight:500;line-height:1.3;letter-spacing:-.2px}
-.q-art{position:relative;margin:60px 24px 0;aspect-ratio:1/1;border-radius:52px;overflow:hidden;background:#7fd99a}
+.q-art{position:relative;flex:none;align-self:center;width:min(calc(100% - 48px), calc(100dvh - 400px - var(--safe-t) - var(--safe-b)));margin:60px 0 0;aspect-ratio:1/1;border-radius:52px;overflow:hidden;background:#7fd99a}
 .q-art .scene{position:absolute;inset:0;width:100%;height:100%}
 .q-art .em{position:absolute;inset:0;display:grid;place-items:center;font-size:120px;line-height:1}
 .q-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -644,6 +646,13 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
   .quick span{font-size:14px}
   .row-main b{font-size:18px}
   .reclaim{font-size:23px}
+  .life small{font-size:12px;letter-spacing:.1px}
+  .life em{font-size:12.5px}
+  .timeline{padding-right:14px}
+  .tl{gap:11px;padding-left:28px}
+  .tl .meta{font-size:13.5px;gap:4px}
+  .tl .meta svg{width:16px;height:16px}
+  .tl .meta .tm{flex:0 1 auto;min-width:34px}
   .tiles{grid-template-columns:1.6fr 1fr}
 }
 @media (prefers-reduced-motion:reduce){
@@ -931,9 +940,11 @@ function brain(v = 'wave') {
       brows = `<path d="M66 70c7-4 15-5 22-2M114 68c7-3 15-2 22 2" fill="none" stroke="${N}" stroke-width="4.2" stroke-linecap="round"/>`;
       break;
     case 'sit':
-      back = limb('M88 150c-8 16-18 26-30 32', 13) + `<ellipse cx="52" cy="184" rx="13" ry="8" fill="${L}"/>` +
-        limb('M114 152c2 14 8 26 18 34', 13) + `<ellipse cx="138" cy="188" rx="13" ry="8" fill="${L}"/>` +
-        limb('M56 132c-10 10-16 22-16 32') + hand(40, 166) + limb('M148 126c18 0 26-12 28-28') + hand(178, 92, 10);
+      back = limb('M80 156c-22 8-46 12-68 12', 15) + `<ellipse cx="8" cy="166" rx="10" ry="13" fill="${L}"/>` +
+        limb('M44 136c-16-4-30-16-38-34') + hand(2, 100, 11) +
+        `<circle cx="-7" cy="90" r="5" fill="${L}"/><circle cx="2" cy="86" r="5" fill="${L}"/><circle cx="11" cy="90" r="5" fill="${L}"/>` +
+        limb('M148 146c8 12 12 24 12 36', 14) + hand(160, 184, 10);
+      front = limb('M104 152c6 14 4 26-6 38', 16) + `<ellipse cx="96" cy="194" rx="12" ry="8" fill="${L}"/>`;
       break;
     default: // wave
       back = legs + limb('M56 132c-10 10-14 22-12 32') + hand(44, 166) + limb('M146 146c22 6 40 6 48-22') + hand(196, 116, 10) +
@@ -981,11 +992,11 @@ function bankScene() {
 }
 
 function challengeScene() {
-  return `<svg class="scene" viewBox="0 0 343 190" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  return `<svg class="scene" viewBox="0 0 343 190" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <rect width="343" height="190" fill="url(#g-ch)"/>
-    <path d="M0 120Q170 104 343 116V190H0z" fill="#5db431"/>
-    <path d="M0 152q90-10 200 0t143-6V190H0z" fill="#56ab2c"/>
-    <ellipse cx="62" cy="196" rx="34" ry="20" fill="#3f8f22"/>
+    <path d="M0 137Q170 130 343 129V190H0z" fill="#5db431"/>
+    <path d="M0 166q90-8 200 0t143-5V190H0z" fill="#56ab2c"/>
+    <path d="M40 161h24a12 11.5 0 0 1-24 0z" fill="#3f8f22"/>
     <path d="M302 160v-26" stroke="#5aa832" stroke-width="3.5" stroke-linecap="round"/>
     <path d="M302 140c-2-10-10-14-18-12 2 9 9 13 18 12z" fill="#8fd14f"/>
     <path d="M302 134c2-11 11-16 20-13-2 10-11 15-20 13z" fill="#8fd14f"/>
@@ -1199,7 +1210,9 @@ function pushLayer(s) {
   if (s.bd) { s.bd.style.zIndex = z; document.body.appendChild(s.bd); }
   s.el.style.zIndex = z + 1;
   s.el.tabIndex = -1;
-  s.ret = document.activeElement;
+  const r = document.activeElement;
+  s.ret = r;
+  s.retSel = r && r.dataset && r.dataset.act ? `[data-act="${CSS.escape(r.dataset.act)}"]` + (r.dataset.id ? `[data-id="${CSS.escape(r.dataset.id)}"]` : '') : null;
   document.body.appendChild(s.el);
   stack.push(s);
   drawSheet(s);
@@ -1252,7 +1265,9 @@ function closeSheet(s = topSheet()) {
   setTimeout(() => { s.el.remove(); if (s.bd) s.bd.remove(); }, 400);
   if (!stack.length) document.body.classList.remove('locked');
   const t = topSheet();
-  const back = s.ret && s.ret.isConnected && !s.ret.closest('[inert]') ? s.ret : t ? t.el : null;
+  let back = s.ret && s.ret.isConnected && !s.ret.closest('[inert]') ? s.ret : null;
+  if (!back && s.retSel) { const n = (t ? t.el : $('#tab-' + UI.tab)).querySelector(s.retSel); if (n && !n.closest('[inert]')) back = n; }
+  if (!back && t) back = t.el;
   if (back) back.focus({ preventScroll: true });
 }
 const sheetOf = el => stack.find(s => s.el.contains(el));
@@ -1287,7 +1302,7 @@ function confirmPanel({ title, text, ok = 'OK', danger = false }, cb) {
   confirmCb = cb;
   openPanel({
     render: () => `<div class="grab"></div><h3>${title}</h3><p class="psub">${text}</p>
-      <button class="btn-green sm" data-act="confirmOk" ${danger ? 'style="background:#ff3b30;box-shadow:0 5px 0 #c4241b"' : ''}>${ok}</button>
+      <button class="btn-green sm" data-act="confirmOk" ${danger ? 'style="background:#ff3b30;border-color:#c4241b;box-shadow:0 5px 0 #c4241b"' : ''}>${ok}</button>
       <button class="btn-ghost" data-act="close">Cancel</button>`,
   });
 }
@@ -1739,7 +1754,7 @@ function runSheet() {
   if (!act) return;
   const a = ACTS[act.id];
   openSheet({
-    live: false, noEsc: true, cls: 'run-sheet',
+    live: false, noEsc: true, cls: 'run-sheet', key: act.start,
     render: () => `
       <div class="run">
         <div class="ringbox"><svg viewBox="0 0 250 250"><circle cx="125" cy="125" r="110" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="14"/>
@@ -2163,6 +2178,7 @@ const ACTIONS = {
     try { await navigator.clipboard.writeText(text); toast('Message copied. Paste it to your friends!'); } catch (_) { toast(text); }
   },
   startUnrot: id => {
+    if (S.active) return;
     S.active = { id, start: Date.now(), dur: S.durations[id] || 20 };
     save();
     closeSheet();
@@ -2225,7 +2241,7 @@ const ACTIONS = {
 
   // scrolling
   buyScroll: m => {
-    if (buyOpen()) return;
+    if (buyOpen() || S.unlock && Date.now() < S.unlock.start + S.unlock.dur * MIN) return;
     m = Number(m);
     const cost = m * DIFFICULTY[S.difficulty].rate;
     if (S.coins < cost) { toast('Not enough Brain Coins. Go unrot first! 🌱'); return; }
@@ -2349,7 +2365,12 @@ addEventListener('storage', e => {
     if (!d || d.v !== 1 || !Array.isArray(d.log)) return;
     S = Object.assign(blank(), d);
     ver++;
-    if (!S.active) { const r = stack.find(s => s.cls === 'run-sheet'); if (r) closeSheet(r); }
+    const run = stack.find(s => s.cls === 'run-sheet'), un = stack.find(s => s.cls === 'unlock-sheet');
+    if (run && (!S.active || run.key !== S.active.start)) closeSheet(run);
+    if (S.active && !stack.some(s => s.cls === 'run-sheet' && !s.closed)) { for (const x of stack.slice()) closeSheet(x); runSheet(); }
+    const unlocked = S.unlock && Date.now() < S.unlock.start + S.unlock.dur * MIN;
+    if (un && !S.unlock) closeSheet(un);
+    if (unlocked && !un && !S.active) { for (const x of stack.slice()) closeSheet(x); unlockSheet(); }
     refresh();
   } catch (_) { /* ignore malformed writes */ }
 });
@@ -2365,7 +2386,7 @@ function tick() {
   if (k !== lastDay) { lastDay = k; ver++; refresh(); return; }
   if (ticks % 20 === 0) {
     const bed = $('#bed-card');
-    if (bed && UI.tab === 'home') bed.outerHTML = bedCard();
+    if (bed && UI.tab === 'home') keepFocus($('#tab-home'), () => { bed.outerHTML = bedCard(); });
     const sig = Object.keys(S.cool).map(coolLabel).join('|');
     for (const s of stack) if (s.coolTick && !s.closed && s.coolSig !== sig) { s.coolSig = sig; drawSheet(s); }
   }
