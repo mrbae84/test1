@@ -6,14 +6,35 @@
 <meta name="theme-color" content="#3fa9ee" />
 <title>unrot</title>
 <meta name="description" content="Earn Brain Coins by doing real-life things, spend them on scroll time." />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" href="icons/favicon-64.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="unrot" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <style>
 /* ============================================================
    unrot — screen-time habit app (single-file web version)
    Everything is stored in this browser's localStorage.
    ============================================================ */
+
+/* Bricolage Grotesque (variable wght + opsz), bundled so it works offline. SIL OFL, see fonts/OFL.txt */
+@font-face{
+  font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-stretch:100%;font-display:swap;
+  src:url('fonts/bricolage-vietnamese.woff2') format('woff2');
+  unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face{
+  font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-stretch:100%;font-display:swap;
+  src:url('fonts/bricolage-latin-ext.woff2') format('woff2');
+  unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face{
+  font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-stretch:100%;font-display:swap;
+  src:url('fonts/bricolage-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root{
   --green:#61b832;
@@ -567,6 +588,11 @@ button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-sh
 .field-time{font-size:28px;text-align:center;height:70px}
 .panel .btn-green{margin-top:18px}
 .panel .btn-ghost{margin-top:10px}
+.p-mascot{width:112px;margin:4px auto 14px}
+.p-mascot svg{width:100%;height:auto;overflow:visible}
+.panel .choice .ic{font-size:24px;line-height:1}
+.panel .choice small{display:block;margin-top:2px;font-size:14px;font-weight:500;color:#8a8a8a}
+.panel .choice .chev{width:18px;height:18px;margin-left:auto;color:#9b9b9b;flex:none}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
 .cal-grid .wd{font-size:13px;color:#9a9a9a;font-weight:600;padding-bottom:4px}
 .cal-grid button{position:relative;aspect-ratio:1;border-radius:12px;font-size:15px;font-weight:600;background:#f6f6f6}
@@ -857,6 +883,47 @@ function niceMax(v) {
 }
 
 /* ================================================================
+   native bridge: only present inside the iOS app (see ios/README.md)
+   ================================================================ */
+const NATIVE = window.__unrotNative || {};
+const SCREEN_TIME = ['unavailable', 'notDetermined', 'denied', 'approved'];
+const natInt = n => (Number.isFinite(Number(n)) && Number(n) > 0 ? Math.floor(Number(n)) : 0);
+const natTime = t => (Number.isFinite(Number(t)) && Number(t) > 0 ? Number(t) : null);
+
+// Never trust the reply's shape: unknown values fall back to "nothing is blocked".
+function cleanStatus(r) {
+  const build = r.build === 'screentime' ? 'screentime' : 'free';
+  return {
+    build,
+    screenTime: build === 'screentime' && SCREEN_TIME.includes(r.screenTime) ? r.screenTime : 'unavailable',
+    distracting: natInt(r.distracting),
+    allowed: natInt(r.allowed),
+    unlockedUntil: natTime(r.unlockedUntil),
+    sessionUntil: natTime(r.sessionUntil),
+  };
+}
+
+const Native = {
+  on: !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unrot),
+  build: NATIVE.build === 'screentime' ? 'screentime' : 'free',
+  saved: typeof NATIVE.savedState === 'string' ? NATIVE.savedState : null,
+  status: null,
+  busy: false,
+  // Resolves with the native reply, or null outside the app or on any error. Never rejects.
+  call(method, args = {}) {
+    if (!Native.on) return Promise.resolve(null);
+    return new Promise(res => res(window.webkit.messageHandlers.unrot.postMessage({ method, args })))
+      .then(r => {
+        if (r && typeof r === 'object' && 'screenTime' in r) Native.status = cleanStatus(r);
+        return r === undefined ? null : r;
+      })
+      .catch(e => { console.warn(`unrot native ${method} failed:`, e); return null; });
+  },
+  refreshStatus() { return Native.call('status'); },
+};
+const blocking = () => Native.on && !!Native.status && Native.status.screenTime === 'approved';
+
+/* ================================================================
    artwork (inline SVG)
    ================================================================ */
 const I = (body, vb = '0 0 24 24') => `<svg viewBox="${vb}" width="24" height="24" aria-hidden="true" focusable="false">${body}</svg>`;
@@ -1065,6 +1132,7 @@ function blank() {
     active: null,
     unlock: null,
     feedback: [],
+    blockOnboarded: false,
   };
 }
 
@@ -1081,16 +1149,29 @@ function seed() {
   return s;
 }
 
-function load() {
+function parseState(json) {
   try {
-    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    const d = JSON.parse(json || 'null');
     if (d && d.v === 1 && Array.isArray(d.log)) return Object.assign(blank(), d);
-  } catch (_) { /* storage blocked or corrupt: start fresh */ }
+  } catch (_) { /* corrupt: ignore */ }
   return null;
+}
+// The iOS app also keeps a copy natively, since WKWebView can drop localStorage.
+function load() {
+  let json = null;
+  try { json = localStorage.getItem(KEY); } catch (_) { /* storage blocked: start fresh */ }
+  return parseState(json) || (Native.on ? parseState(Native.saved) : null);
+}
+let nativeSaveTimer = 0;
+function nativeSave() {
+  clearTimeout(nativeSaveTimer);
+  nativeSaveTimer = 0;
+  Native.call('saveState', { json: JSON.stringify(S) });
 }
 function save() {
   ver++;
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) { /* private mode: keep going in memory */ }
+  if (Native.on) { clearTimeout(nativeSaveTimer); nativeSaveTimer = setTimeout(nativeSave, 400); }
 }
 
 let aggCache = null, aggVer = -1;
@@ -1612,6 +1693,9 @@ function renderSettings() {
   const apps = S.distracting.map(id => APPS.find(a => a[0] === id)).filter(Boolean);
   const icons = apps.slice(0, 3).map(a => `<i style="background:linear-gradient(135deg,${a[2]},${a[3]});color:${a[4] || '#fff'}">${a[1][0]}</i>`).join('') +
     (apps.length > 3 ? `<span>+${apps.length - 3}</span>` : '') + (apps.length ? '' : '<span class="val">None</span>');
+  const nd = blocking() ? Native.status.distracting : 0;
+  const distractingRight = blocking() ? `<span class="val">${nd} app${nd === 1 ? '' : 's'}</span>`
+    : Native.on ? '<span class="val">Off</span>' : `<span class="apps-stack">${icons}</span>`;
   const [bh, bm] = S.bedtime.split(':').map(Number);
   const row = o => `<button class="srow ${o.cls || ''}" data-act="${o.act}" ${o.id ? `data-id="${o.id}"` : ''}>
     <span class="si" style="--sb:${o.bg}">${o.icon}</span><span class="tx"><b>${o.title}</b>${o.sub ? `<small>${o.sub}</small>` : ''}</span>
@@ -1621,7 +1705,7 @@ function renderSettings() {
     <h1 class="set-title">Settings</h1>
     <h2 class="set-h">General</h2>
     <div class="group">
-      ${row({ act: 'pickDistracting', icon: '🔒', bg: '#fdf4cc', title: 'Distracting apps', right: `<span class="apps-stack">${icons}</span>` })}
+      ${row({ act: 'pickDistracting', icon: '🔒', bg: '#fdf4cc', title: 'Distracting apps', right: distractingRight })}
       ${row({ act: 'pickDifficulty', icon: '😊', bg: '#dcf6e3', title: 'Difficulty Mode', sub: `${d.rate} coins per minute`, right: `<span class="spill" style="background:${d.tone[0]};color:${d.tone[1]}">${d.label}</span>` })}
       ${row({ act: 'pickLanguage', icon: '🌐', bg: '#d9ebfd', title: 'Language', right: `<span class="val sb">${LANGS[S.language]}</span>` })}
       <div class="srow"><span class="si" style="--sb:#e3effd">💳</span>
@@ -1727,6 +1811,7 @@ function actSheet(id) {
   openSheet({
     render: () => {
       const st = actStats(id), dur = S.durations[id] || 20;
+      const na = blocking() ? Native.status.allowed : S.allowed.length;
       return `
       <div class="act-head">
         <button class="circ l" data-act="actHistory" data-id="${id}" aria-label="History">${ICON.cal}</button>
@@ -1738,7 +1823,7 @@ function actSheet(id) {
         <button class="chunk opt" data-act="pickDuration" data-id="${id}"><span class="ico">${ICON.watch}</span>
           <span class="tx"><b>${fmtDurLong(dur)}</b><span>${coin(18)} ${a.rate} coins/hour</span></span><span class="chev">${ICON.chevR}</span></button>
         <button class="chunk opt" data-act="pickAllowed"><span class="ico">${ICON.shield}</span>
-          <span class="tx"><b>Allowed apps</b><span>Select apps you<br>still need</span></span><em class="pill">${S.allowed.length} app${S.allowed.length === 1 ? '' : 's'}</em></button>
+          <span class="tx"><b>Allowed apps</b><span>Select apps you<br>still need</span></span><em class="pill">${na} app${na === 1 ? '' : 's'}</em></button>
       </div>
       <div class="act-foot">
         <button class="link-green" data-act="shareOffline" data-id="${id}">Tell people you're offline ${ICON.share}</button>
@@ -1784,6 +1869,7 @@ function finishUnrot(full) {
   const a = ACTS[act.id];
   const mins = full ? act.dur : Math.floor((Date.now() - act.start) / MIN);
   S.active = null;
+  if (blocking()) Native.call('endSession');
   const run = stack.find(s => s.cls === 'run-sheet');
   if (run) { stack.slice(stack.indexOf(run) + 1).forEach(x => closeSheet(x)); closeSheet(run); }
   confirmCb = null;
@@ -1949,6 +2035,7 @@ function unlockSheet() {
       const el = (Date.now() - cur.start) / 1000, total = cur.dur * 60;
       if (el >= total) {
         S.unlock = null; save();
+        if (blocking()) Native.call('relock');
         s.el.querySelector('.clock').textContent = '00:00';
         s.el.querySelector('.rp').style.strokeDashoffset = RING_C.toFixed(1);
         s.el.querySelector('.ttl').textContent = "Time's up!";
@@ -2110,6 +2197,90 @@ function recapPanel() {
   ]);
 }
 
+// One native request at a time for the ones that show system UI, then redraw with the new status.
+async function nativeTask(fn) {
+  if (Native.busy) return;
+  Native.busy = true;
+  try { await fn(); } finally { Native.busy = false; refresh(); }
+}
+const nativePick = method => nativeTask(() => Native.call(method));
+function turnOnBlocking() {
+  if (!S.blockOnboarded) { S.blockOnboarded = true; save(); }
+  return nativeTask(async () => {
+    await Native.call('authorize');
+    if (blocking()) await Native.call('pickDistracting');
+    else if (!stack.some(s => s.kind === 'blocking' && !s.closed)) setTimeout(blockingPanel, 450);
+  });
+}
+function blockOnboarding() {
+  openPanel({
+    kind: 'onboarding',
+    render: () => `<div class="grab"></div><div class="p-mascot">${brain('wave')}</div>
+      <h3>Let unrot block your distracting apps</h3>
+      <p class="psub">Your distracting apps stay locked until you spend Brain Coins on scroll time, and unlock for exactly the minutes you buy. Apple's Screen Time does the blocking, and your app choices never leave your iPhone.</p>
+      <button class="btn-green sm" data-act="blockOn">Turn on app blocking</button>
+      <button class="btn-ghost" data-act="close">Not now</button>`,
+    onClose: () => { if (!S.blockOnboarded) { S.blockOnboarded = true; save(); } },
+  });
+}
+function blockingPanel() {
+  openPanel({
+    kind: 'blocking',
+    render: () => {
+      const st = Native.status || { build: Native.build, screenTime: 'unavailable', distracting: 0, allowed: 0 };
+      const head = (emoji, title) => `<div class="grab"></div><div style="text-align:center;font-size:52px;line-height:1;margin:6px 0 12px">${emoji}</div><h3>${title}</h3>`;
+      const done = '<button class="btn-ghost" data-act="close">Close</button>';
+      if (st.screenTime === 'approved') {
+        const until = (t, label) => (t && t > Date.now() ? `<p>${label} <b>${esc(enTime(t))}</b>.</p>` : '');
+        const sel = n => `${n} selected`;
+        return `${head('🛡️', 'App blocking is on')}
+          <p class="psub">Screen Time access is allowed.</p>
+          <div class="body">
+            <button class="choice" data-act="blockPick" data-id="distracting"><span class="ic">🔒</span><span>Choose distracting apps<small>${sel(st.distracting)} · locked until you buy scroll time</small></span><span class="chev">${ICON.chevR}</span></button>
+            <button class="choice" data-act="blockPick" data-id="allowed"><span class="ic">✅</span><span>Choose allowed apps<small>${sel(st.allowed)} · still work during unrot sessions</small></span><span class="chev">${ICON.chevR}</span></button>
+            ${until(st.unlockedUntil, 'Scroll time is unlocked until')}${until(st.sessionUntil, 'An unrot session is blocking apps until')}
+            <p>Your distracting apps stay shielded until you buy scroll time. When the minutes you bought are used up, they lock again. During an unrot session every app except your allowed apps is blocked.</p>
+            ${st.distracting ? '' : '<p><b>Nothing is blocked yet.</b> Choose your distracting apps to start.</p>'}
+          </div>
+          <button class="btn-green sm" data-act="close">Done</button>`;
+      }
+      if (st.screenTime === 'notDetermined') {
+        return `${head('🔒', 'Turn on app blocking')}
+          <p class="psub">unrot uses Apple's Screen Time to lock your distracting apps until you buy scroll time with Brain Coins.</p>
+          <div class="body"><p>Tap the button, choose <b>Continue</b> and confirm with Face ID or your passcode. Then pick the apps that distract you most. Your choices stay on your iPhone.</p></div>
+          <button class="btn-green sm" data-act="blockOn">Turn on app blocking</button>${done}`;
+      }
+      if (st.screenTime === 'denied') {
+        return `${head('🚫', 'Screen Time access is off')}
+          <p class="psub">unrot can't block apps until you allow Screen Time access.</p>
+          <div class="body">
+            <p>Open <b>Settings</b>, go to <b>Screen Time</b>, then <b>Apps with Screen Time Access</b>, and turn on <b>unrot</b>.</p>
+            <p>If Screen Time is turned off or managed by a parent, turn it on first or ask them to allow unrot.</p>
+          </div>
+          <button class="btn-green sm" data-act="blockSettings">Open Settings</button>
+          <button class="btn-ghost" data-act="blockOn">Try again</button>${done}`;
+      }
+      if (st.build === 'screentime') {
+        return `${head('🔧', 'Blocking isn’t available')}
+          <p class="psub">This copy of unrot couldn't get Screen Time access.</p>
+          <div class="body">
+            <p>Real app blocking needs the <b>Family Controls</b> capability in the app's signing profile. It looks like it's missing from this build, so unrot works on the honour system for now.</p>
+            <p>The steps to set it up are in <b>ios/README.md</b>.</p>
+          </div>
+          <button class="btn-green sm" data-act="close">Got it</button>`;
+      }
+      return `${head('🧠', 'Honour system')}
+        <p class="psub">This is the free build of unrot, so it can't block other apps.</p>
+        <div class="body">
+          <p>Spend Brain Coins in <b>Scroll</b> before you open a distracting app, and keep your word to yourself.</p>
+          <p>Real blocking uses Apple's Screen Time, which needs the paid <b>Apple Developer Program</b> and the <b>Screen Time build</b> of the app. See <b>ios/README.md</b> for how to build it.</p>
+          <p>Until then, you can set limits in your iPhone's own <b>Settings → Screen Time</b>.</p>
+        </div>
+        <button class="btn-green sm" data-act="close">Got it</button>`;
+    },
+  });
+}
+
 /* ================================================================
    actions (event delegation)
    ================================================================ */
@@ -2160,7 +2331,7 @@ const ACTIONS = {
   // timed unrots
   pickDuration: id => durationPanel(id),
   setDuration: (v, el) => { const [id, m] = v.split(':'); S.durations[id] = Number(m); save(); closeSheet(sheetOf(el)); refresh(); },
-  pickAllowed: () => appsPanel('allowed'),
+  pickAllowed: () => (blocking() ? nativePick('pickAllowed') : appsPanel('allowed')),
   allowToggle: id => { S.allowed = S.allowed.includes(id) ? S.allowed.filter(x => x !== id) : [...S.allowed, id]; save(); refresh(); },
   actHistory: id => {
     const items = S.log.filter(e => e.act === id).sort((a, b) => b.ts - a.ts).slice(0, 30);
@@ -2181,6 +2352,7 @@ const ACTIONS = {
     if (S.active) return;
     S.active = { id, start: Date.now(), dur: S.durations[id] || 20 };
     save();
+    if (blocking()) Native.call('startSession', { minutes: S.active.dur, title: ACTS[id].title });
     closeSheet();
     runSheet();
   },
@@ -2257,11 +2429,17 @@ const ACTIONS = {
       const sc = stack.find(s => s.el.querySelector('[data-act="buyScroll"]'));
       if (sc) closeSheet(sc);
       unlockSheet();
+      if (blocking()) Native.call('unlock', { minutes: m });
     };
     if (S.purchaseAnim) buyAnimation(m, cost, go); else go();
   },
   buyDone: (_, btn) => { const o = btn.closest('.buy'); if (o && o._done) o._done(); },
-  doneScrolling: (_, el) => { S.unlock = null; save(); closeSheet(sheetOf(el)); refresh(); },
+  doneScrolling: (_, el) => {
+    const was = S.unlock;
+    S.unlock = null; save();
+    if (was && blocking()) Native.call('relock'); // the time-up branch already relocked
+    closeSheet(sheetOf(el)); refresh();
+  },
 
   // stats
   insteadTab: id => { UI.instead = id; refresh(); },
@@ -2282,7 +2460,7 @@ const ACTIONS = {
   },
 
   // settings
-  pickDistracting: () => appsPanel('distracting'),
+  pickDistracting: () => (blocking() ? nativePick('pickDistracting') : Native.on ? blockingPanel() : appsPanel('distracting')),
   distToggle: id => { S.distracting = S.distracting.includes(id) ? S.distracting.filter(x => x !== id) : [...S.distracting, id]; save(); refresh(); },
   pickDifficulty: () => openPanel({
     render: () => `<div class="grab"></div><h3>Difficulty Mode</h3><p class="psub">How many Brain Coins one minute of scrolling costs.</p>
@@ -2328,16 +2506,20 @@ const ACTIONS = {
     : ['unrot is a habit tool to help you spend less time scrolling. Brain Coins have no cash value.', 'The web version cannot block other apps; it relies on you keeping your word to yourself.']),
   deleteAccount: () => confirmPanel({ title: 'Delete my account?', text: 'This erases your coins, history, journal entries and settings from this device. It can’t be undone.', ok: 'Delete everything', danger: true }, () => {
     try { localStorage.removeItem(KEY); } catch (_) { /* ignore */ }
+    if (blocking()) { Native.call('relock'); Native.call('endSession'); }
     S = blank();
     save();
     UI.showMore = false;
     showTab('home');
     toast('Account deleted. Fresh start! 🌱');
   }),
-  blocking: () => infoPanel('Blocking Issues', [
+  blockOn: (_, el) => { const s = sheetOf(el); if (s && s.kind === 'onboarding') closeSheet(s); turnOnBlocking(); },
+  blockPick: kind => nativePick(kind === 'allowed' ? 'pickAllowed' : 'pickDistracting'),
+  blockSettings: () => Native.call('openSettings'),
+  blocking: () => (Native.on ? blockingPanel() : infoPanel('Blocking Issues', [
     'Browsers can’t block other apps, so this web version works on the honour system: spend Brain Coins in <b>Scroll</b> before you open a distracting app.',
     'For hard blocking, pair it with your phone’s built-in Screen Time (iPhone) or Digital Wellbeing (Android) limits.',
-  ]),
+  ])),
 };
 
 document.addEventListener('click', e => {
@@ -2361,9 +2543,9 @@ $('#photo-input').addEventListener('change', onPhoto);
 addEventListener('storage', e => {
   if (e.key !== KEY || !e.newValue) return;
   try {
-    const d = JSON.parse(e.newValue);
-    if (!d || d.v !== 1 || !Array.isArray(d.log)) return;
-    S = Object.assign(blank(), d);
+    const d = parseState(e.newValue);
+    if (!d) return;
+    S = d;
     ver++;
     const run = stack.find(s => s.cls === 'run-sheet'), un = stack.find(s => s.cls === 'unlock-sheet');
     if (run && (!S.active || run.key !== S.active.start)) closeSheet(run);
@@ -2391,7 +2573,12 @@ function tick() {
     for (const s of stack) if (s.coolTick && !s.closed && s.coolSig !== sig) { s.coolSig = sig; drawSheet(s); }
   }
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (nativeSaveTimer) nativeSave(); return; }
+  tick();
+  // Screen Time access may have changed in Settings while the app was in the background.
+  if (Native.on) Native.refreshStatus().then(() => refresh());
+});
 
 /* ================================================================
    boot
@@ -2406,6 +2593,23 @@ if (S.active) {
   if (Date.now() < S.unlock.start + S.unlock.dur * MIN) unlockSheet(); else { S.unlock = null; save(); }
 }
 setInterval(tick, 1000);
+
+if (Native.on) {
+  Native.refreshStatus().then(() => {
+    const st = Native.status;
+    // The app may have been closed while scroll time or a session ran out: bring the shields in line.
+    if (blocking()) {
+      const now = Date.now();
+      if (!S.unlock && st.unlockedUntil && st.unlockedUntil > now) Native.call('relock');
+      if (!S.active && st.sessionUntil && st.sessionUntil > now) Native.call('endSession');
+    }
+    refresh();
+    if (st && st.build === 'screentime' && st.screenTime === 'notDetermined' && !S.blockOnboarded) blockOnboarding();
+  });
+}
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !Native.on) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered:', e)));
+}
 })();
 </script>
 </body>

@@ -2,8 +2,17 @@
 
 A single-file web version of the **unrot** screen-time habit app: earn Brain Coins by
 doing real-life things ("unrotting") and spend them on scroll time. Open
-`unrot/index.html` in any modern browser. It needs no build step and no backend, and the only
-network request is for the Google font, which falls back to the system font if it can't load.
+`unrot/index.html` in any modern browser. It needs no build step, no backend and no network:
+the Bricolage Grotesque font is bundled in `fonts/` (SIL OFL) and the icons in `icons/`.
+
+Served over http(s) it is an installable PWA (`manifest.webmanifest`) and works offline: `sw.js`
+precaches the app shell, serves fonts and icons cache-first, and fetches `index.html` network-first
+with the cached copy as the offline fallback. Bump `CACHE` in `sw.js` when fonts or icons change.
+`.github/workflows/pages.yml` publishes only this folder to GitHub Pages (at `/unrot/`) from the
+repository's default branch.
+
+Inside the iOS app (`ios/`) the page talks to native code through `window.webkit.messageHandlers.unrot`
+to block apps with Screen Time; in a normal browser that object is absent and nothing changes.
 
 All data (coins, sessions, journal entries, settings) lives in this browser's
 `localStorage` under the key `unrot.v1`. **Settings → Delete my account** erases it.
@@ -27,5 +36,5 @@ The first launch is seeded to match the reference screenshots: 99/100 coins, one
 Energy Breathing session (+6) and one minute of scrolling (−1) this morning. Dates use the Vietnamese
 locale like the screenshots (`11 - 17 thg 10 2026`, `CN … T7`, `SA`/`CH`).
 
-A browser can't block other apps, so **Scroll** works on the honour system. Pair it with
+A browser can't block other apps, so on the web **Scroll** works on the honour system. Pair it with
 iOS Screen Time or Android Digital Wellbeing if you want hard limits.
