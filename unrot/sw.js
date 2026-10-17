@@ -1,5 +1,6 @@
 // unrot service worker: keeps the app working offline.
-// Bump CACHE when fonts or icons change; index.html is always fetched fresh when online.
+// Bump CACHE whenever a file in SHELL other than index.html changes (fonts, icons, manifest);
+// index.html is always fetched fresh when online.
 const CACHE = 'unrot-v1';
 const SHELL = [
   './',
@@ -16,7 +17,8 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the HTTP cache so a new CACHE version never stores a stale copy.
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -25,8 +27,8 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-const put = (req, res) => {
-  if (res.ok && res.type === 'basic') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+const put = (key, res) => {
+  if (res.ok && res.type === 'basic') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(key, copy)); }
   return res;
 };
 
@@ -35,7 +37,9 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   if (req.mode === 'navigate') {
     // Network first so a new deploy shows up straight away; offline falls back to the cached app.
-    e.respondWith(fetch(req).then(res => put(req, res))
+    // Stored without its query string so ?utm=… visits don't pile up extra copies of the page.
+    const key = new URL(req.url); key.search = ''; key.hash = '';
+    e.respondWith(fetch(req).then(res => put(key.href, res))
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html'))));
     return;
   }

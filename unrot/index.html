@@ -892,7 +892,7 @@ const natTime = t => (Number.isFinite(Number(t)) && Number(t) > 0 ? Number(t) : 
 
 // Never trust the reply's shape: unknown values fall back to "nothing is blocked".
 function cleanStatus(r) {
-  const build = r.build === 'screentime' ? 'screentime' : 'free';
+  const build = (r.build == null ? NATIVE.build : r.build) === 'screentime' ? 'screentime' : 'free';
   return {
     build,
     screenTime: build === 'screentime' && SCREEN_TIME.includes(r.screenTime) ? r.screenTime : 'unavailable',
@@ -903,18 +903,22 @@ function cleanStatus(r) {
   };
 }
 
+// Every method except these two replies with a STATUS object.
+const NOT_STATUS = ['saveState', 'openSettings'];
 const Native = {
   on: !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unrot),
   build: NATIVE.build === 'screentime' ? 'screentime' : 'free',
   saved: typeof NATIVE.savedState === 'string' ? NATIVE.savedState : null,
   status: null,
   busy: false,
+  sent: 0, // count of shield-changing requests, so a stale status reply isn't acted on
   // Resolves with the native reply, or null outside the app or on any error. Never rejects.
   call(method, args = {}) {
     if (!Native.on) return Promise.resolve(null);
+    if (method !== 'status' && !NOT_STATUS.includes(method)) Native.sent++;
     return new Promise(res => res(window.webkit.messageHandlers.unrot.postMessage({ method, args })))
       .then(r => {
-        if (r && typeof r === 'object' && 'screenTime' in r) Native.status = cleanStatus(r);
+        if (r && typeof r === 'object' && !NOT_STATUS.includes(method)) Native.status = cleanStatus(r);
         return r === undefined ? null : r;
       })
       .catch(e => { console.warn(`unrot native ${method} failed:`, e); return null; });
@@ -1637,7 +1641,7 @@ function renderStats() {
     <h1 class="reclaim">You've reclaimed <strong>${recl}</strong> of your life by unrotting</h1>
     <div class="pad">
       <div class="bank">${bankScene()}<div class="bn">Unrot Bank</div>${CHIP}<div class="bm">${brain('wave')}</div>
-        <div class="ch"><small>Cardholder Name</small><b>${esc(S.name)}</b></div><div class="num">**** ${S.card}</div></div>
+        <div class="ch"><small>Cardholder Name</small><b>${esc(S.name)}</b></div><div class="num">**** ${esc(S.card)}</div></div>
       <div class="life"><div class="top"><small>LIFETIME EARNINGS</small><em>~${rh} hour${rh === 1 ? '' : 's'} of real life</em></div>
         <div class="v">${coin(30)}${S.lifetime}</div></div>
       <h2 class="big-h">What you do instead<br>of scrolling</h2>
@@ -2055,13 +2059,13 @@ function buyAnimation(m, cost, done) {
   el.className = 'buy';
   el.innerHTML = `
     <div class="term"><div class="scr">TAP CARD</div></div>
-    <div class="mini-bank">${bankScene()}<div class="bn">Unrot Bank</div>${CHIP}<div class="num">**** ${S.card}</div></div>
+    <div class="mini-bank">${bankScene()}<div class="bn">Unrot Bank</div>${CHIP}<div class="num">**** ${esc(S.card)}</div></div>
     <div class="receipt" role="dialog" aria-label="Receipt">
       <h4>UNROT BANK</h4><div class="c">SCREEN TIME RECEIPT</div><hr>
       <div class="ln"><span>Date</span><span>${viDate(now)}</span></div>
       <div class="ln"><span>Time</span><span>${viTime(now.getHours(), now.getMinutes())}</span></div>
       <div class="ln"><span>Item</span><span>Scroll time × ${m} min</span></div>
-      <div class="ln"><span>Card</span><span>**** ${S.card}</span></div><hr>
+      <div class="ln"><span>Card</span><span>**** ${esc(S.card)}</span></div><hr>
       <div class="ln tot"><span>TOTAL</span><span>${cost} coin${cost === 1 ? '' : 's'}</span></div>
       <div class="ln"><span>Balance</span><span>${S.coins} coins</span></div><hr>
       <div class="quote">“Your time has value. Spend it wisely.”</div>
@@ -2197,6 +2201,26 @@ function recapPanel() {
   ]);
 }
 
+// Bring the native shields in line with the web state: the app may have been closed while scroll time or a
+// session ran out, a request may have failed, or one may have been skipped because the status wasn't known yet.
+function reconcile() {
+  if (!blocking()) return Promise.resolve();
+  const st = Native.status, now = Date.now(), jobs = [];
+  const unlockLeft = S.unlock ? S.unlock.start + S.unlock.dur * MIN - now : 0;
+  const sessionLeft = S.active ? S.active.start + S.active.dur * MIN - now : 0;
+  const unlocked = st.unlockedUntil && st.unlockedUntil > now, inSession = st.sessionUntil && st.sessionUntil > now;
+  if (unlockLeft <= 0 && unlocked) jobs.push(Native.call('relock'));
+  else if (unlockLeft >= MIN && !unlocked) jobs.push(Native.call('unlock', { minutes: Math.floor(unlockLeft / MIN) }));
+  if (sessionLeft <= 0 && inSession) jobs.push(Native.call('endSession'));
+  else if (sessionLeft > 0 && !inSession) jobs.push(Native.call('startSession', { minutes: Math.ceil(sessionLeft / MIN), title: ACTS[S.active.id].title }));
+  return Promise.all(jobs);
+}
+// Fetch the status and reconcile, unless a shield request went out meanwhile (the reply would be stale).
+function syncNative() {
+  const sent = Native.sent;
+  return Native.refreshStatus().then(() => (Native.sent === sent ? reconcile() : null));
+}
+
 // One native request at a time for the ones that show system UI, then redraw with the new status.
 async function nativeTask(fn) {
   if (Native.busy) return;
@@ -2208,7 +2232,7 @@ function turnOnBlocking() {
   if (!S.blockOnboarded) { S.blockOnboarded = true; save(); }
   return nativeTask(async () => {
     await Native.call('authorize');
-    if (blocking()) await Native.call('pickDistracting');
+    if (blocking()) { await reconcile(); await Native.call('pickDistracting'); }
     else if (!stack.some(s => s.kind === 'blocking' && !s.closed)) setTimeout(blockingPanel, 450);
   });
 }
@@ -2577,7 +2601,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) { if (nativeSaveTimer) nativeSave(); return; }
   tick();
   // Screen Time access may have changed in Settings while the app was in the background.
-  if (Native.on) Native.refreshStatus().then(() => refresh());
+  if (Native.on) syncNative().then(() => refresh());
 });
 
 /* ================================================================
@@ -2595,14 +2619,8 @@ if (S.active) {
 setInterval(tick, 1000);
 
 if (Native.on) {
-  Native.refreshStatus().then(() => {
+  syncNative().then(() => {
     const st = Native.status;
-    // The app may have been closed while scroll time or a session ran out: bring the shields in line.
-    if (blocking()) {
-      const now = Date.now();
-      if (!S.unlock && st.unlockedUntil && st.unlockedUntil > now) Native.call('relock');
-      if (!S.active && st.sessionUntil && st.sessionUntil > now) Native.call('endSession');
-    }
     refresh();
     if (st && st.build === 'screentime' && st.screenTime === 'notDetermined' && !S.blockOnboarded) blockOnboarding();
   });
