@@ -46,6 +46,8 @@ targets:
         excludes:
           - "*.entitlements"
       - path: Shared
+      # BundleSchemeHandler (serves app://unrot/...), shared with the Mac app in ../mac.
+      - path: WebShared
       # The whole web app, copied as a folder reference so the bundle keeps the folder:
       # Unrot.app/web/unrot/index.html, Unrot.app/web/unrot/fonts/..., ...
       # It must NOT land at Unrot.app/unrot: the app executable is Unrot.app/Unrot, and macOS

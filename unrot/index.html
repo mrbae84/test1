@@ -884,18 +884,22 @@ function niceMax(v) {
 
 /* ================================================================
    native bridge: only present inside the iOS app (see ios/README.md)
+   or the Mac app (see mac/README.md)
    ================================================================ */
 const NATIVE = window.__unrotNative || {};
 const SCREEN_TIME = ['unavailable', 'notDetermined', 'denied', 'approved'];
+// 'screentime' and 'free' are the iOS builds; the Mac app's blocker needs no permission.
+const natBuild = b => (b === 'screentime' || b === 'mac' ? b : 'free');
 const natInt = n => (Number.isFinite(Number(n)) && Number(n) > 0 ? Math.floor(Number(n)) : 0);
 const natTime = t => (Number.isFinite(Number(t)) && Number(t) > 0 ? Number(t) : null);
 
 // Never trust the reply's shape: unknown values fall back to "nothing is blocked".
 function cleanStatus(r) {
-  const build = (r.build == null ? NATIVE.build : r.build) === 'screentime' ? 'screentime' : 'free';
+  const build = natBuild(r.build == null ? NATIVE.build : r.build);
   return {
     build,
-    screenTime: build === 'screentime' && SCREEN_TIME.includes(r.screenTime) ? r.screenTime : 'unavailable',
+    screenTime: build === 'mac' ? (r.screenTime === 'approved' ? 'approved' : 'unavailable')
+      : build === 'screentime' && SCREEN_TIME.includes(r.screenTime) ? r.screenTime : 'unavailable',
     distracting: natInt(r.distracting),
     allowed: natInt(r.allowed),
     unlockedUntil: natTime(r.unlockedUntil),
@@ -907,7 +911,7 @@ function cleanStatus(r) {
 const NOT_STATUS = ['saveState', 'openSettings'];
 const Native = {
   on: !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unrot),
-  build: NATIVE.build === 'screentime' ? 'screentime' : 'free',
+  build: natBuild(NATIVE.build),
   saved: typeof NATIVE.savedState === 'string' ? NATIVE.savedState : null,
   status: null,
   busy: false,
@@ -926,6 +930,7 @@ const Native = {
   refreshStatus() { return Native.call('status'); },
 };
 const blocking = () => Native.on && !!Native.status && Native.status.screenTime === 'approved';
+const onMac = () => Native.on && (Native.status ? Native.status.build : Native.build) === 'mac';
 
 /* ================================================================
    artwork (inline SVG)
@@ -1160,7 +1165,7 @@ function parseState(json) {
   } catch (_) { /* corrupt: ignore */ }
   return null;
 }
-// The iOS app also keeps a copy natively, since WKWebView can drop localStorage.
+// The iOS and Mac apps also keep a copy natively, since WKWebView can drop localStorage.
 function load() {
   let json = null;
   try { json = localStorage.getItem(KEY); } catch (_) { /* storage blocked: start fresh */ }
@@ -1700,6 +1705,7 @@ function renderSettings() {
   const nd = blocking() ? Native.status.distracting : 0;
   const distractingRight = blocking() ? `<span class="val">${nd} app${nd === 1 ? '' : 's'}</span>`
     : Native.on ? '<span class="val">Off</span>' : `<span class="apps-stack">${icons}</span>`;
+  const mac = onMac();
   const [bh, bm] = S.bedtime.split(':').map(Number);
   const row = o => `<button class="srow ${o.cls || ''}" data-act="${o.act}" ${o.id ? `data-id="${o.id}"` : ''}>
     <span class="si" style="--sb:${o.bg}">${o.icon}</span><span class="tx"><b>${o.title}</b>${o.sub ? `<small>${o.sub}</small>` : ''}</span>
@@ -1709,7 +1715,7 @@ function renderSettings() {
     <h1 class="set-title">Settings</h1>
     <h2 class="set-h">General</h2>
     <div class="group">
-      ${row({ act: 'pickDistracting', icon: '🔒', bg: '#fdf4cc', title: 'Distracting apps', right: distractingRight })}
+      ${row({ act: 'pickDistracting', icon: '🔒', bg: '#fdf4cc', title: 'Distracting apps', sub: mac && blocking() ? 'Hidden on this Mac until you buy scroll time' : '', right: distractingRight })}
       ${row({ act: 'pickDifficulty', icon: '😊', bg: '#dcf6e3', title: 'Difficulty Mode', sub: `${d.rate} coins per minute`, right: `<span class="spill" style="background:${d.tone[0]};color:${d.tone[1]}">${d.label}</span>` })}
       ${row({ act: 'pickLanguage', icon: '🌐', bg: '#d9ebfd', title: 'Language', right: `<span class="val sb">${LANGS[S.language]}</span>` })}
       <div class="srow"><span class="si" style="--sb:#e3effd">💳</span>
@@ -1741,7 +1747,7 @@ function renderSettings() {
     </div>
     <h2 class="set-h">Help</h2>
     <div class="group">
-      ${row({ act: 'blocking', icon: '🔧', bg: '#fdd9dc', title: 'Blocking Issues', sub: 'Fix problems with app blocking' })}
+      ${row({ act: 'blocking', icon: '🔧', bg: '#fdd9dc', title: 'Blocking Issues', sub: mac ? 'Fix problems with app blocking on this Mac' : 'Fix problems with app blocking' })}
     </div>`;
   onScroll();
 }
@@ -2239,11 +2245,15 @@ function turnOnBlocking() {
 function blockOnboarding() {
   openPanel({
     kind: 'onboarding',
-    render: () => `<div class="grab"></div><div class="p-mascot">${brain('wave')}</div>
+    render: () => (onMac() ? `<div class="grab"></div><div class="p-mascot">${brain('wave')}</div>
+      <h3>Pick the apps unrot should block on this Mac</h3>
+      <p class="psub">They stay hidden until you spend Brain Coins on scroll time, and come back for exactly the minutes you buy. Your choices never leave your Mac.</p>
+      <button class="btn-green sm" data-act="blockOn">Choose apps</button>
+      <button class="btn-ghost" data-act="close">Not now</button>` : `<div class="grab"></div><div class="p-mascot">${brain('wave')}</div>
       <h3>Let unrot block your distracting apps</h3>
       <p class="psub">Your distracting apps stay locked until you spend Brain Coins on scroll time, and unlock for exactly the minutes you buy. Apple's Screen Time does the blocking, and your app choices never leave your iPhone.</p>
       <button class="btn-green sm" data-act="blockOn">Turn on app blocking</button>
-      <button class="btn-ghost" data-act="close">Not now</button>`,
+      <button class="btn-ghost" data-act="close">Not now</button>`),
     onClose: () => { if (!S.blockOnboarded) { S.blockOnboarded = true; save(); } },
   });
 }
@@ -2254,9 +2264,27 @@ function blockingPanel() {
       const st = Native.status || { build: Native.build, screenTime: 'unavailable', distracting: 0, allowed: 0 };
       const head = (emoji, title) => `<div class="grab"></div><div style="text-align:center;font-size:52px;line-height:1;margin:6px 0 12px">${emoji}</div><h3>${title}</h3>`;
       const done = '<button class="btn-ghost" data-act="close">Close</button>';
+      const until = (t, label) => (t && t > Date.now() ? `<p>${label} <b>${esc(enTime(t))}</b>.</p>` : '');
+      const sel = n => `${n} selected`;
+      if (st.build === 'mac') {
+        if (st.screenTime !== 'approved') {
+          return `${head('🔧', 'Blocking isn’t running')}
+            <p class="psub">unrot couldn't start its app blocker on this Mac.</p>
+            <div class="body"><p>Quit unrot from its brain icon in the menu bar and open it again. Until then, spend Brain Coins in <b>Scroll</b> before you open a distracting app.</p></div>
+            <button class="btn-green sm" data-act="close">Got it</button>`;
+        }
+        return `${head('🛡️', 'App blocking is on')}
+          <p class="psub">The app blocker is running on this Mac. No permission needed.</p>
+          <div class="body">
+            <button class="choice" data-act="blockPick" data-id="distracting"><span class="ic">🔒</span><span>Choose distracting apps<small>${sel(st.distracting)} · hidden until you buy scroll time</small></span><span class="chev">${ICON.chevR}</span></button>
+            <button class="choice" data-act="blockPick" data-id="allowed"><span class="ic">✅</span><span>Choose allowed apps<small>${sel(st.allowed)} · still work during unrot sessions</small></span><span class="chev">${ICON.chevR}</span></button>
+            ${until(st.unlockedUntil, 'Scroll time is unlocked until')}${until(st.sessionUntil, 'An unrot session is blocking apps until')}
+            <p>unrot hides your distracting apps on this Mac until you buy scroll time. During an unrot session every app except your allowed apps is hidden. Keep unrot running — its brain icon lives in the menu bar. Websites in your browser aren't blocked.</p>
+            ${st.distracting ? '' : '<p><b>Nothing is blocked yet.</b> Choose your distracting apps to start.</p>'}
+          </div>
+          <button class="btn-green sm" data-act="close">Done</button>`;
+      }
       if (st.screenTime === 'approved') {
-        const until = (t, label) => (t && t > Date.now() ? `<p>${label} <b>${esc(enTime(t))}</b>.</p>` : '');
-        const sel = n => `${n} selected`;
         return `${head('🛡️', 'App blocking is on')}
           <p class="psub">Screen Time access is allowed.</p>
           <div class="body">
@@ -2301,6 +2329,23 @@ function blockingPanel() {
           <p>Until then, you can set limits in your iPhone's own <b>Settings → Screen Time</b>.</p>
         </div>
         <button class="btn-green sm" data-act="close">Got it</button>`;
+    },
+  });
+}
+
+// Shown when the Mac app hides an app the user tried to open. One at a time: a repeat updates it.
+function blockedPanel(name, reason) {
+  const open = stack.find(s => s.kind === 'blocked' && !s.closed);
+  if (open) { open.app = name; open.reason = reason; drawSheet(open); return; }
+  openPanel({
+    kind: 'blocked', app: name, reason,
+    render: s => {
+      const session = s.reason === 'session';
+      return `<div class="grab"></div><div class="p-mascot">${brain(session ? 'meditate' : 'think')}</div>
+        <h3>${esc(s.app)} is blocked</h3>
+        <p class="psub">${session ? "You're in an unrot session. Only your allowed apps work until it ends." : 'Spend Brain Coins in Scroll to unlock your distracting apps.'}</p>
+        ${session ? '<button class="btn-green sm" data-act="close" autofocus>Keep unrotting</button>'
+          : '<button class="btn-green sm" data-act="blockedScroll" autofocus>Scroll</button><button class="btn-ghost" data-act="close">Close</button>'}`;
     },
   });
 }
@@ -2537,7 +2582,18 @@ const ACTIONS = {
     showTab('home');
     toast('Account deleted. Fresh start! 🌱');
   }),
-  blockOn: (_, el) => { const s = sheetOf(el); if (s && s.kind === 'onboarding') closeSheet(s); turnOnBlocking(); },
+  blockOn: (_, el) => {
+    const s = sheetOf(el);
+    if (s && s.kind === 'onboarding') closeSheet(s);
+    if (!onMac()) { turnOnBlocking(); return; }
+    if (!S.blockOnboarded) { S.blockOnboarded = true; save(); }
+    nativePick('pickDistracting');
+  },
+  blockedScroll: (_, el) => {
+    closeSheet(sheetOf(el));
+    // The event may have arrived while Scroll (or the unlocked screen) was already open underneath.
+    if (!stack.some(s => !s.closed && s.el.querySelector('[data-act="buyScroll"]'))) ACTIONS.openScroll();
+  },
   blockPick: kind => nativePick(kind === 'allowed' ? 'pickAllowed' : 'pickDistracting'),
   blockSettings: () => Native.call('openSettings'),
   blocking: () => (Native.on ? blockingPanel() : infoPanel('Blocking Issues', [
@@ -2600,7 +2656,8 @@ function tick() {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { if (nativeSaveTimer) nativeSave(); return; }
   tick();
-  // Screen Time access may have changed in Settings while the app was in the background.
+  // Screen Time access may have changed in Settings while the app was in the background (iOS),
+  // or the Mac app may have ended scroll time or a session on its own.
   if (Native.on) syncNative().then(() => refresh());
 });
 
@@ -2623,7 +2680,14 @@ if (Native.on) {
     const st = Native.status;
     refresh();
     if (st && st.build === 'screentime' && st.screenTime === 'notDetermined' && !S.blockOnboarded) blockOnboarding();
+    if (st && st.build === 'mac' && st.distracting === 0 && !S.blockOnboarded) blockOnboarding();
   });
+  // The Mac app calls this, with a JSON argument, when it hides an app the user tried to open.
+  window.__unrotBlocked = info => {
+    const o = info && typeof info === 'object' ? info : {};
+    const name = typeof o.name === 'string' && o.name.trim() ? o.name.trim().slice(0, 80) : 'That app';
+    blockedPanel(name, o.reason === 'session' ? 'session' : 'locked');
+  };
 }
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !Native.on) {
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered:', e)));

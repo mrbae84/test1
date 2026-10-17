@@ -14,6 +14,10 @@ repository's default branch.
 Inside the iOS app (`ios/`) the page talks to native code through `window.webkit.messageHandlers.unrot`
 to block apps with Screen Time; in a normal browser that object is absent and nothing changes.
 
+The same page also runs inside the macOS app (`mac/`), which uses the same bridge with
+`build: "mac"`: it hides your distracting apps on the Mac (no Screen Time permission needed) and calls
+`window.__unrotBlocked({ name, reason })` so the page can explain why an app was just blocked.
+
 All data (coins, sessions, journal entries, settings) lives in this browser's
 `localStorage` under the key `unrot.v1`. **Settings → Delete my account** erases it.
 

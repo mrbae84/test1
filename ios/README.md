@@ -4,6 +4,26 @@ This folder holds the iPhone app. It is a small native SwiftUI shell that shows 
 [`../unrot`](../unrot) in a full-screen web view. In its Screen Time build it also really blocks
 distracting apps with Apple's Screen Time API (FamilyControls, ManagedSettings, DeviceActivity).
 
+## Easiest way: download the ready-made Xcode project
+
+You do not need Homebrew, XcodeGen or the Terminal for this.
+
+1. Open the release page
+   **[github.com/mrbae84/test1/releases/tag/unrot-latest](https://github.com/mrbae84/test1/releases/tag/unrot-latest)**
+   and download **`unrot-iphone-xcode.zip`** (under **Assets**).
+2. Unzip it and open **`START-HERE.txt`**. It walks you through the rest: open
+   `ios/Unrot.xcodeproj` in Xcode, sign in with your Apple ID, pick your team, plug in the iPhone
+   and press Run.
+
+The zip is built automatically from this repository (`.github/workflows/apps.yml`) and already
+contains the generated `Unrot.xcodeproj` (free build) and `UnrotScreenTime.xcodeproj` (Screen
+Time build), with the web app next to them. Looking for the Mac app? It is on the same page:
+`unrot-mac.zip` (see [`../mac/README.md`](../mac/README.md)).
+
+The rest of this file explains how to generate the projects yourself.
+
+---
+
 There are **two builds from the same code**:
 
 | | Free build | Screen Time build |
@@ -229,6 +249,7 @@ project.screentime.yml       Screen Time build spec     -> UnrotScreenTime.xcode
 project.common.yml           settings both specs include (app target, Info.plist keys)
 App/                         the app: SwiftUI shell, WKWebView, bridge, Screen Time manager
 Shared/                      code shared by the app and the extensions (stores, selections)
+WebShared/                   BundleSchemeHandler (serves app://unrot/...), shared with ../mac
 UnrotMonitor/                DeviceActivityMonitor extension (re-locks, ends sessions)
 UnrotShield/                 ShieldConfiguration extension (what the block screen looks like)
 UnrotShieldAction/           ShieldAction extension (what the block screen's buttons do)

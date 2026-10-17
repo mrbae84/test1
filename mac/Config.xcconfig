@@ -1,0 +1,15 @@
+// Config.xcconfig
+// Settings for the Mac app (UnrotMac.xcodeproj). The only file you might want to edit.
+//
+// 1) BUNDLE_PREFIX
+//    A reverse-domain prefix, for example com.janedoe or io.github.janedoe.
+//    Only letters, digits, hyphens and dots. The app's bundle ID is $(BUNDLE_PREFIX).unrot.mac.
+//    The Mac app is signed "ad hoc" (no Apple account), so nothing is registered with Apple and
+//    "com.yourname" works as is. Changing it later gives unrot a fresh, empty set of saved data
+//    (macOS keeps app data per bundle ID).
+BUNDLE_PREFIX = com.yourname
+
+// 2) DEVELOPMENT_TEAM
+//    Leave empty. The project signs ad hoc (CODE_SIGN_IDENTITY "-" in project.yml), which needs
+//    no Apple ID at all. Only fill this in if you switch to signing with your own team.
+DEVELOPMENT_TEAM =

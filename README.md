@@ -68,3 +68,8 @@ animation work — please do not treat it as a real product.
   `.github/workflows/pages.yml` publishes it to GitHub Pages at `/test1/unrot/`.
 - **iPhone app:** [`ios/`](ios/README.md) wraps the same page in a native app. Its Screen Time
   build really blocks the apps you pick until you spend Brain Coins.
+- **Mac app:** [`mac/`](mac/README.md) runs the same page in a menu bar app that hides the apps
+  you pick until you spend Brain Coins, and hides everything but your allowed apps during an unrot session.
+
+Ready-made downloads of the apps are on the
+[release page](https://github.com/mrbae84/test1/releases/tag/unrot-latest).
