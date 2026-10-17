@@ -57,3 +57,9 @@ picks its best or worst segment, and the dice are re-rolled until they match.
 
 Gambling carries real risk. This repository exists only to demonstrate UI and
 animation work — please do not treat it as a real product.
+
+## Also in this repo: unrot
+
+[`unrot/index.html`](unrot/index.html) is a separate single-file screen-time habit app
+(earn Brain Coins by doing real-life things, spend them on scroll time). See
+[`unrot/README.md`](unrot/README.md).

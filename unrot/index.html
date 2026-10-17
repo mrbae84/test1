@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#3fa9ee" />
+<title>unrot</title>
+<meta name="description" content="Earn Brain Coins by doing real-life things, spend them on scroll time." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   unrot — screen-time habit app (single-file web version)
+   Everything is stored in this browser's localStorage.
+   ============================================================ */
+
+:root{
+  --green:#61b832;
+  --green-d:#3f8a2a;
+  --green-l:#eafbdc;
+  --green-t:#4ea428;
+  --coin:#f6c22c;
+  --red:#ff3b30;
+  --red-l:#fde4e2;
+  --orange:#f2602f;
+  --ink:#111;
+  --ink-2:#2a2a2a;
+  --muted:#8b8b8b;
+  --muted-2:#a7a7a7;
+  --line:#e8e8e8;
+  --chunk:#e3e3e3;
+  --bg:#fff;
+  --bg-2:#f6f6f6;
+  --navy:#2c2c6c;
+  --col:430px;
+  --font:'Bricolage Grotesque',ui-rounded,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --ios:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#e7ebe6}
+body{
+  margin:0;
+  font-family:var(--font);
+  font-optical-sizing:auto;
+  color:var(--ink);
+  background:#e7ebe6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.3;
+}
+body.locked{overflow:hidden}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
+button:disabled{cursor:not-allowed}
+input,textarea{font:inherit;color:inherit}
+svg{display:block;flex:none}
+[hidden]{display:none !important}
+:focus-visible{outline:3px solid #7cc4f5;outline-offset:2px}
+
+.app{
+  position:relative;
+  max-width:var(--col);
+  min-height:100vh;
+  min-height:100dvh;
+  margin:0 auto;
+  background:var(--bg);
+  overflow-x:hidden;
+  box-shadow:0 0 0 1px rgba(0,0,0,.04),0 24px 70px rgba(0,0,0,.08);
+}
+.tab{display:none;padding-bottom:calc(130px + var(--safe-b))}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tab.on{display:block;animation:tabIn .28s ease}
+@keyframes tabIn{from{opacity:.4}to{opacity:1}}
+.pad{padding:0 16px}
+
+/* ---------------- shared bits ---------------- */
+.h2{font-size:24px;font-weight:800;letter-spacing:-.3px;line-height:1.15}
+.sec{margin:30px 0 16px}
+.sec-row{display:flex;align-items:center;justify-content:space-between;margin:32px 0 16px}
+.coin{display:inline-block;vertical-align:middle}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#9a9a9a;margin:0 2px;flex:none}
+.muted{color:var(--muted)}
+
+.card{
+  background:#fff;
+  border:1.5px solid var(--line);
+  border-radius:22px;
+}
+.chunk{
+  display:block;
+  background:#fff;
+  border:2px solid #e9e9e9;
+  border-radius:22px;
+  box-shadow:0 5px 0 var(--chunk);
+  transition:transform .08s ease,box-shadow .08s ease;
+}
+button.chunk:active:not(:disabled):not(.is-off){transform:translateY(3px);box-shadow:0 2px 0 var(--chunk)}
+
+.btn-green{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;height:66px;
+  border-radius:20px;
+  background:var(--green);
+  color:#fff;
+  font-size:25px;font-weight:600;letter-spacing:-.2px;
+  box-shadow:0 5px 0 var(--green-d);
+  transition:transform .08s ease,box-shadow .08s ease,filter .2s;
+}
+.btn-green:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--green-d)}
+.btn-green:disabled{background:#c9c9c9;box-shadow:0 5px 0 #a9a9a9;color:#f4f4f4}
+.btn-green.sm{height:52px;font-size:19px;border-radius:16px}
+.btn-ghost{
+  display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:18px;
+  background:#f1f1f1;color:#444;font-size:18px;font-weight:600;
+}
+.btn-white{
+  display:flex;align-items:center;justify-content:center;width:100%;height:62px;border-radius:20px;
+  background:#fff;color:var(--green-d);font-size:22px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.14);
+}
+.btn-white:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.14)}
+.pill{display:inline-flex;align-items:center;height:40px;padding:0 16px;border-radius:14px;background:#e9f8df;color:#3d8a22;font-size:19px;font-weight:600;white-space:nowrap}
+
+/* activity rows (chunky list) */
+.list{display:grid;gap:18px}
+.row{
+  display:flex;align-items:center;gap:18px;width:100%;
+  min-height:94px;padding:14px 16px 14px 16px;
+}
+.ico{
+  flex:none;display:grid;place-items:center;
+  width:54px;height:54px;border-radius:15px;
+  background:var(--t-bg,#eee);border:1.5px solid var(--t-bd,#ccc);
+  font-size:30px;line-height:1;
+}
+.row-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.row-main b{font-size:20px;font-weight:700;letter-spacing:-.2px;line-height:1.15}
+.meta{display:flex;align-items:center;gap:6px;color:#7d7d7d;font-size:18px;flex-wrap:wrap}
+.meta .pad-ic{color:#4fb4e6}
+.meta .cd{font-size:15px;color:#8a8a8a}
+.row.is-off{cursor:default}
+.row.is-off .ico{opacity:.5}
+.row.is-off b{color:#8e8e8e}
+.row.is-off .meta .coin,.row.is-off .meta .pad-ic{opacity:.45}
+.row.is-off .meta>span:first-of-type{color:#b4b4b4}
+
+/* ---------------- home ---------------- */
+.hero{position:relative;height:318px;overflow:hidden}
+.hero .scene{position:absolute;inset:0;width:100%;height:100%}
+.wordmark{
+  position:absolute;left:16px;top:calc(var(--safe-t) + 52px);
+  font-size:52px;font-weight:800;color:#fff;letter-spacing:-2px;line-height:1;
+  text-shadow:0 2px 10px rgba(0,60,120,.12);
+}
+.streak-pill{
+  position:absolute;right:16px;top:calc(var(--safe-t) + 62px);
+  display:flex;align-items:center;gap:8px;height:30px;padding:0 13px 0 11px;border-radius:16px;
+  background:rgba(22,52,52,.62);color:#fff;font-size:19px;font-weight:700;
+}
+.streak-pill svg{width:17px;height:17px}
+.hero-mascot{position:absolute;left:50%;top:calc(var(--safe-t) + 122px);width:182px;transform:translateX(-49%)}
+.hero-mascot svg{width:100%;height:auto;overflow:visible}
+
+.coins-card{display:flex;align-items:center;gap:14px;padding:22px 16px 22px 20px;margin-top:2px;border-width:1.5px;border-radius:24px}
+.coins-card .coin{width:34px;height:34px}
+.cc-body{flex:1;min-width:0}
+.cc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.cc-top b{font-size:19px;font-weight:700}
+.cc-top span{font-size:15px;color:#8b8b8b;font-weight:600}
+.bar{height:13px;border-radius:7px;background:#ececec;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:7px;background:#3ec455;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+
+.tiles{display:grid;grid-template-columns:213fr 116fr;gap:14px;margin-top:14px}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;height:118px;border-radius:24px}
+.tile svg{width:42px;height:42px}
+.tile span{font-size:16px;font-weight:500}
+
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.quick button{display:flex;flex-direction:column;align-items:center;gap:12px}
+.quick .sq{display:grid;place-items:center;width:100%;aspect-ratio:1;border-radius:22px}
+.quick .sq svg{width:31px;height:31px}
+.quick span{font-size:16px;font-weight:500}
+
+.steps-card{position:relative;margin-top:26px;padding:22px 20px 24px;border-radius:24px}
+.steps-card h3{font-size:25px;font-weight:800;letter-spacing:-.3px}
+.steps-card p{margin:14px 0 12px;font-size:16px;color:#8b8b8b;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:14px;padding:10px 0}
+.step .ck{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#e9e9e9;color:#fff;flex:none}
+.step.done .ck{background:#5bb833}
+.step .ck svg{width:20px;height:20px}
+.step span{flex:1;min-width:0;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step.done span{color:#8f8f8f;text-decoration:line-through;text-decoration-thickness:2px}
+.go{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--green);color:#fff;box-shadow:0 4px 0 var(--green-d);flex:none}
+.go:active{transform:translateY(3px);box-shadow:0 1px 0 var(--green-d)}
+.go svg{width:20px;height:20px}
+.steps-card .btn-green{margin-top:14px}
+.tape{
+  position:absolute;right:-14px;top:-16px;transform:rotate(9deg);
+  display:flex;align-items:center;gap:5px;padding:5px 26px 5px 18px;
+  background:#f8eeac;color:#222;font-size:15px;font-weight:700;
+  clip-path:polygon(0 8%,4% 0,8% 10%,12% 0,100% 0,96% 18%,100% 32%,96% 50%,100% 66%,96% 82%,100% 100%,0 100%,4% 84%,0 66%,4% 50%,0 32%,4% 16%);
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
+
+.streak-card{display:flex;align-items:center;gap:18px;margin-top:26px;padding:16px 18px;border-radius:24px;background:#fff6f2}
+.streak-card .ring{position:relative;width:56px;height:56px;flex:none}
+.streak-card .ring svg{width:56px;height:56px}
+.streak-card .ring .em{position:absolute;inset:0;display:grid;place-items:center;font-size:24px}
+.streak-card .st b{display:block;font-size:20px;font-weight:700;color:var(--orange)}
+.streak-card .st span{display:block;margin-top:3px;font-size:16px;color:#f0743e;line-height:1.3}
+.streak-card.done{background:#f0fbe9}
+.streak-card.done .st b{color:#43a41d}
+.streak-card.done .st span{color:#5bb833}
+
+.bed-card{display:flex;align-items:center;gap:16px;width:100%;margin-top:22px;padding:18px 18px;border-radius:24px;background:#fafafa;border:1.5px solid #f0f0f0;text-align:left}
+.moon{width:50px;height:50px;flex:none}
+.bed-card .t{flex:1;min-width:0}
+.bed-card b{display:block;font-size:25px;font-weight:800;letter-spacing:-.4px}
+.bed-card .t>span{display:block;font-size:16px;color:#8b8b8b;margin-top:2px}
+.bed-ring{position:relative;width:56px;height:56px;flex:none}
+.bed-ring svg{width:56px;height:56px;transform:rotate(-90deg)}
+.bed-ring em{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:9.5px;font-weight:700;color:#4a5a7d}
+
+.pill-btn{height:36px;padding:0 24px;border-radius:18px;background:#ececec;font-size:16px;font-weight:600}
+.more{display:flex;align-items:center;justify-content:center;gap:10px;margin:22px auto 0;padding:8px 14px;font-size:19px;font-weight:500;color:#8b8b8b}
+.more svg{width:20px;height:20px;transition:transform .2s}
+.more.open svg{transform:rotate(180deg)}
+
+.log-bar{padding:16px 16px 14px;border-radius:24px}
+.split{display:flex;gap:4px;height:28px}
+.split i{display:flex;align-items:center;justify-content:center;min-width:20px;border-radius:14px;color:#fff;font-style:normal;font-size:16px;font-weight:700;overflow:hidden;white-space:nowrap}
+.split .g{background:#5bb833}
+.split .r{background:#e04440}
+.split .e{background:#eee;flex:1}
+.legend{display:flex;gap:28px;margin-top:12px;padding-left:6px;font-size:17px;color:#8b8b8b}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend span::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--c)}
+.timeline{margin-top:14px;padding:12px 16px 8px;border-radius:24px}
+.tl{position:relative;display:flex;align-items:center;gap:16px;padding:14px 0 14px 34px}
+.tl::before{content:"";position:absolute;left:5px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--c)}
+.tl:not(:last-child)::after{content:"";position:absolute;left:10px;top:calc(50% + 10px);height:calc(100% - 20px);border-left:2px dotted #d4d4d4}
+.tl .ico{width:50px;height:50px;border:0;border-radius:13px;font-size:26px}
+.tl .tx{flex:1;min-width:0}
+.tl b{display:block;font-size:19px;font-weight:700;line-height:1.15;overflow:hidden;text-overflow:ellipsis}
+.tl .meta{font-size:15px;margin-top:4px;flex-wrap:nowrap;white-space:nowrap}
+.tl .meta svg{width:18px;height:18px}
+.tl .amt{display:flex;align-items:center;gap:6px;font-size:20px;font-weight:500;color:#555;white-space:nowrap}
+.tl .amt .coin{width:28px;height:28px}
+.empty{padding:22px 8px;text-align:center;color:#9a9a9a;font-size:16px}
+
+/* ---------------- stats ---------------- */
+.reclaim{padding:calc(var(--safe-t) + 48px) 20px 0;text-align:center;font-size:30px;line-height:1.25;font-weight:500;letter-spacing:-.3px}
+.reclaim strong{color:#5bb833;font-weight:800}
+.bank{position:relative;margin-top:40px;aspect-ratio:343/240;border-radius:22px;overflow:hidden;color:#fff;box-shadow:0 10px 30px rgba(40,120,60,.18)}
+.bank .scene{position:absolute;inset:0;width:100%;height:100%}
+.bank .bn{position:absolute;left:12px;top:16px;font-size:20px;font-weight:700;letter-spacing:.1px}
+.bank .chip{position:absolute;right:12px;top:20px;width:36px;height:29px}
+.bank .bm{position:absolute;left:50%;top:22%;width:30%;transform:translateX(-50%)}
+.bank .bm svg{width:100%;height:auto}
+.bank .ch{position:absolute;left:12px;bottom:14px}
+.bank .ch small{display:block;font-size:12px;font-weight:500;opacity:.95;letter-spacing:.2px}
+.bank .ch b{display:block;margin-top:2px;font-size:20px;font-weight:600}
+.bank .num{position:absolute;right:12px;bottom:15px;font-size:20px;font-weight:600;letter-spacing:.5px}
+.life{margin-top:26px;padding:18px 20px 22px;border-radius:22px;background:#f7f7f7}
+.life .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.life small{font-size:15px;font-weight:600;color:#8b8b8b;letter-spacing:.3px}
+.life em{font-style:normal;color:#5bb833;font-size:15px;font-weight:500;text-align:right}
+.life .v{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:30px;font-weight:800}
+.life .v .coin{width:30px;height:30px}
+.big-h{font-size:28px;font-weight:800;letter-spacing:-.4px;line-height:1.12;margin:56px 0 18px}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg2 button{height:42px;border-radius:21px;font-size:18px;font-weight:600;color:#666;text-align:center}
+.seg2 button.on{background:#eefbe3;color:var(--green-t)}
+.pu-list{display:grid;gap:12px;margin-top:16px}
+.pu{display:flex;align-items:center;gap:14px;padding:16px;border-radius:22px;background:#f7f7f7}
+.pu .ico{width:54px;height:54px;border:0;border-radius:14px}
+.pu .tx{flex:1;min-width:0}
+.pu b{display:block;font-size:19px;font-weight:700}
+.pu .tx>span{display:block;font-size:16px;color:#7f7f7f;margin-top:2px}
+.pu .amt{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700}
+.pu .amt .coin{width:22px;height:22px}
+
+.patterns{display:flex;gap:15px;margin:0 -16px;padding:2px 16px 8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
+.pcol{display:flex;flex-direction:column;gap:15px;width:142px;flex:none;scroll-snap-align:start}
+.patterns::-webkit-scrollbar{display:none}
+.pc{display:flex;flex-direction:column;justify-content:space-between;padding:18px 16px;border-radius:22px;background:var(--pc)}
+.pc.tall{height:184px}
+.pc.short{height:81px;flex-direction:row;align-items:flex-start;gap:10px;padding:16px 14px}
+.pc .em{font-size:28px;line-height:1}
+.pc .em .coin{width:28px;height:28px}
+.pc b{display:block;font-size:20px;font-weight:700;line-height:1.15;letter-spacing:-.2px}
+.pc .lab{display:block;font-size:15px;color:#8a8a8a;margin-top:3px;line-height:1.15}
+.pc small{display:block;font-size:11px;color:#8a8a8a;margin-top:3px}
+.pc.short .tx{display:flex;flex-direction:column;align-items:flex-end;text-align:right;min-width:0}
+.pc.short b{font-size:20px;white-space:nowrap}
+.pc.short .lab{font-size:13.5px}
+.pc .vrow{display:flex;align-items:center;gap:6px}
+.pc .vrow .coin{width:24px;height:24px}
+
+.chart{margin-top:18px;padding:22px 20px 18px;border:2px solid #ececec;border-radius:28px}
+.chart .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px}
+.chart .ttl{font-size:19px;font-weight:700;color:#8a8a8a}
+.badge{display:flex;align-items:center;gap:8px}
+.badge .ar{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--bc);color:#fff}
+.badge .ar svg{width:15px;height:15px}
+.badge b{display:block;font-size:22px;font-weight:800;line-height:1}
+.badge small{display:block;font-size:13px;color:#333;margin-top:3px}
+.chart .vrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
+.chart .val{display:flex;align-items:center;gap:12px;font-size:40px;font-weight:800;letter-spacing:-1px}
+.chart .val .vi{width:40px;height:40px;display:grid;place-items:center}
+.chart .val .vi svg{width:40px;height:40px}
+.seg{display:flex;padding:4px;border-radius:22px;background:#ececec}
+.seg button{height:34px;padding:0 17px;border-radius:17px;font-size:17px;font-weight:600;color:#8b8b8b}
+.seg button.on{background:#fff;color:#111;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.nav{display:flex;align-items:center;justify-content:space-between;margin:16px -4px 6px}
+.nav button{display:grid;place-items:center;width:32px;height:32px;color:#8a8a8a}
+.nav button:disabled{opacity:.35}
+.nav button svg{width:22px;height:22px}
+.nav span{font-size:17px;font-weight:600}
+.plot{position:relative;display:flex;gap:6px;height:178px;padding-top:22px}
+.plot .cols{position:relative;flex:1;display:grid;grid-template-columns:repeat(var(--n),1fr);column-gap:var(--gap,10px);align-items:end}
+.plot .grid{position:absolute;left:0;right:0;border-top:1px solid #f1f1f1}
+.plot .colw{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;height:100%;padding-bottom:26px}
+.plot .b{border-radius:var(--br,10px);background:var(--c);min-height:4px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.plot .b.z{background:var(--p);height:4px !important;border-radius:2px}
+.plot .lb{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:14px;color:#9a9a9a;white-space:nowrap}
+.plot .axis{position:relative;width:26px;font-size:14px;color:#9a9a9a}
+.plot .axis span{position:absolute;right:0;transform:translateY(50%)}
+.cal-link{display:flex;align-items:center;gap:16px;width:100%;margin-top:36px;padding:20px 20px;border-radius:24px}
+.cal-link .em{font-size:40px;line-height:1}
+.cal-link b{flex:1;font-size:23px;font-weight:700}
+.cal-link svg{width:30px;height:30px;color:#777}
+
+/* ---------------- challenges ---------------- */
+.ch-title{padding:calc(var(--safe-t) + 54px) 24px 0;font-size:40px;font-weight:800;letter-spacing:-.8px}
+.ch-label{margin:40px 24px 18px;font-size:15px;font-weight:600;color:#8a8a8a;letter-spacing:.4px}
+.ch-card{position:relative;display:block;width:calc(100% - 48px);margin:0 24px;aspect-ratio:326/180;border-radius:26px;overflow:hidden;color:#fff;text-align:left}
+.ch-card .scene{position:absolute;inset:0;width:100%;height:100%}
+.ch-card .tx{position:absolute;left:20px;top:50%;transform:translateY(-44%)}
+.ch-card b{display:block;font-size:30px;font-weight:800;line-height:1.08;letter-spacing:-.3px}
+.ch-card .tx>span{display:block;margin-top:10px;font-size:15px;font-weight:500;line-height:1.2}
+.ch-card .bm{position:absolute;right:16px;bottom:8px;width:44%}
+.ch-card .bm svg{width:100%;height:auto}
+.ch-card .prog{position:absolute;left:20px;right:20px;bottom:14px;height:8px;border-radius:4px;background:rgba(255,255,255,.35)}
+.ch-card .prog i{display:block;height:100%;border-radius:4px;background:#fff}
+.soon{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:64px;color:#6e6e6e;font-size:21px;font-weight:600}
+.soon svg{width:30px;height:30px}
+
+/* ---------------- settings (iOS look) ---------------- */
+.tab-settings{background:#f4f4f4;font-family:var(--ios)}
+.set-bar{
+  position:sticky;top:0;z-index:5;
+  padding:calc(var(--safe-t) + 14px) 16px 12px;text-align:center;
+  font-size:17px;font-weight:600;letter-spacing:-.2px;
+  background:rgba(244,244,244,.86);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);
+  opacity:0;pointer-events:none;transition:opacity .18s;
+}
+.set-bar.show{opacity:1}
+.set-title{margin-top:-46px;padding:calc(var(--safe-t) + 50px) 16px 0;font-size:34px;font-weight:700;letter-spacing:.2px}
+.set-h{margin:34px 16px 18px;font-size:20px;font-weight:600}
+.group{margin:0 16px;border-radius:22px;background:#fff;overflow:hidden}
+.srow{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:74px;padding:12px 16px 12px 20px;text-align:left}
+.srow+.srow::before{content:"";position:absolute;left:72px;right:0;top:0;border-top:.5px solid #d9d9d9}
+.srow:active{background:#f2f2f2}
+.si{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:var(--sb);font-size:24px;flex:none}
+.srow .tx{flex:1;min-width:0}
+.srow b{display:block;font-size:17.5px;font-weight:500;letter-spacing:-.2px}
+.srow small{display:block;margin-top:2px;font-size:14.5px;color:#8a8a8a;line-height:1.3}
+.srow .val{font-size:17px;color:#8a8a8a;white-space:nowrap}
+.srow .chev{display:block;width:18px;height:18px;color:#9b9b9b;flex:none}
+.chev svg{width:100%;height:100%}
+.srow.danger b{color:#ff3b30}
+.spill{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:9px;background:#e9f8e3;color:#43a01e;font-size:17px;font-weight:500;white-space:nowrap}
+.apps-stack{display:flex;align-items:center}
+.apps-stack i{width:24px;height:24px;border-radius:7px;margin-left:-8px;border:1.5px solid #fff;display:grid;place-items:center;color:#fff;font-style:normal;font-size:12px;font-weight:700}
+.apps-stack i:first-child{margin-left:0}
+.apps-stack span{margin-left:4px;font-size:16px;font-weight:600}
+.note{display:flex;gap:12px;align-items:flex-start;margin:0;padding:12px 18px 16px;border-top:.5px solid #e2e2e2;color:#8a8a8a;font-size:14.5px;line-height:1.35;background:#fff}
+.note svg{width:20px;height:20px;margin-top:2px;color:#9a9a9a}
+.toggle{position:relative;width:52px;height:32px;border-radius:16px;background:#e3e3e3;flex:none;transition:background .2s}
+.toggle::after{content:"";position:absolute;left:2px;top:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18);transition:transform .2s}
+.toggle[aria-checked="true"]{background:#34c759}
+.toggle[aria-checked="true"]::after{transform:translateX(20px)}
+
+/* ---------------- tab bar ---------------- */
+.tabbar{
+  position:fixed;left:50%;bottom:calc(var(--safe-b) + 22px);z-index:40;
+  display:grid;grid-template-columns:repeat(4,1fr);align-items:center;
+  width:min(310px,calc(100vw - 64px));height:78px;padding:0 10px;transform:translateX(-50%);
+  border-radius:39px;background:rgba(92,92,92,.86);
+  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+  box-shadow:0 10px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.tabbar button{display:grid;place-items:center;height:56px;width:56px;margin:auto;border-radius:50%;color:#c3c3c3;transition:background .2s,color .2s}
+.tabbar button svg{width:26px;height:26px}
+.tabbar button.on{background:rgba(255,255,255,.2);color:#fff}
+
+/* ---------------- sheets ---------------- */
+.sheet{
+  position:fixed;top:0;bottom:0;left:0;right:0;z-index:60;
+  width:min(100%,var(--col));margin:0 auto;
+  transform:translateY(100%);
+  background:#fff;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  transition:transform .38s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;
+}
+.sheet.open{transform:none}
+.x-btn{
+  position:absolute;right:16px;top:calc(var(--safe-t) + 46px);z-index:3;
+  display:grid;place-items:center;width:44px;height:44px;border-radius:50%;
+  background:rgba(0,0,0,.13);color:#fff;
+}
+.x-btn svg{width:22px;height:22px}
+.cat-head{position:relative;flex:none;height:272px;background:var(--hb)}
+.cat-head.compact{height:128px}
+.curve{position:absolute;left:-11%;right:-11%;bottom:-1px;height:40px;border-radius:50% 50% 0 0/100% 100% 0 0;background:#fff}
+.cat-head.compact .curve{height:30px}
+.cat-mascot{position:absolute;left:50%;bottom:-28px;width:164px;transform:translateX(-50%);z-index:2}
+.cat-head.compact .cat-mascot{bottom:-36px;width:152px}
+.cat-mascot svg{width:100%;height:auto;overflow:visible}
+.cat-body{flex:1;padding:50px 16px calc(40px + var(--safe-b))}
+.cat-head.compact+.cat-body{padding-top:62px}
+.cat-body h1{text-align:center;font-size:31px;font-weight:800;letter-spacing:-.4px}
+.cat-body .sub{margin:12px auto 28px;max-width:320px;text-align:center;color:#8b8b8b;font-size:18px;line-height:1.3}
+
+.act-head{position:relative;flex:none;height:250px;background:var(--green)}
+.act-head .curve{left:-7%;right:-7%;height:72px}
+.act-emoji{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);font-size:88px;line-height:1;z-index:2}
+.circ{position:absolute;top:calc(var(--safe-t) + 44px);z-index:3;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.22);color:#fff}
+.circ svg{width:22px;height:22px}
+.circ.l{left:22px}
+.circ.r{right:22px}
+.act-body{flex:1;padding:4px 16px 28px}
+.act-body h1{text-align:center;font-size:32px;font-weight:800;letter-spacing:-.4px}
+.stats3{display:grid;grid-template-columns:1fr 1fr 1fr;margin:26px 0 34px}
+.stats3>div{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0}
+.stats3>div+div{border-left:1.5px solid #e5e5e5}
+.stats3 b{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:700}
+.stats3 b .coin{width:20px;height:20px}
+.stats3 span{font-size:16px;color:#7f7f7f}
+.opt{display:flex;align-items:center;gap:16px;width:100%;padding:16px 16px;margin-bottom:18px;border-radius:24px}
+.opt .ico{width:54px;height:54px;border:0;border-radius:14px;background:#e8f8de;color:#888}
+.opt .ico svg{width:30px;height:30px}
+.opt .tx{flex:1;min-width:0}
+.opt b{display:block;font-size:20px;font-weight:700}
+.opt .tx>span{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:17px;color:#7f7f7f;line-height:1.25}
+.opt .pill{font-style:normal;padding:0 12px;flex:none}
+.opt span .coin{width:18px;height:18px}
+.opt .chev{display:block;width:22px;height:22px;color:#8a8a8a;flex:none}
+.act-foot{position:sticky;bottom:0;padding:12px 16px calc(24px + var(--safe-b));background:linear-gradient(rgba(255,255,255,0),#fff 22%)}
+.link-green{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-bottom:20px;color:#58b22d;font-size:19px;font-weight:600}
+.link-green svg{width:22px;height:22px}
+
+/* quest (photo) */
+.q-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(var(--safe-t) + 30px) 16px 0}
+.q-top h2{font-size:19px;font-weight:500;text-align:center;flex:1}
+.q-info{display:grid;place-items:center;width:36px;height:36px;color:#8a8a8a}
+.q-info svg{width:32px;height:32px}
+.q-x{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#8e8e93;color:#fff}
+.q-x svg{width:18px;height:18px}
+.q-chat{display:flex;align-items:center;gap:30px;padding:24px 20px 0 20px}
+.q-chat .bm{width:82px;flex:none}
+.q-chat .bm svg{width:100%;height:auto}
+.bubble{flex:1;padding:18px 18px;border:1.5px solid #dcdcdc;border-radius:30px;font-size:21px;font-weight:500;line-height:1.3}
+.q-art{position:relative;margin:56px 20px 0;aspect-ratio:1/0.98;border-radius:44px;overflow:hidden;background:#7fd99a}
+.q-art .scene{position:absolute;inset:0;width:100%;height:100%}
+.q-art .em{position:absolute;inset:0;display:grid;place-items:center;font-size:120px;line-height:1}
+.q-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.q-foot{margin-top:auto;padding:30px 16px calc(28px + var(--safe-b))}
+
+/* run screens */
+.run{flex:1;display:flex;flex-direction:column;align-items:center;padding:calc(var(--safe-t) + 70px) 24px calc(30px + var(--safe-b));color:#fff;text-align:center;background:var(--rb,var(--green))}
+.run h1{margin-top:22px;font-size:32px;font-weight:800}
+.run p{margin-top:8px;font-size:17px;opacity:.92}
+.ringbox{position:relative;width:250px;height:250px;margin-top:10px}
+.ringbox svg{width:250px;height:250px;transform:rotate(-90deg)}
+.ringbox .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ringbox .c .e{font-size:64px;line-height:1}
+.ringbox .c b{margin-top:8px;font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.run .earned{display:flex;align-items:center;gap:8px;margin-top:20px;padding:10px 18px;border-radius:20px;background:rgba(255,255,255,.2);font-size:20px;font-weight:700}
+.run .earned .coin{width:24px;height:24px}
+.run .spacer{flex:1;min-height:30px}
+.run .btn-white{max-width:380px}
+.run .lnk{margin-top:16px;font-size:16px;font-weight:600;opacity:.9;text-decoration:underline;text-underline-offset:3px}
+
+.breath{position:relative;display:grid;place-items:center;width:260px;height:260px;margin-top:24px}
+.breath .orb{position:absolute;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#d7f0fc 55%,#a5dcf6);box-shadow:0 0 0 18px rgba(255,255,255,.18),0 0 0 40px rgba(255,255,255,.1);transform:scale(.8);transition-property:transform;transition-timing-function:ease-in-out}
+.breath .lbl{position:relative;font-size:22px;font-weight:700;color:#1f6a95}
+.breath .lbl small{display:block;text-align:center;font-size:30px;font-weight:800;margin-top:2px}
+
+.counter{display:flex;flex-direction:column;align-items:center;width:100%}
+.pad-btn{display:grid;place-items:center;width:240px;height:240px;margin-top:20px;border-radius:50%;background:#fff;color:#e5484d;box-shadow:0 8px 0 rgba(0,0,0,.12);font-size:16px;font-weight:700}
+.pad-btn:active{transform:translateY(5px);box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.pad-btn b{display:block;font-size:84px;line-height:1;font-weight:800;color:#222}
+.pm{display:flex;gap:16px;margin-top:22px}
+.pm button{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:28px;font-weight:700;text-align:center}
+
+.journal textarea{width:100%;min-height:180px;margin-top:16px;padding:16px;border:2px solid #ececec;border-radius:20px;font-size:18px;line-height:1.4;resize:vertical;background:#fcfcfc}
+.journal textarea:focus{outline:none;border-color:#f2c987;background:#fff}
+.prompt{padding:18px;border-radius:20px;background:#fff7e6;font-size:19px;font-weight:600;line-height:1.3}
+.moods{display:flex;justify-content:space-between;gap:6px;margin-top:16px}
+.moods button{flex:1;padding:10px 0;border-radius:16px;border:2px solid #eee;font-size:30px;text-align:center;line-height:1}
+.moods button small{display:block;margin-top:6px;font-size:11.5px;color:#777}
+.moods button.on{border-color:#f2a061;background:#fff3ea}
+
+/* ---------------- panels (bottom pickers) ---------------- */
+.backdrop{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.35);opacity:0;transition:opacity .25s}
+.backdrop.open{opacity:1}
+.panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:81;
+  width:min(100%,var(--col));margin:0 auto;max-height:86vh;overflow-y:auto;
+  padding:10px 16px calc(24px + var(--safe-b));
+  border-radius:28px 28px 0 0;background:#fff;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);
+}
+.panel.open{transform:none}
+.panel .grab{width:40px;height:5px;margin:0 auto 14px;border-radius:3px;background:#ddd}
+.panel h3{font-size:22px;font-weight:800;letter-spacing:-.2px;text-align:center}
+.panel .psub{margin:8px 0 0;text-align:center;font-size:15px;color:#8a8a8a;line-height:1.35}
+.panel .body{margin-top:18px}
+.panel .body p{font-size:16px;line-height:1.45;color:#444;margin-bottom:12px}
+.choice{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;margin-bottom:10px;border:2px solid #eee;border-radius:18px;font-size:18px;font-weight:600}
+.choice .r{margin-left:auto;display:flex;align-items:center;gap:6px;color:#7f7f7f;font-weight:500;font-size:16px}
+.choice .r .coin{width:18px;height:18px}
+.choice.on{border-color:var(--green);background:#f3fbec}
+.choice:disabled{opacity:.45}
+.choice .ai{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;color:#fff;font-size:15px;font-weight:800;flex:none}
+.choice .box{margin-left:auto;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid #d4d4d4;color:#fff}
+.choice.on .box{background:var(--green);border-color:var(--green)}
+.choice .box svg{width:14px;height:14px}
+.field{width:100%;height:56px;padding:0 16px;border:2px solid #ececec;border-radius:16px;font-size:19px;background:#fafafa}
+.field:focus{outline:none;border-color:var(--green);background:#fff}
+.field-time{font-size:28px;text-align:center;height:70px}
+.panel .btn-green{margin-top:18px}
+.panel .btn-ghost{margin-top:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.cal-grid .wd{font-size:13px;color:#9a9a9a;font-weight:600;padding-bottom:4px}
+.cal-grid button{position:relative;aspect-ratio:1;border-radius:12px;font-size:15px;font-weight:600;background:#f6f6f6}
+.cal-grid button.g{background:#e3f6d8;color:#2f7d17}
+.cal-grid button.r{background:#fde3e1;color:#b8231c}
+.cal-grid button.t{outline:2px solid #111;outline-offset:-2px}
+.cal-grid button.sel{background:#111;color:#fff}
+.cal-grid button:disabled{background:none;color:#ccc}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.cal-nav button{width:36px;height:36px;display:grid;place-items:center;color:#777}
+.cal-nav button svg{width:22px;height:22px}
+.cal-nav b{font-size:18px}
+.day-list{margin-top:16px}
+.day-list .tl{padding-top:10px;padding-bottom:10px}
+.ch-days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:16px 0 6px}
+.ch-days i{display:grid;place-items:center;aspect-ratio:1;border-radius:50%;background:#f0f0f0;font-style:normal;font-size:13px;font-weight:700;color:#999}
+.ch-days i.d{background:#5bb833;color:#fff}
+.ch-days i.t{outline:2px solid #5bb833;outline-offset:1px}
+.ch-days i.m{background:#fde3e1;color:#d0453f}
+
+/* purchase animation */
+.buy{position:fixed;inset:0;z-index:95;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:rgba(14,22,18,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .25s}
+.buy.open{opacity:1}
+.term{position:relative;width:180px;height:120px;border-radius:24px;background:#2b2f36;box-shadow:0 14px 30px rgba(0,0,0,.35);display:grid;place-items:center}
+.term .scr{width:140px;height:64px;border-radius:12px;background:#11151b;color:#9fb3c8;display:grid;place-items:center;font-size:15px;font-weight:700;letter-spacing:.3px;transition:background .25s,color .25s}
+.term.ok .scr{background:#2fbf5b;color:#fff}
+.term::after{content:"";position:absolute;top:-10px;left:50%;width:46px;height:14px;margin-left:-23px;border-radius:7px 7px 0 0;background:#3a3f48}
+.mini-bank{position:relative;width:240px;aspect-ratio:343/240;border-radius:16px;overflow:hidden;color:#fff;margin-top:-10px;box-shadow:0 16px 36px rgba(0,0,0,.4);transform:translateY(120vh) rotate(-8deg);transition:transform .7s cubic-bezier(.2,.9,.25,1)}
+.mini-bank .scene{position:absolute;inset:0;width:100%;height:100%}
+.mini-bank .bn{position:absolute;left:10px;top:9px;font-size:14px;font-weight:700}
+.mini-bank .chip{position:absolute;right:10px;top:10px;width:26px;height:21px}
+.mini-bank .num{position:absolute;right:10px;bottom:9px;font-size:14px;font-weight:600}
+.buy.s1 .mini-bank{transform:translateY(40px) rotate(-6deg)}
+.buy.s2 .mini-bank{transform:translateY(-36px) rotate(0) scale(.94)}
+.buy.s3 .mini-bank{transform:translateY(120vh) rotate(10deg)}
+.receipt{
+  position:absolute;left:50%;top:50%;width:min(300px,calc(100% - 48px));
+  padding:22px 22px 26px;background:#fffdf7;color:#222;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.55;
+  transform:translate(-50%,-30%) scaleY(.2);transform-origin:top;opacity:0;
+  transition:transform .55s cubic-bezier(.2,.9,.25,1),opacity .3s;
+  clip-path:polygon(0 0,100% 0,100% 100%,95% 98%,90% 100%,85% 98%,80% 100%,75% 98%,70% 100%,65% 98%,60% 100%,55% 98%,50% 100%,45% 98%,40% 100%,35% 98%,30% 100%,25% 98%,20% 100%,15% 98%,10% 100%,5% 98%,0 100%);
+}
+.buy.s4 .receipt{transform:translate(-50%,-50%) scaleY(1);opacity:1}
+.buy.s4 .term,.buy.s4 .mini-bank{opacity:0;transition:opacity .2s}
+.receipt h4{margin:0;text-align:center;font-size:15px;letter-spacing:2px}
+.receipt .c{text-align:center;color:#777}
+.receipt hr{border:0;border-top:1.5px dashed #bbb;margin:10px 0}
+.receipt .ln{display:flex;justify-content:space-between;gap:10px}
+.receipt .tot{font-weight:800;font-size:15px}
+.receipt .quote{margin-top:10px;text-align:center;font-style:italic;color:#555}
+.receipt button{display:block;width:100%;margin-top:16px;height:46px;border-radius:12px;background:var(--green);color:#fff;font-family:var(--font);font-size:17px;font-weight:700;box-shadow:0 4px 0 var(--green-d)}
+
+/* toast + coin burst */
+.toast{
+  position:fixed;left:50%;top:calc(var(--safe-t) + 16px);z-index:120;
+  max-width:min(92vw,390px);padding:12px 18px;border-radius:18px;
+  background:rgba(25,25,25,.92);color:#fff;font-size:16px;font-weight:600;text-align:center;
+  transform:translate(-50%,-140%);transition:transform .3s cubic-bezier(.2,.8,.2,1);pointer-events:none;
+}
+.toast.show{transform:translate(-50%,0)}
+.burst{position:fixed;inset:0;z-index:110;pointer-events:none;overflow:hidden}
+.burst .coin{position:absolute;left:50%;top:55%;width:34px;height:34px;animation:fly 1.1s cubic-bezier(.2,.7,.3,1) forwards}
+.burst .plus{position:absolute;left:50%;top:44%;transform:translate(-50%,0);font-size:46px;font-weight:800;color:#f2b411;text-shadow:0 3px 0 #fff,0 0 18px rgba(255,255,255,.9);animation:rise 1.2s ease-out forwards}
+@keyframes fly{
+  0%{transform:translate(-50%,-50%) scale(.4);opacity:0}
+  15%{opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1) rotate(var(--rot));opacity:0}
+}
+@keyframes rise{0%{opacity:0;transform:translate(-50%,20px) scale(.6)}20%{opacity:1;transform:translate(-50%,0) scale(1.05)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+
+@media (min-width:600px){
+  body{padding:0}
+}
+@media (max-width:360px){
+  .quick span{font-size:14px}
+  .row-main b{font-size:18px}
+  .reclaim{font-size:26px}
+  .tiles{grid-template-columns:1.6fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="g-coin" cx="38%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#ffe680"/>
+      <stop offset=".55" stop-color="#fbc72b"/>
+      <stop offset="1" stop-color="#f0a417"/>
+    </radialGradient>
+    <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3ea7ee"/>
+      <stop offset=".6" stop-color="#78c6f2"/>
+      <stop offset="1" stop-color="#b9e3f8"/>
+    </linearGradient>
+    <linearGradient id="g-fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".75" stop-color="#fff" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="g-ch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#43b5f6"/>
+      <stop offset="1" stop-color="#62cffb"/>
+    </linearGradient>
+    <linearGradient id="g-bank" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b8fd3"/>
+      <stop offset="1" stop-color="#5bc2d6"/>
+    </linearGradient>
+    <linearGradient id="g-chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7d25a"/>
+      <stop offset="1" stop-color="#e2a926"/>
+    </linearGradient>
+    <linearGradient id="g-park" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#86e0a0"/>
+      <stop offset="1" stop-color="#6fd38f"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <section class="tab" id="tab-home" data-tab="home" aria-label="Home"></section>
+  <section class="tab" id="tab-stats" data-tab="stats" aria-label="Statistics"></section>
+  <section class="tab" id="tab-challenges" data-tab="challenges" aria-label="Challenges"></section>
+  <section class="tab tab-settings" id="tab-settings" data-tab="settings" aria-label="Settings"></section>
+</div>
+
+<nav class="tabbar" aria-label="Main">
+  <button data-act="tab" data-id="home" aria-label="Home"></button>
+  <button data-act="tab" data-id="stats" aria-label="Statistics"></button>
+  <button data-act="tab" data-id="challenges" aria-label="Challenges"></button>
+  <button data-act="tab" data-id="settings" aria-label="Settings"></button>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="photo-input" accept="image/*" capture="environment" hidden />
+<script>
+(() => {
+'use strict';
+
+/* ================================================================
+   constants & catalogue
+   ================================================================ */
+const KEY = 'unrot.v1';
+const CAP = 100;               // wallet size ("99/100")
+const STREAK_GOAL = 10;        // coins earned in a day to keep the streak
+const MIN = 6e4, HOUR = 36e5, DAY = 864e5;
+
+const DIFFICULTY = {
+  easy:   { label: 'Easy',   rate: 1, tone: ['#e9f8e3', '#43a01e'] },
+  medium: { label: 'Medium', rate: 2, tone: ['#fff1d1', '#c27c00'] },
+  hard:   { label: 'Hard',   rate: 3, tone: ['#fde4e2', '#d0453f'] },
+};
+const LANGS = { system: 'System default', en: 'English', vi: 'Tiếng Việt' };
+
+const TONES = {
+  orange: ['#fde7d6', '#f39b52'],
+  green:  ['#ddf5dd', '#5cc35f'],
+  blue:   ['#d9e9fd', '#3a93ee'],
+  yellow: ['#fff5c9', '#f0cb3a'],
+  pink:   ['#fde6e8', '#ef9aa2'],
+  red:    ['#fde0e0', '#e5484d'],
+  peach:  ['#fde4d3', '#ee8d4b'],
+};
+
+// steps: [label, seconds, orb size (1 = full, 0 = small)]
+const ACTS = {
+  workout:  { cat: 'timed', title: 'Workout', icon: '🎾', hero: '🏋️‍♀️', rate: 15, tone: 'orange' },
+  skill:    { cat: 'timed', title: 'Practice a skill', icon: '🎸', rate: 20, tone: 'orange' },
+  cook:     { cat: 'timed', title: 'Cook a meal', icon: '🧑‍🍳', hero: '👨‍🍳', rate: 10, tone: 'orange' },
+  read:     { cat: 'timed', title: 'Read a book', icon: '📚', rate: 15, tone: 'orange' },
+  walk:     { cat: 'timed', title: 'Go for a walk', icon: '🚶', rate: 10, tone: 'orange' },
+  study:    { cat: 'timed', title: 'Study', icon: '✏️', rate: 20, tone: 'orange' },
+  meditate: { cat: 'timed', title: 'Meditate', icon: '🧘', rate: 15, tone: 'orange' },
+  chores:   { cat: 'timed', title: 'Do chores', icon: '🧹', rate: 10, tone: 'orange' },
+
+  b_energy:  { cat: 'breathe', title: 'Energy Breathing', icon: '⚡', perMin: 2, tone: 'blue', steps: [['Breathe in', 2, 1], ['Breathe out', 2, 0]] },
+  b_anxiety: { cat: 'breathe', title: 'Anxiety Breathing', icon: '😌', perMin: 2, tone: 'blue', steps: [['Breathe in', 4, 1], ['Hold', 7, 1], ['Breathe out', 8, 0]] },
+  b_calm:    { cat: 'breathe', title: 'Calm Breathing', icon: '🧘', perMin: 2, tone: 'blue', steps: [['Breathe in', 4, 1], ['Breathe out', 6, 0]] },
+  b_focus:   { cat: 'breathe', title: 'Focus Breathing', icon: '🎯', perMin: 2, tone: 'blue', steps: [['Breathe in', 4, 1], ['Hold', 4, 1], ['Breathe out', 4, 0], ['Hold', 4, 0]] },
+  b_sleep:   { cat: 'breathe', title: 'Deep Sleep Breathing', icon: '😴', perMin: 2, tone: 'blue', steps: [['Breathe in', 4, 1], ['Hold', 2, 1], ['Breathe out', 8, 0]] },
+
+  j_grat:    { cat: 'journal', title: 'Gratitude Journaling', icon: '🥰', coins: 7, tone: 'yellow', cool: 'day', prompt: 'Write down three things you are grateful for today.' },
+  j_emotion: { cat: 'journal', title: 'Emotional Check-In', icon: '💭', coins: 7, tone: 'pink', cool: 3, moods: true, prompt: 'How are you feeling right now, and what is behind it?' },
+  j_reflect: { cat: 'journal', title: 'Reflection Check-In', icon: '🧠', coins: 10, tone: 'peach', cool: 'day', prompt: 'How did today go? What would you do differently tomorrow?' },
+
+  pushups: { cat: 'exercise', title: 'Pushups', icon: '💪', per: 1, unit: 'pushup', tone: 'red' },
+
+  q_smile:  { cat: 'quest', title: 'Smile', icon: '😊', coins: 3, tone: 'green', cool: 'day', ask: 'Send me a selfie with a big smile!' },
+  q_grass:  { cat: 'quest', title: 'Touch grass', icon: '🌱', coins: 7, tone: 'green', cool: 'day', ask: 'Send me a photo of you touching grass!' },
+  q_water:  { cat: 'quest', title: 'Drink some water', icon: '💧', coins: 3, tone: 'green', cool: 'day', ask: 'Send me a photo of water!' },
+  q_meal:   { cat: 'quest', title: 'Eat a healthy meal', icon: '🥗', coins: 7, tone: 'green', cool: 'day', ask: 'Send me a photo of your healthy meal!' },
+  q_nature: { cat: 'quest', title: 'Spend time in nature', icon: '🌳', coins: 7, tone: 'green', cool: 'day', ask: 'Send me a photo from outside!' },
+  q_bed:    { cat: 'quest', title: 'Make your bed', icon: '🛏️', coins: 5, tone: 'green', cool: 'day', ask: 'Send me a photo of your made bed!' },
+  q_desk:   { cat: 'quest', title: 'Clean your desk', icon: '🗃️', coins: 7, tone: 'green', cool: 'day', ask: 'Send me a photo of your clean desk!' },
+  q_hang:   { cat: 'quest', title: 'Hang out with someone', icon: '👯', coins: 5, tone: 'green', cool: 'day', ask: 'Send me a photo with your friend!' },
+};
+for (const [id, a] of Object.entries(ACTS)) a.id = id;
+
+const CATS = {
+  breathe:  { title: 'Breathing Exercise', sub: 'Quick breathing exercises to calm your mind and restore brain energy.', bg: '#8ed6f3', mascot: 'meditate', compact: true, stat: 'Breathwork', icon: '🌬️', tone: 'blue' },
+  journal:  { title: 'Journaling Exercises', sub: 'Clear your mind and organize your thoughts.', bg: '#f2c987', mascot: 'journal', stat: 'Journaling', icon: '📓', tone: 'yellow' },
+  exercise: { title: 'Exercises', sub: 'Move your body to boost brain energy.', bg: '#8fe3a4', mascot: 'lift', stat: 'Exercise', icon: '💪', tone: 'red' },
+  quest:    { title: 'Side Quests', sub: 'Complete challenges to earn Brain Coins.', bg: '#bda6f3', mascot: 'think', stat: 'Side Quests', icon: '🗺️', tone: 'green' },
+};
+
+// [id, name, colour, colour, text colour]
+const APPS = [
+  ['tiktok', 'TikTok', '#1b1b1b', '#fe2c55'], ['instagram', 'Instagram', '#f58529', '#dd2a7b'],
+  ['youtube', 'YouTube', '#ff3b30', '#c4161c'], ['facebook', 'Facebook', '#1877f2', '#0b5fd1'],
+  ['x', 'X', '#333', '#000'], ['reddit', 'Reddit', '#ff5700', '#e14a00'],
+  ['snapchat', 'Snapchat', '#fffc00', '#f2d600', '#222'], ['netflix', 'Netflix', '#e50914', '#9c0610'],
+  ['threads', 'Threads', '#444', '#111'], ['messenger', 'Messenger', '#00b2ff', '#a033ff'],
+  ['zalo', 'Zalo', '#0068ff', '#0047b3'], ['discord', 'Discord', '#5865f2', '#4752c4'],
+  ['pinterest', 'Pinterest', '#e60023', '#ad001a'], ['twitch', 'Twitch', '#9146ff', '#6a2bd9'],
+  ['music', 'Music', '#fc3c44', '#f94c57'], ['games', 'Games', '#34c759', '#248a3d'],
+  ['maps', 'Maps', '#34c759', '#0a84ff'], ['phone', 'Phone', '#34c759', '#28a745'],
+  ['messages', 'Messages', '#5ad67d', '#1fa64a'], ['bank', 'Banking', '#0a84ff', '#0060c0'],
+  ['calendar', 'Calendar', '#ff6b5f', '#ff3b30'], ['notes', 'Notes', '#ffd60a', '#f5b800', '#222'],
+  ['spotify', 'Spotify', '#1db954', '#14833b'], ['camera', 'Camera', '#8e8e93', '#5c5c60'],
+];
+const DEFAULT_DISTRACTING = ['tiktok', 'instagram', 'youtube', 'facebook', 'x', 'reddit', 'snapchat', 'netflix', 'threads', 'messenger', 'zalo'];
+const DEFAULT_ESSENTIAL = ['workout', 'skill', 'cook', 'q_water', 'read', 'walk', 'meditate', 'study'];
+const DURATIONS = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+const SCROLL_OPTIONS = [1, 5, 10, 15, 30];
+
+/* ================================================================
+   small helpers
+   ================================================================ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const pad2 = n => String(n).padStart(2, '0');
+const sum = arr => arr.reduce((x, y) => x + y, 0);
+const dkey = t => { const d = new Date(t); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const keyDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const startOfDay = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d; };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const dayDiff = (a, b) => Math.round((startOfDay(b) - startOfDay(a)) / DAY);
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Vietnamese-locale dates, as the screenshots show them
+const WD = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
+const viLong = t => { const d = new Date(t); return `thg ${d.getMonth() + 1} ${ordinal(d.getDate())}, ${d.getFullYear()}`; };
+const viHour = h => `${h % 12 || 12} ${h < 12 ? 'SA' : 'CH'}`;
+const viTime = (h, m) => `${h % 12 || 12}:${pad2(m)} ${h < 12 ? 'SA' : 'CH'}`;
+const enTime = t => { const d = new Date(t), h = d.getHours(); return `${h % 12 || 12}:${pad2(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; };
+const viDate = t => { const d = new Date(t); return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; };
+
+function rangeLabel(a, b) {
+  if (a.getFullYear() !== b.getFullYear()) return `${a.getDate()} thg ${a.getMonth() + 1} ${a.getFullYear()} - ${b.getDate()} thg ${b.getMonth() + 1} ${b.getFullYear()}`;
+  if (a.getMonth() !== b.getMonth()) return `${a.getDate()} thg ${a.getMonth() + 1} - ${b.getDate()} thg ${b.getMonth() + 1} ${b.getFullYear()}`;
+  return `${a.getDate()} - ${b.getDate()} thg ${b.getMonth() + 1} ${b.getFullYear()}`;
+}
+function fmtMins(m) {
+  m = Math.max(0, Math.round(m));
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? `${h}h${r}m` : `${h}h`;
+}
+function fmtDurLong(m) {
+  if (m < 60) return `${m} minute${m === 1 ? '' : 's'}`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return `${h} hour${h === 1 ? '' : 's'}${r ? ` ${r} minutes` : ''}`;
+}
+function fmtClock(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${pad2(m)}:${pad2(s)}`;
+}
+function niceMax(v) {
+  if (v <= 10) return 10;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 5, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+
+/* ================================================================
+   artwork (inline SVG)
+   ================================================================ */
+const I = (body, vb = '0 0 24 24') => `<svg viewBox="${vb}" width="24" height="24" aria-hidden="true" focusable="false">${body}</svg>`;
+const STROKE = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
+
+const ICON = {
+  home: I(`<path d="M4 10.4 12 4l8 6.4V19a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19z" ${STROKE} stroke-width="2.3"/><path d="M9.7 20.6v-4.9a2.3 2.3 0 0 1 4.6 0v4.9" ${STROKE} stroke-width="2.3"/>`),
+  stats: I('<rect x="3" y="11.5" width="5" height="9.5" rx="2.5" fill="currentColor"/><rect x="9.5" y="7" width="5" height="14" rx="2.5" fill="currentColor"/><rect x="16" y="3" width="5" height="18" rx="2.5" fill="currentColor"/>'),
+  trophy: I(`<path d="M7 3h10v6.2a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 5H4.4v1.4A3.6 3.6 0 0 0 8 10M17 5h2.6v1.4A3.6 3.6 0 0 1 16 10" ${STROKE} stroke-width="2"/><path d="M10.6 14h2.8v3.6h-2.8z" fill="currentColor"/><rect x="7.4" y="17.4" width="9.2" height="3.6" rx="1.2" fill="currentColor"/>`),
+  user: I('<circle cx="12" cy="7.4" r="4.4" fill="currentColor"/><rect x="3.6" y="13.8" width="16.8" height="7.6" rx="3.8" fill="currentColor"/>'),
+  flame: I(`<path d="M12 2.6c.6 3-1.2 4.6-2.8 6.3C7.6 10.5 6 12.3 6 14.9a6 6 0 0 0 12 .1c0-2.6-1.3-4.3-2.4-5.6-.3 1.4-1 2.3-2 2.6.6-3.3-.2-6.8-1.6-9.4z" ${STROKE} stroke-width="2"/><path d="M12 20.6a2.7 2.7 0 0 1-2.7-2.7c0-1.6 1.4-2.4 2.2-3.6.6 1.2 2.2 1.8 2.2 3.6a2.6 2.6 0 0 1-1.7 2.7z" ${STROKE} stroke-width="1.6"/>`),
+  check: I(`<path d="M5 12.6l4.3 4.3L19 7.2" ${STROKE} stroke-width="3.2"/>`),
+  arrowR: I(`<path d="M4.5 12h14.5M13 6l6 6-6 6" ${STROKE} stroke-width="2.7"/>`),
+  chevR: I(`<path d="M9 5l7 7-7 7" ${STROKE} stroke-width="2.2"/>`),
+  chevL: I(`<path d="M15 5l-7 7 7 7" ${STROKE} stroke-width="2.2"/>`),
+  chevD: I(`<path d="M5 9l7 7 7-7" ${STROKE} stroke-width="2"/>`),
+  x: I(`<path d="M6.5 6.5l11 11M17.5 6.5l-11 11" ${STROKE} stroke-width="2.8"/>`),
+  cal: I(`<rect x="3.5" y="4.5" width="17" height="16" rx="3.2" ${STROKE} stroke-width="2"/><path d="M3.5 9.2h17" ${STROKE} stroke-width="2"/><g fill="currentColor"><circle cx="8" cy="12.8" r="1.05"/><circle cx="12" cy="12.8" r="1.05"/><circle cx="16" cy="12.8" r="1.05"/><circle cx="8" cy="16.4" r="1.05"/><circle cx="12" cy="16.4" r="1.05"/><circle cx="16" cy="16.4" r="1.05"/></g>`),
+  watch: I(`<circle cx="12" cy="13.6" r="7.4" ${STROKE} stroke-width="2.2"/><path d="M12 13.6V9.8M10 3h4M18.4 6.6 20 5" ${STROKE} stroke-width="2.2"/>`),
+  shield: I('<path d="M12 2.6 4.4 5.5v5.7c0 4.8 3.2 8.7 7.6 10.1 4.4-1.4 7.6-5.3 7.6-10.1V5.5z" fill="#5bb833"/><path d="M8.4 12.2l2.6 2.6 4.7-5.1" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'),
+  share: I(`<path d="M12 3.2v11.6M7.8 7.2 12 3l4.2 4.2" ${STROKE} stroke-width="2.2"/><path d="M8.6 10.4H7a1.8 1.8 0 0 0-1.8 1.8v7a1.8 1.8 0 0 0 1.8 1.8h10a1.8 1.8 0 0 0 1.8-1.8v-7a1.8 1.8 0 0 0-1.8-1.8h-1.6" ${STROKE} stroke-width="2.2"/>`),
+  info: I(`<circle cx="12" cy="12" r="9.6" ${STROKE} stroke-width="1.7"/><path d="M12 10.6v6.2" ${STROKE} stroke-width="2"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/>`),
+  pad: I('<path d="M7 6.2h10a5 5 0 0 1 4.9 5.9l-1 5.2a2.6 2.6 0 0 1-4.6 1.1L14.6 16H9.4l-1.7 2.4a2.6 2.6 0 0 1-4.6-1.1l-1-5.2A5 5 0 0 1 7 6.2z" fill="currentColor"/><path d="M7.6 9.6v4M5.6 11.6h4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="16" cy="10.4" r="1.25" fill="#fff"/><circle cx="17.9" cy="12.8" r="1.25" fill="#fff"/>'),
+  lockOpen: I('<rect x="5" y="10.6" width="14" height="10.4" rx="2.6" fill="#f26a5b"/><path d="M8.4 10.6V7.6a3.6 3.6 0 0 1 6.9-1.4" fill="none" stroke="#f26a5b" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="15.6" r="1.4" fill="#fff"/>'),
+  hourglass: I('<path d="M5.8 3h12.4M5.8 21h12.4" stroke="#4fb32b" stroke-width="2.6" stroke-linecap="round"/><path d="M7.6 3.4c0 4.6 4.4 5.6 4.4 8.6s-4.4 4-4.4 8.6h8.8c0-4.6-4.4-5.6-4.4-8.6s4.4-4 4.4-8.6z" fill="none" stroke="#4fb32b" stroke-width="2.3" stroke-linejoin="round"/><path d="M9.4 19.6c.8-2 2.6-2.7 2.6-4.6.3 1.9 1.8 2.6 2.6 4.6zM10 7.4h4c-.6 1.2-1.4 1.8-2 2.4-.6-.6-1.4-1.2-2-2.4z" fill="#4fb32b"/>'),
+  skull: I('<path d="M12 2.8a8 8 0 0 0-8 8c0 2.6 1.2 4.6 3 5.9V20a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-3.3c1.8-1.3 3-3.3 3-5.9a8 8 0 0 0-8-8z" fill="#fff" stroke="#f04b42" stroke-width="2"/><circle cx="8.9" cy="11.4" r="2.3" fill="#f04b42"/><circle cx="15.1" cy="11.4" r="2.3" fill="#f04b42"/><path d="M12 13.6l-1 2h2z" fill="#f04b42"/><path d="M10 21v-2.6M12 21v-2.6M14 21v-2.6" stroke="#f04b42" stroke-width="1.5"/>'),
+  arrowNE: I(`<path d="M7 17 17 7M9 7h8v8" ${STROKE} stroke-width="2.8"/>`),
+  arrowSE: I(`<path d="M7 7l10 10M17 9v8H9" ${STROKE} stroke-width="2.8"/>`),
+  sparkle: I('<path d="M13.2 5.2c.6 4.2 2.3 6 6.6 6.6-4.3.6-6 2.3-6.6 6.6-.6-4.3-2.3-6-6.6-6.6 4.3-.6 6-2.4 6.6-6.6z" fill="#4fb32b"/><path d="M6.2 2.6c.3 1.6.9 2.2 2.5 2.5-1.6.3-2.2.9-2.5 2.5-.3-1.6-.9-2.2-2.5-2.5 1.6-.3 2.2-.9 2.5-2.5zM17 1.6c.2 1 .5 1.3 1.5 1.5-1 .2-1.3.5-1.5 1.5-.2-1-.5-1.3-1.5-1.5 1-.2 1.3-.5 1.5-1.5z" fill="#4fb32b"/>'),
+  leaf: I('<path d="M42 44 33 35" stroke="#3b8d2a" stroke-width="3.4" stroke-linecap="round"/><path d="M5.5 7.5c15.5-3.2 29.4 3 31.4 19 .7 5.5-1.5 9.2-4 10.6C19 38.6 7.2 28.6 5.5 7.5z" fill="#4cae3a"/><path d="M10 12l23.5 23.2M17.6 19.6l-1.2 9.2M17.6 19.6l8.6-1.6M25.4 27.3l-2.2 7.2M25.4 27.3l7.6-2.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>', '0 0 48 48'),
+  phone: I('<rect x="12" y="4" width="24" height="40" rx="6.5" fill="#dcedff" stroke="#2f86e6" stroke-width="3"/><path d="M38.2 15v7" stroke="#2f86e6" stroke-width="2.6" stroke-linecap="round"/><path d="M20.6 19.5v3M27.4 19.5v3" stroke="#2f86e6" stroke-width="2.8" stroke-linecap="round"/><path d="M19.6 26.6c2.6 3.4 6.2 3.4 8.8 0z" fill="#2f86e6" stroke="#2f86e6" stroke-width="2" stroke-linejoin="round"/>', '0 0 48 48'),
+  wind: I('<path d="M3 9.2h11a3 3 0 1 0-3-3M2.5 13h16a3.2 3.2 0 1 1-3.2 3.2M4 16.8h7" fill="none" stroke="#52b0ea" stroke-width="2.3" stroke-linecap="round"/>'),
+  book: I('<path d="M2.6 5.4c3.2-.9 6.3-.4 8.9 1.3v13.6c-2.6-1.6-5.7-2-8.9-1.2z" fill="#f8a23b"/><path d="M21.4 5.4c-3.2-.9-6.3-.4-8.9 1.3v13.6c2.6-1.6 5.7-2 8.9-1.2z" fill="#f8a23b"/><path d="M14.6 9.4h4.6M14.6 12.4h4.6M14.6 15.4h4.6" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>'),
+  dumbbell: I('<path d="M3.4 12h17.2" stroke="#8b54f7" stroke-width="2.2" stroke-linecap="round"/><rect x="4.2" y="8.6" width="2.6" height="6.8" rx="1.1" fill="#8b54f7"/><rect x="7.6" y="6.6" width="2.6" height="10.8" rx="1.1" fill="#8b54f7"/><rect x="13.8" y="6.6" width="2.6" height="10.8" rx="1.1" fill="#8b54f7"/><rect x="17.2" y="8.6" width="2.6" height="6.8" rx="1.1" fill="#8b54f7"/>'),
+  picture: I('<rect x="3" y="4" width="18" height="16" rx="3" fill="#ec5252"/><path d="M5.6 17.6l4.6-5.2 3 3.1 2.1-2.1 3.3 4.2z" fill="#fff"/>'),
+};
+
+const MOON = `<svg class="moon" viewBox="0 0 50 50" width="50" height="50" aria-hidden="true"><circle cx="25" cy="25" r="25" fill="#1e2a4b"/><circle cx="22" cy="28" r="11.5" fill="#f2dfb0"/><circle cx="17.5" cy="25.5" r="2.4" fill="#dcc08b"/><circle cx="24.5" cy="33" r="1.7" fill="#dcc08b"/><circle cx="26" cy="23" r="1.2" fill="#dcc08b"/><circle cx="36" cy="16" r="1.4" fill="#fff"/><circle cx="39" cy="26" r="1" fill="#fff"/><circle cx="31" cy="10.5" r=".9" fill="#fff"/></svg>`;
+const CHIP = `<svg class="chip" viewBox="0 0 36 29" aria-hidden="true"><rect width="36" height="29" rx="6" fill="url(#g-chip)"/><path d="M3 14.5h9.5M23.5 14.5H33M12.5 7h11v15h-11zM12.5 14.5h11" fill="none" stroke="#a87512" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+
+function coin(size = 22, attrs = '') {
+  return `<svg class="coin" ${attrs} width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20.9" r="18.6" fill="#e1931a"/><circle cx="20" cy="19.4" r="18" fill="url(#g-coin)"/><circle cx="20" cy="19.4" r="13.4" fill="none" stroke="#e9a21b" stroke-width="1.5"/><path d="M14.9 23.4c-2.3-.4-3-3.3-1.1-4.5-.8-2.3 1.4-4.1 3.4-3.2.6-2 3.4-2.2 4.4-.4 2-.8 4 .9 3.4 3 1.9.9 1.7 3.9-.4 4.4.2 2-2 3.3-3.7 2.2-1.2 1.4-3.7 1.1-4.3-.6-.7.1-1.4 0-1.7-.9z" fill="none" stroke="#cf830f" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 15.6v8.8M16.4 19.3c1.3.2 2.3-.3 3.6-1.5M23.6 20.7c-1.3 0-2.4-.4-3.6-1.7" fill="none" stroke="#cf830f" stroke-width="1.25" stroke-linecap="round"/><path d="M8.8 13.6a12.6 12.6 0 0 1 6.3-5.4" stroke="#fff6c8" stroke-width="2" stroke-linecap="round" fill="none" opacity=".85"/></svg>`;
+}
+
+// The pink brain mascot. Variants: wave, think, lift, journal, meditate, sit.
+function brain(v = 'wave') {
+  const P = '#f9c4ce', L = '#f6a9b7', F = '#ec8ea2', N = '#2c2c6c';
+  const limb = (d, w = 13) => `<path d="${d}" fill="none" stroke="${L}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const hand = (x, y, r = 8.5) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${L}"/>`;
+  const legs = limb('M90 148v40', 13) + limb('M112 148v40', 13) +
+    `<rect x="76" y="183" width="22" height="13" rx="6.5" fill="${L}"/><rect x="104" y="183" width="22" height="13" rx="6.5" fill="${L}"/>`;
+  let back = '', front = '';
+  let brows = `<path d="M65 70c7-6 16-7 23-3M113 67c8-4 17-2 23 4" fill="none" stroke="${N}" stroke-width="4.6" stroke-linecap="round"/>`;
+  let eyes = null, pupil = [0, 0];
+  let mouth = `<path d="M91 113c6 7 14 7 20 0" fill="none" stroke="${N}" stroke-width="4.4" stroke-linecap="round"/>`;
+
+  switch (v) {
+    case 'think':
+      back = legs + limb('M58 132c-12 12-14 24-10 34') + hand(48, 168);
+      front = limb('M150 134c10 22-10 32-28 12') + hand(118, 140, 9.5);
+      brows = `<path d="M63 64c8-9 19-10 27-5M113 72l24-5" fill="none" stroke="${N}" stroke-width="4.6" stroke-linecap="round"/>`;
+      pupil = [3, -3];
+      mouth = `<path d="M96 121c5-5 12-5 17-1" fill="none" stroke="${N}" stroke-width="4.4" stroke-linecap="round"/>`;
+      break;
+    case 'lift':
+      back = legs + limb('M62 134c-6 14-6 28-2 42') + limb('M140 134c6 14 6 28 2 42');
+      front = `<rect x="16" y="171" width="168" height="9" rx="4.5" fill="${N}"/><rect x="18" y="150" width="19" height="50" rx="9.5" fill="${N}"/><rect x="163" y="150" width="19" height="50" rx="9.5" fill="${N}"/>` + hand(60, 176, 9) + hand(142, 176, 9);
+      brows = `<path d="M63 66l25 9M139 66l-25 9" fill="none" stroke="${N}" stroke-width="4.8" stroke-linecap="round"/>`;
+      mouth = `<path d="M92 115c6 6 12 6 18 0" fill="none" stroke="${N}" stroke-width="4.4" stroke-linecap="round"/>`;
+      break;
+    case 'journal':
+      back = legs + limb('M148 128c12 2 14 12 4 20');
+      front = `<g transform="rotate(-13 80 152)"><rect x="52" y="120" width="56" height="68" rx="9" fill="#fde9a6"/><rect x="69" y="114" width="22" height="11" rx="3.5" fill="#f2896c"/></g>` +
+        hand(58, 162, 9) + `<g transform="rotate(-38 152 138)"><rect x="132" y="133" width="44" height="10" rx="2.5" fill="#5b52e8"/><path d="M132 133l-9 5 9 5z" fill="#f4c9a0"/></g>` + hand(146, 140, 9);
+      pupil = [-3, 3];
+      break;
+    case 'meditate':
+      back = `<ellipse cx="82" cy="170" rx="28" ry="12" fill="${L}"/><ellipse cx="120" cy="170" rx="28" ry="12" fill="${L}"/>` +
+        limb('M54 128c-10 12-18 22-30 26') + hand(20, 154, 8.5) + limb('M148 128c10 12 18 22 30 26') + hand(182, 154, 8.5);
+      eyes = `<path d="M64 90c7 11 21 11 28 0M110 90c7 11 21 11 28 0" fill="none" stroke="${N}" stroke-width="5" stroke-linecap="round"/>`;
+      brows = `<path d="M66 70c7-4 15-5 22-2M114 68c7-3 15-2 22 2" fill="none" stroke="${N}" stroke-width="4.2" stroke-linecap="round"/>`;
+      break;
+    case 'sit':
+      back = limb('M88 150c-8 16-18 26-30 32', 13) + `<ellipse cx="52" cy="184" rx="13" ry="8" fill="${L}"/>` +
+        limb('M114 152c2 14 8 26 18 34', 13) + `<ellipse cx="138" cy="188" rx="13" ry="8" fill="${L}"/>` +
+        limb('M56 132c-10 10-16 22-16 32') + hand(40, 166) + limb('M148 126c18 0 26-12 28-28') + hand(178, 92, 10);
+      break;
+    default: // wave
+      back = legs + limb('M56 132c-10 10-14 22-12 32') + hand(44, 166) + limb('M148 126c18 0 26-12 28-28') + hand(178, 92, 10) +
+        `<circle cx="170" cy="82" r="4.6" fill="${L}"/><circle cx="178" cy="79" r="4.6" fill="${L}"/><circle cx="186" cy="83" r="4.6" fill="${L}"/>`;
+  }
+  if (!eyes) {
+    const [px, py] = pupil;
+    eyes = `<ellipse cx="78" cy="92" rx="17" ry="18.5" fill="#fff"/><ellipse cx="124" cy="92" rx="17" ry="18.5" fill="#fff"/>` +
+      `<circle cx="${80 + px}" cy="${95 + py}" r="12.5" fill="${N}"/><circle cx="${126 + px}" cy="${95 + py}" r="12.5" fill="${N}"/>` +
+      `<circle cx="${84 + px}" cy="${89 + py}" r="4.3" fill="#fff"/><circle cx="${130 + px}" cy="${89 + py}" r="4.3" fill="#fff"/>`;
+  }
+  const head = `<g fill="${P}"><circle cx="56" cy="64" r="28"/><circle cx="88" cy="44" r="30"/><circle cx="122" cy="44" r="30"/><circle cx="150" cy="64" r="28"/><circle cx="166" cy="96" r="24"/><circle cx="152" cy="124" r="26"/><circle cx="122" cy="138" r="24"/><circle cx="86" cy="140" r="24"/><circle cx="54" cy="126" r="26"/><circle cx="36" cy="96" r="24"/><ellipse cx="101" cy="94" rx="62" ry="52"/></g>`;
+  const folds = `<g fill="none" stroke="${F}" stroke-width="3.2" stroke-linecap="round"><path d="M104 16c-5 9 4 17-1 28"/><path d="M58 46c9-6 19-5 25 2"/><path d="M128 30c9-1 16 3 19 10"/><path d="M24 96c-1 8 2 15 8 19"/><path d="M178 92c2 9-1 16-7 21"/><path d="M70 152c7 3 14 2 19-3"/><path d="M128 156c6-1 11-5 13-10"/></g>`;
+  const cheeks = `<g fill="${F}"><circle cx="55" cy="111" r="2.5"/><circle cx="61" cy="117" r="2.5"/><circle cx="51" cy="118" r="2.3"/><circle cx="147" cy="111" r="2.5"/><circle cx="142" cy="117" r="2.5"/><circle cx="151" cy="118" r="2.3"/></g>`;
+  return `<svg viewBox="0 0 200 205" aria-hidden="true" focusable="false">${back}${head}${folds}${cheeks}${eyes}${brows}${mouth}${front}</svg>`;
+}
+
+function heroScene() {
+  return `<svg class="scene" viewBox="0 0 375 318" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect width="375" height="318" fill="url(#g-sky)"/>
+    <g fill="#2d9746"><circle cx="-6" cy="96" r="46"/><circle cx="36" cy="140" r="40"/><circle cx="4" cy="178" r="40"/><circle cx="74" cy="192" r="30"/><circle cx="58" cy="94" r="22"/></g>
+    <g fill="#3bab53"><circle cx="18" cy="150" r="30"/><circle cx="60" cy="200" r="22"/><circle cx="-8" cy="210" r="30"/></g>
+    <rect x="283" y="168" width="13" height="48" rx="3" fill="#7a4a27"/>
+    <path d="M289.5 34 258 92h16l-27 46h18l-32 56h133l-32-56h18l-27-46h16z" fill="#1f6b39"/>
+    <path d="M289.5 34 258 92h16l-27 46h18l-32 56h66V34z" fill="#23773f"/>
+    <g fill="#2d9746"><circle cx="372" cy="150" r="40"/><circle cx="338" cy="196" r="28"/><circle cx="384" cy="204" r="34"/></g>
+    <path d="M0 202 Q190 182 375 198 V318 H0z" fill="#84c859"/>
+    <path d="M0 224 Q190 208 375 220 V318 H0z" fill="#9bd374"/>
+    <rect y="196" width="375" height="122" fill="url(#g-fade)"/>
+  </svg>`;
+}
+
+function bankScene() {
+  return `<svg class="scene" viewBox="0 0 343 240" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="343" height="240" fill="url(#g-bank)"/>
+    <path d="M0 26C70 6 124 40 190 16S300-2 343 18v52c-62-14-112 10-172 0S60 58 0 78z" fill="#69cbd6" opacity=".75"/>
+    <path d="M0 86 58 54l52 26 60-40 70 36 58-26 45 22v50H0z" fill="#2f7fc4" opacity=".9"/>
+    <path d="M0 104c60-16 120 6 180-8s110-16 163-4v148H0z" fill="#78c142"/>
+    <path d="M0 126c90-16 170 22 343 0v20c-163 22-253-14-343 6z" fill="#c8e35a"/>
+    <path d="M343 94c-43 8-93 18-81 36 10 16 58 20 81 30z" fill="#bfe7f7"/>
+    <path d="M343 102c-31 6-63 14-57 26 6 12 36 16 57 22z" fill="#dff4fb"/>
+    <g fill="#2a6e46"><path d="M208 104l10-32 10 32z"/><path d="M228 102l13-42 13 42z"/><path d="M250 106l10-30 10 30z"/><path d="M268 100l9-26 9 26z"/></g>
+    <path d="M0 182c110-12 230 22 343 4v54H0z" fill="#5fae36"/>
+  </svg>`;
+}
+
+function challengeScene() {
+  return `<svg class="scene" viewBox="0 0 343 190" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="343" height="190" fill="url(#g-ch)"/>
+    <path d="M0 120Q170 104 343 116V190H0z" fill="#5db431"/>
+    <path d="M0 152q90-10 200 0t143-6V190H0z" fill="#56ab2c"/>
+    <ellipse cx="62" cy="196" rx="34" ry="20" fill="#3f8f22"/>
+    <path d="M302 160v-26" stroke="#5aa832" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M302 140c-2-10-10-14-18-12 2 9 9 13 18 12z" fill="#8fd14f"/>
+    <path d="M302 134c2-11 11-16 20-13-2 10-11 15-20 13z" fill="#8fd14f"/>
+    <ellipse cx="302" cy="162" rx="11" ry="4.5" fill="#7a5233"/>
+    <path d="M326 190c0-8 4-14 8-16-1 6 0 11 2 16z" fill="#3f8f22"/>
+  </svg>`;
+}
+
+function parkScene(bottle) {
+  return `<svg class="scene" viewBox="0 0 320 314" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="320" height="314" fill="url(#g-park)"/>
+    <rect x="240" y="14" width="56" height="12" rx="6" fill="#a6ecbd"/>
+    <g fill="#2f8f45"><circle cx="-4" cy="120" r="44"/><circle cx="324" cy="120" r="44"/></g>
+    <g fill="#3ba650"><circle cx="20" cy="108" r="34"/><circle cx="56" cy="138" r="30"/><circle cx="24" cy="166" r="36"/><circle cx="300" cy="104" r="34"/><circle cx="266" cy="140" r="30"/><circle cx="300" cy="170" r="36"/></g>
+    <path d="M0 196Q160 186 320 196V314H0z" fill="#4cbc4e"/>
+    <path d="M40 226c3-6 8-8 12-6M262 230c3-6 8-8 12-6" fill="none" stroke="#3ea541" stroke-width="5" stroke-linecap="round"/>
+    ${bottle ? `
+    <ellipse cx="160" cy="262" rx="62" ry="9" fill="#3c9e40"/>
+    <rect x="127" y="44" width="66" height="30" rx="8" fill="#2f80d4"/>
+    <path d="M138 50v18M148 50v18M158 50v18M168 50v18M178 50v18" stroke="#5aa2e6" stroke-width="3" stroke-linecap="round"/>
+    <rect x="132" y="72" width="56" height="10" rx="3" fill="#3b8ee0"/>
+    <path d="M124 112c0-14 12-28 36-28s36 14 36 28v130c0 10-8 18-18 18h-36c-10 0-18-8-18-18z" fill="#cdeefa" stroke="#a8ddf3" stroke-width="3"/>
+    <path d="M128 124h64v116c0 9-7 15-15 15h-34c-8 0-15-6-15-15z" fill="#85d4f0"/>
+    <rect x="124" y="150" width="72" height="58" fill="#4ab3ec"/>
+    <path d="M138 172q11-8 22 0t22 0M138 190q11-8 22 0t22 0" fill="none" stroke="#2d8bd6" stroke-width="4" stroke-linecap="round"/>
+    <rect x="140" y="98" width="7" height="22" rx="3.5" fill="#fff" opacity=".85"/>
+    <rect x="138" y="218" width="9" height="20" rx="4.5" fill="#e3f6fd"/>` : ''}
+  </svg>`;
+}
+
+/* ================================================================
+   state
+   ================================================================ */
+let S;
+let ver = 0;
+const UI = {
+  tab: 'home',
+  showMore: false,
+  instead: 'power',
+  charts: { coins: { mode: 'week', off: 0 }, rot: { mode: 'week', off: 0 }, unrot: { mode: 'week', off: 0 } },
+  calMonth: 0,
+  calSel: null,
+};
+
+function blank() {
+  return {
+    v: 1,
+    name: 'ndwduy',
+    card: String(1000 + Math.floor(Math.random() * 9000)),
+    coins: 50,
+    lifetime: 0,
+    member: Date.now(),
+    bedtime: '21:35',
+    difficulty: 'easy',
+    purchaseAnim: true,
+    language: 'system',
+    notif: { daily: true, streak: true, bedtime: false },
+    distracting: DEFAULT_DISTRACTING.slice(),
+    allowed: [],
+    essential: DEFAULT_ESSENTIAL.slice(),
+    durations: {},
+    cool: {},
+    log: [],
+    bonusClaimed: false,
+    challenge: null,
+    active: null,
+    unlock: null,
+    feedback: [],
+  };
+}
+
+// First run looks like the screenshots: one breathing session and one minute of scrolling this morning.
+function seed() {
+  const s = blank();
+  s.card = '4829';
+  const t = new Date(); t.setHours(7, 4, 0, 0);
+  const ts = Math.min(t.getTime(), Date.now() - 3 * MIN);
+  s.log.push({ id: uid(), ts, act: 'b_energy', type: 'unrot', cat: 'breathe', title: 'Energy Breathing', icon: '🌬️', mins: 3, coins: 6 });
+  s.log.push({ id: uid(), ts: ts + 30e3, act: 'scroll', type: 'rot', cat: 'rot', title: 'Brainrot', icon: '🔓', mins: 1, coins: -1 });
+  s.coins = 99;
+  s.lifetime = 6;
+  return s;
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (d && d.v === 1 && Array.isArray(d.log)) return Object.assign(blank(), d);
+  } catch (_) { /* storage blocked or corrupt: start fresh */ }
+  return null;
+}
+function save() {
+  ver++;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) { /* private mode: keep going in memory */ }
+}
+
+let aggCache = null, aggVer = -1;
+function A() {
+  if (aggVer === ver && aggCache) return aggCache;
+  const coins = {}, rot = {}, unrot = {}, coinHour = Array(24).fill(0), rotHour = Array(24).fill(0);
+  for (const e of S.log) {
+    const k = dkey(e.ts), h = new Date(e.ts).getHours();
+    if (e.coins > 0) { coins[k] = (coins[k] || 0) + e.coins; coinHour[h] += e.coins; }
+    if (e.type === 'rot') { rot[k] = (rot[k] || 0) + e.mins; rotHour[h] += e.mins; }
+    if (e.cat === 'timed') unrot[k] = (unrot[k] || 0) + e.mins;
+  }
+  aggCache = { coins, rot, unrot, coinHour, rotHour };
+  aggVer = ver;
+  return aggCache;
+}
+
+function streakInfo() {
+  const { coins } = A();
+  const today = startOfDay(Date.now());
+  const ok = d => (coins[dkey(d)] || 0) >= STREAK_GOAL;
+  let cur = 0;
+  for (let d = ok(today) ? today : addDays(today, -1); ok(d); d = addDays(d, -1)) cur++;
+  let best = 0, run = 0, prev = null;
+  for (const k of Object.keys(coins).filter(k => coins[k] >= STREAK_GOAL).sort()) {
+    const d = keyDate(k);
+    run = prev && dayDiff(prev, d) === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = d;
+  }
+  return { cur, best: Math.max(best, cur), today: coins[dkey(today)] || 0, secured: ok(today) };
+}
+
+function coolLeft(id) {
+  const t = S.cool[id];
+  if (!t) return 0;
+  const left = t - Date.now();
+  if (left <= 0) { delete S.cool[id]; return 0; }
+  return left;
+}
+function coolLabel(id) {
+  const left = coolLeft(id);
+  if (!left) return '';
+  if (S.cool[id] >= startOfDay(Date.now() + DAY).getTime()) return 'Available: tomorrow';
+  const total = Math.ceil(left / MIN), h = Math.floor(total / 60), m = total % 60;
+  return `Available in: ${h ? `${h}h ` : ''}${m}m`;
+}
+function setCool(a) {
+  if (!a.cool) return;
+  S.cool[a.id] = a.cool === 'day' ? startOfDay(Date.now() + DAY).getTime() : Date.now() + a.cool * HOUR;
+}
+
+function logIt(e) {
+  const a = ACTS[e.act] || {};
+  S.log.push({
+    id: uid(),
+    ts: e.ts || Date.now(),
+    act: e.act,
+    type: e.type || 'unrot',
+    cat: e.cat || a.cat || '',
+    title: e.title || a.title || '',
+    icon: e.icon || (a.cat === 'breathe' ? CATS.breathe.icon : a.icon) || '✨',
+    mins: e.mins || 0,
+    coins: e.coins || 0,
+    ...(e.note ? { note: e.note } : {}),
+  });
+}
+
+// Adds coins (wallet is capped, lifetime is not), logs the entry, saves and celebrates.
+function award(e) {
+  const before = S.coins;
+  S.coins = Math.min(CAP, S.coins + e.coins);
+  S.lifetime += e.coins;
+  logIt(e);
+  save();
+  refresh();
+  burst(e.coins);
+  if (S.coins - before < e.coins) setTimeout(() => toast(`Wallet full: you can hold ${CAP} Brain Coins`), 900);
+}
+
+function actStats(id) {
+  let n = 0, mins = 0, coins = 0;
+  for (const e of S.log) if (e.act === id && e.type === 'unrot') { n++; mins += e.mins; coins += e.coins; }
+  return { n, mins, coins };
+}
+
+/* ================================================================
+   sheets & panels (a single stack)
+   ================================================================ */
+const stack = [];
+const topSheet = () => stack[stack.length - 1];
+
+function pushLayer(s) {
+  const z = 60 + stack.length * 2;
+  if (s.bd) { s.bd.style.zIndex = z; document.body.appendChild(s.bd); }
+  s.el.style.zIndex = z + 1;
+  document.body.appendChild(s.el);
+  stack.push(s);
+  drawSheet(s);
+  document.body.classList.add('locked');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    s.el.classList.add('open');
+    if (s.bd) s.bd.classList.add('open');
+  }));
+  if (s.mount) s.mount(s);
+  const f = s.el.querySelector('[autofocus]');
+  if (f) setTimeout(() => f.focus(), 350);
+  return s;
+}
+function openSheet(opts) {
+  const el = document.createElement('div');
+  el.className = 'sheet ' + (opts.cls || '');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  return pushLayer({ ...opts, el });
+}
+function openPanel(opts) {
+  const bd = document.createElement('div');
+  bd.className = 'backdrop';
+  bd.dataset.act = 'close';
+  const el = document.createElement('div');
+  el.className = 'panel';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  return pushLayer({ ...opts, el, bd });
+}
+function drawSheet(s) {
+  if (!s.render) return;
+  const st = s.el.scrollTop;
+  s.el.innerHTML = s.render(s);
+  s.el.scrollTop = st;
+  if (s.after) s.after(s);
+}
+function closeSheet(s = topSheet()) {
+  const i = stack.indexOf(s);
+  if (!s || i < 0) return;
+  stack.splice(i, 1);
+  s.closed = true;
+  if (s.onClose) s.onClose(s);
+  s.el.classList.remove('open');
+  if (s.bd) s.bd.classList.remove('open');
+  setTimeout(() => { s.el.remove(); if (s.bd) s.bd.remove(); }, 400);
+  if (!stack.length) document.body.classList.remove('locked');
+}
+const sheetOf = el => stack.find(s => s.el.contains(el));
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function burst(n) {
+  if (!(n > 0) || reduceMotion()) return;
+  const b = document.createElement('div');
+  b.className = 'burst';
+  const count = Math.min(10, 3 + n);
+  let html = `<div class="plus">+${n}</div>`;
+  for (let i = 0; i < count; i++) {
+    const ang = (-90 + (i - (count - 1) / 2) * 20) * Math.PI / 180;
+    const r = 150 + Math.random() * 70;
+    html += coin(34, `style="--dx:${(Math.cos(ang) * r).toFixed(0)}px;--dy:${(Math.sin(ang) * r).toFixed(0)}px;--rot:${Math.round(Math.random() * 140 - 70)}deg;animation-delay:${i * 35}ms"`);
+  }
+  b.innerHTML = html;
+  document.body.appendChild(b);
+  setTimeout(() => b.remove(), 1600);
+}
+
+let confirmCb = null;
+function confirmPanel({ title, text, ok = 'OK', danger = false }, cb) {
+  confirmCb = cb;
+  openPanel({
+    render: () => `<div class="grab"></div><h3>${title}</h3><p class="psub">${text}</p>
+      <button class="btn-green sm" data-act="confirmOk" ${danger ? 'style="background:#ff3b30;box-shadow:0 5px 0 #c4241b"' : ''}>${ok}</button>
+      <button class="btn-ghost" data-act="close">Cancel</button>`,
+  });
+}
+function resultPanel(emoji, title, text) {
+  openPanel({
+    render: () => `<div class="grab"></div><div style="text-align:center;font-size:58px;line-height:1;margin:8px 0 12px">${emoji}</div>
+      <h3>${title}</h3><p class="psub">${text}</p><button class="btn-green sm" data-act="close" autofocus>Nice!</button>`,
+  });
+}
+function infoPanel(title, paragraphs) {
+  openPanel({
+    render: () => `<div class="grab"></div><h3>${title}</h3><div class="body">${paragraphs.map(p => `<p>${p}</p>`).join('')}</div>
+      <button class="btn-green sm" data-act="close">Got it</button>`,
+  });
+}
+
+/* ================================================================
+   shared row templates
+   ================================================================ */
+const toneVars = t => `--t-bg:${t[0]};--t-bd:${t[1]}`;
+const padIc = `<span class="pad-ic">${ICON.pad}</span>`;
+
+function rewardLabel(a) {
+  if (a.cat === 'timed') return `${a.rate}/hr`;
+  if (a.cat === 'breathe') return `${a.perMin}/min`;
+  if (a.cat === 'exercise') return `${a.per}/${a.unit}`;
+  return String(a.coins);
+}
+function actRow(id) {
+  const a = ACTS[id];
+  const cd = coolLabel(id);
+  const meta = a.cat === 'timed'
+    ? `${coin(22)}<span>${rewardLabel(a)}</span>`
+    : `${coin(22)}<span>${rewardLabel(a)}</span><i class="dot"></i>${padIc}${cd ? `<i class="dot"></i><span class="cd">${cd}</span>` : ''}`;
+  return `<button class="chunk row ${cd ? 'is-off' : ''}" data-act="openAct" data-id="${id}" ${cd ? 'aria-disabled="true"' : ''}>
+    <span class="ico" style="${toneVars(TONES[a.tone])}">${a.icon}</span>
+    <span class="row-main"><b>${a.title}</b><span class="meta">${meta}</span></span></button>`;
+}
+function tlRow(e) {
+  const rot = e.type === 'rot';
+  const a = ACTS[e.act];
+  const bg = rot ? '#fde0e1' : e.type === 'bonus' ? '#fff3c4' : TONES[(a && a.tone) || 'green'][0];
+  const kind = rot ? ICON.lockOpen : e.cat === 'timed' ? `<span style="color:#e58a3a">${ICON.watch}</span>` : e.type === 'bonus' ? '🎁' : padIc;
+  const meta = [enTime(e.ts), kind, e.mins ? fmtMins(e.mins) : ''].filter(Boolean).join('<i class="dot"></i>');
+  const amt = e.coins ? `${e.coins > 0 ? '+' : '-'} ${Math.abs(e.coins)} ${coin(28)}` : '';
+  return `<div class="tl" style="--c:${rot ? '#e5484d' : '#5bb833'}">
+    <span class="ico" style="--t-bg:${bg}">${e.icon}</span>
+    <div class="tx"><b>${esc(e.title)}</b><span class="meta">${meta}</span></div>
+    <span class="amt">${amt}</span></div>`;
+}
+function appChoice(app, on, act) {
+  const [id, name, c1, c2, fg] = app;
+  return `<button class="choice ${on ? 'on' : ''}" data-act="${act}" data-id="${id}" aria-pressed="${on}">
+    <span class="ai" style="background:linear-gradient(135deg,${c1},${c2});color:${fg || '#fff'}">${name[0]}</span>${name}
+    <span class="box">${ICON.check}</span></button>`;
+}
+
+/* ================================================================
+   HOME
+   ================================================================ */
+function bedInfo() {
+  const [h, m] = S.bedtime.split(':').map(Number);
+  const now = new Date(), bed = new Date(now);
+  bed.setHours(h, m, 0, 0);
+  if (bed <= now) bed.setDate(bed.getDate() + 1);
+  const left = bed - now;
+  return { mins: Math.floor(left / MIN), frac: Math.min(1, Math.max(0, 1 - left / DAY)) };
+}
+function bedCard() {
+  const b = bedInfo(), C = 157.08;
+  return `<button class="bed-card" id="bed-card" data-act="editBedtime" aria-label="Bedtime: ${fmtMins(b.mins)} left">
+    ${MOON}<span class="t"><b>${fmtMins(b.mins)}</b><span>Until bedtime.</span></span>
+    <span class="bed-ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="25" fill="none" stroke="#ececec" stroke-width="4"/>
+    <circle cx="28" cy="28" r="25" fill="none" stroke="#4b5b7e" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(C * b.frac).toFixed(1)} ${C}"/></svg>
+    <em>${fmtMins(b.mins)}</em></span></button>`;
+}
+
+function renderHome() {
+  const st = streakInfo();
+  const ag = A();
+  const today = dkey(Date.now());
+  const done1 = S.lifetime > 0, done2 = S.log.some(e => e.type === 'rot');
+  const ess = S.essential.filter(id => ACTS[id]);
+  const shown = UI.showMore ? ess : ess.slice(0, 4);
+  const prog = Math.min(1, st.today / STREAK_GOAL);
+  const um = ag.unrot[today] || 0, rm = ag.rot[today] || 0, tot = um + rm;
+  const items = S.log.filter(e => dkey(e.ts) === today).sort((a, b) => b.ts - a.ts);
+
+  const steps = S.bonusClaimed ? '' : `
+    <div class="card steps-card">
+      <div class="tape">+30 ${coin(20)}</div>
+      <h3>First steps to Unrot</h3>
+      <p>Complete all to earn 30 ${coin(20)} bonus coins!</p>
+      <div class="step ${done1 ? 'done' : ''}"><span class="ck">${ICON.check}</span><span>Earn your first Brain Coin</span>
+        <button class="go" data-act="openCat" data-id="breathe" aria-label="Earn your first Brain Coin">${ICON.arrowR}</button></div>
+      <div class="step ${done2 ? 'done' : ''}"><span class="ck">${ICON.check}</span><span>Spend your first Brain Coin</span>
+        <button class="go" data-act="openScroll" aria-label="Spend your first Brain Coin">${ICON.arrowR}</button></div>
+      <button class="btn-green" data-act="claimBonus" ${done1 && done2 ? '' : 'disabled'}>Claim Bonus Coins</button>
+    </div>`;
+
+  $('#tab-home').innerHTML = `
+    <div class="hero">${heroScene()}
+      <div class="wordmark">unrot</div>
+      <button class="streak-pill" data-act="streakInfo" aria-label="Streak: ${st.cur} days">${ICON.flame}<span>${st.cur}</span></button>
+      <div class="hero-mascot">${brain('wave')}</div>
+    </div>
+    <div class="pad">
+      <div class="card coins-card">${coin(34)}
+        <div class="cc-body"><div class="cc-top"><b>Brain Coins</b><span>${S.coins}/${CAP}</span></div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${CAP}" aria-valuenow="${S.coins}"><i style="width:${S.coins / CAP * 100}%"></i></div></div>
+      </div>
+      <div class="tiles">
+        <button class="chunk tile" data-act="openUnrots">${ICON.leaf}<span>Unrot</span></button>
+        <button class="chunk tile" data-act="openScroll">${ICON.phone}<span>Scroll</span></button>
+      </div>
+      <h2 class="h2 sec">Get rich quick</h2>
+      <div class="quick">
+        ${[['breathe', 'Breathe', ICON.wind], ['journal', 'Journal', ICON.book], ['exercise', 'Exercise', ICON.dumbbell], ['quest', 'Quests', ICON.picture]]
+          .map(([c, label, ic]) => `<button data-act="openCat" data-id="${c}"><span class="chunk sq">${ic}</span><span>${label}</span></button>`).join('')}
+      </div>
+      ${steps}
+      <button class="streak-card ${st.secured ? 'done' : ''}" data-act="streakInfo" style="width:100%;text-align:left">
+        <span class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="25" fill="#fff" stroke="${st.secured ? '#d7f2c8' : '#fde3d9'}" stroke-width="4"/>
+          ${prog > 0 ? `<circle cx="28" cy="28" r="25" fill="none" stroke="${st.secured ? '#5bb833' : '#f2602f'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(157.08 * prog).toFixed(1)} 157.08" transform="rotate(-90 28 28)"/>` : ''}</svg>
+          <span class="em">🔥</span></span>
+        <span class="st"><b>Daily Streak</b><span>${st.secured ? `Streak secured! ${st.cur} day${st.cur === 1 ? '' : 's'} in a row` : `Earn ${STREAK_GOAL} brain coins to earn today's streak`}</span></span>
+      </button>
+      ${bedCard()}
+      <div class="sec-row"><h2 class="h2">Essential Unrots</h2><button class="pill-btn" data-act="editEssential">Edit</button></div>
+      <div class="list">${shown.map(actRow).join('') || '<div class="empty">No Unrots picked. Tap Edit to add some.</div>'}</div>
+      ${ess.length > 4 ? `<button class="more ${UI.showMore ? 'open' : ''}" data-act="toggleMore" aria-expanded="${UI.showMore}">${UI.showMore ? 'Show less' : 'Show more'} ${ICON.chevD}</button>` : ''}
+      <h2 class="h2 sec" style="margin-top:36px">Today's Brainlog</h2>
+      <div class="card log-bar">
+        <div class="split">${tot
+          ? `<i class="g" style="flex:${Math.max(um, tot * .04)}">${um && um >= tot * .25 ? fmtMins(um) : ''}</i><i class="r" style="flex:${Math.max(rm, tot * .04)}">${rm && rm >= tot * .25 ? fmtMins(rm) : ''}</i>`
+          : '<i class="e"></i>'}</div>
+        <div class="legend"><span style="--c:#5bb833">Unrotting</span><span style="--c:#e04440">Scrolling</span></div>
+      </div>
+      <div class="card timeline">${items.length ? items.map(tlRow).join('') : '<div class="empty">Nothing logged yet today. Start an Unrot to earn Brain Coins!</div>'}</div>
+    </div>`;
+}
+
+/* ================================================================
+   STATS
+   ================================================================ */
+const CHARTS = {
+  coins: { title: 'Brain Coins Earned', map: ag => ag.coins, fmt: n => String(n), color: '#fbd024', pale: '#fdf1c4', upGood: true, minBar: 8, icon: () => coin(42), badge: (up, p) => `vs last ${p}` },
+  rot:   { title: 'Brainrot Time', map: ag => ag.rot, fmt: fmtMins, color: '#ff3b30', pale: '#fde0de', upGood: false, minBar: 28, icon: () => ICON.skull, badge: (up, p) => `${up ? 'More' : 'Less'} than last ${p}` },
+  unrot: { title: 'Unrot Time', map: ag => ag.unrot, fmt: fmtMins, color: '#5cb83a', pale: '#e2f3da', upGood: true, minBar: 28, icon: () => ICON.hourglass, badge: (up, p) => `vs last ${p}` },
+};
+
+function period(mode, off) {
+  const now = new Date();
+  if (mode === 'week') {
+    const s = startOfDay(now);
+    s.setDate(s.getDate() - s.getDay() + off * 7);
+    const days = Array.from({ length: 7 }, (_, i) => addDays(s, i));
+    return { days, label: rangeLabel(days[0], days[6]), labels: days.map(d => WD[d.getDay()]) };
+  }
+  const s = new Date(now.getFullYear(), now.getMonth() + off, 1);
+  const n = new Date(s.getFullYear(), s.getMonth() + 1, 0).getDate();
+  const days = Array.from({ length: n }, (_, i) => new Date(s.getFullYear(), s.getMonth(), i + 1));
+  return { days, label: `thg ${s.getMonth() + 1} ${s.getFullYear()}`, labels: days.map(d => [1, 8, 15, 22, 29].includes(d.getDate()) ? String(d.getDate()) : '') };
+}
+
+function chartCard(id) {
+  const cfg = CHARTS[id], ui = UI.charts[id], map = cfg.map(A());
+  const p = period(ui.mode, ui.off), pp = period(ui.mode, ui.off - 1);
+  const val = d => map[dkey(d)] || 0;
+  const vals = p.days.map(val);
+  const total = sum(vals), prev = sum(pp.days.map(val));
+  const span = ui.mode === 'week' ? 'week' : 'month';
+  let badge = '';
+  if (total || prev) {
+    const up = total >= prev;
+    const pct = prev ? Math.round((total - prev) / prev * 100) : 100;
+    badge = `<div class="badge" style="--bc:${up === cfg.upGood ? '#3cc05a' : '#ff3b30'}"><span class="ar">${up ? ICON.arrowNE : ICON.arrowSE}</span>
+      <span><b>${pct > 0 ? '+' : ''}${pct}%</b><small>${cfg.badge(up, span)}</small></span></div>`;
+  }
+  const max = Math.max(0, ...vals), nice = niceMax(max), H = 130;
+  const ticks = max >= nice * .2 ? [0, nice / 2, nice] : [0];
+  const week = ui.mode === 'week';
+  const cols = vals.map((v, i) => `<div class="colw">${v > 0
+    ? `<div class="b" style="height:${Math.max(cfg.minBar, v / nice * H).toFixed(1)}px" title="${p.days[i].getDate()}/${p.days[i].getMonth() + 1}: ${cfg.fmt(v)}"></div>`
+    : '<div class="b z"></div>'}<span class="lb">${p.labels[i]}</span></div>`).join('');
+  return `<div class="chart">
+    <div class="hd"><span class="ttl">${cfg.title}</span>${badge}</div>
+    <div class="vrow"><span class="val"><span class="vi">${cfg.icon()}</span>${cfg.fmt(total)}</span>
+      <span class="seg" role="tablist"><button class="${week ? 'on' : ''}" data-act="chartMode" data-id="${id}:week" role="tab" aria-selected="${week}">Week</button><button class="${week ? '' : 'on'}" data-act="chartMode" data-id="${id}:month" role="tab" aria-selected="${!week}">Month</button></span></div>
+    <div class="nav"><button data-act="chartNav" data-id="${id}:-1" aria-label="Previous ${span}">${ICON.chevL}</button><span>${p.label}</span>
+      <button data-act="chartNav" data-id="${id}:1" aria-label="Next ${span}" ${ui.off >= 0 ? 'disabled' : ''}>${ICON.chevR}</button></div>
+    <div class="plot" style="--c:${cfg.color};--p:${cfg.pale}">
+      <div class="cols" style="--n:${vals.length};--gap:${week ? 12 : 3}px;--br:${week ? 10 : 3}px">
+        ${ticks.slice(1).map(t => `<div class="grid" style="bottom:${26 + t / nice * H}px"></div>`).join('')}${cols}</div>
+      <div class="axis">${ticks.map(t => `<span style="bottom:${26 + t / nice * H}px">${id === 'coins' ? t : (t ? fmtMins(t) : 0)}</span>`).join('')}</div>
+    </div></div>`;
+}
+
+function patternsHtml() {
+  const ag = A();
+  const st = streakInfo();
+  const dayKeys = Object.keys(ag.coins);
+  const best = dayKeys.reduce((b, k) => (!b || ag.coins[k] > ag.coins[b] ? k : b), null);
+  const avg = dayKeys.length ? sum(dayKeys.map(k => ag.coins[k])) / dayKeys.length : 0;
+  const bestX = best && avg ? (ag.coins[best] / avg).toFixed(1) : '1.0';
+  const record = best ? ag.coins[best] : 0;
+  const longest = Math.max(0, ...S.log.filter(e => e.cat === 'timed').map(e => e.mins));
+  const peak = arr => { const m = Math.max(...arr); return m > 0 ? arr.indexOf(m) : -1; };
+  const ch = peak(ag.coinHour), rh = peak(ag.rotHour);
+  const rotKeys = Object.keys(ag.rot);
+  const worst = rotKeys.reduce((b, k) => (!b || ag.rot[k] > ag.rot[b] ? k : b), null);
+  const worstMins = worst ? ag.rot[worst] : 0;
+  const tall = (bg, em, value, label, small) => `<div class="pc tall" style="--pc:${bg}"><span class="em">${em}</span><span><b>${value}</b><span class="lab">${label}</span>${small ? `<small>${small}</small>` : ''}</span></div>`;
+  const short = (bg, em, value, label) => `<div class="pc short" style="--pc:${bg}"><span class="em">${em}</span><span class="tx"><b>${value}</b><span class="lab">${label}</span></span></div>`;
+  return `<div class="patterns">
+    <div class="pcol">${tall('#d6fbfc', '✅', viLong(S.member), 'Member Since')}${short('#effaee', '💪', fmtMins(longest), 'Longest Unrot')}</div>
+    <div class="pcol">${short('#effaee', '🔥', `${st.best} day${st.best === 1 ? '' : 's'}`, 'Best streak')}${tall('#f4e7fd', '🏆', `<span class="vrow">${record} ${coin(24)}</span>`, 'Personal record', 'coins in a day')}</div>
+    <div class="pcol">${tall('#e6f59b', coin(34), best ? viLong(keyDate(best)) : 'N/A', 'Best day', `${bestX}x average`)}${short('#fdefe4', '🌅', ch < 0 ? 'N/A' : viHour(ch), 'Coins peak hour')}</div>
+    <div class="pcol">${short('#fde9e9', '🌅', rh < 0 ? 'N/A' : viHour(rh), 'Brainrot peak hour')}${tall('#d6fbfc', `<span style="display:block;width:34px">${ICON.skull}</span>`, worstMins >= 60 ? viLong(keyDate(worst)) : 'N/A', 'Worst Day', `${Math.floor(worstMins / 60)} hours brainrot`)}</div>
+  </div>`;
+}
+
+function insteadRows() {
+  const groups = {};
+  for (const e of S.log) {
+    if (e.type !== 'unrot') continue;
+    let key;
+    if (UI.instead === 'power' && CATS[e.cat]) key = e.cat;
+    else if (UI.instead === 'unrots' && e.cat === 'timed') key = e.act;
+    else continue;
+    const g = groups[key] || (groups[key] = { n: 0, mins: 0, coins: 0 });
+    g.n++; g.mins += e.mins; g.coins += e.coins;
+  }
+  const rows = Object.entries(groups).sort((a, b) => b[1].coins - a[1].coins);
+  if (!rows.length) return `<div class="empty">${UI.instead === 'power' ? 'No power ups yet. Try a breathing exercise!' : 'No Unrots yet. Start one from the home screen!'}</div>`;
+  return rows.map(([k, g]) => {
+    const isCat = UI.instead === 'power';
+    const title = isCat ? CATS[k].stat : ACTS[k] ? ACTS[k].title : k;
+    const icon = isCat ? CATS[k].icon : ACTS[k] ? ACTS[k].icon : '✨';
+    const tone = TONES[isCat ? CATS[k].tone : 'orange'];
+    return `<div class="pu"><span class="ico" style="--t-bg:${tone[0]}">${icon}</span>
+      <span class="tx"><b>${title}</b><span>${g.n} times${g.mins ? ` · ${fmtMins(g.mins)}` : ''}</span></span>
+      <span class="amt">${coin(22)}${g.coins}</span></div>`;
+  }).join('');
+}
+
+function renderStats() {
+  const reclaimed = S.lifetime * 4;
+  const rh = Math.round(reclaimed / 60);
+  const recl = reclaimed < 60 ? `${reclaimed} minute${reclaimed === 1 ? '' : 's'}` : fmtDurLong(reclaimed).replace(/ \d+ minutes$/, '');
+  $('#tab-stats').innerHTML = `
+    <h1 class="reclaim">You've reclaimed <strong>${recl}</strong> of your life by unrotting</h1>
+    <div class="pad">
+      <div class="bank">${bankScene()}<div class="bn">Unrot Bank</div>${CHIP}<div class="bm">${brain('wave')}</div>
+        <div class="ch"><small>Cardholder Name</small><b>${esc(S.name)}</b></div><div class="num">**** ${S.card}</div></div>
+      <div class="life"><div class="top"><small>LIFETIME EARNINGS</small><em>~${rh} hour${rh === 1 ? '' : 's'} of real life</em></div>
+        <div class="v">${coin(30)}${S.lifetime}</div></div>
+      <h2 class="big-h">What you do instead<br>of scrolling</h2>
+      <div class="seg2" role="tablist">
+        <button class="${UI.instead === 'power' ? 'on' : ''}" data-act="insteadTab" data-id="power" role="tab" aria-selected="${UI.instead === 'power'}">Power Ups</button>
+        <button class="${UI.instead === 'unrots' ? 'on' : ''}" data-act="insteadTab" data-id="unrots" role="tab" aria-selected="${UI.instead === 'unrots'}">Unrots</button>
+      </div>
+      <div class="pu-list">${insteadRows()}</div>
+      <h2 class="big-h" style="margin-top:50px">Your patterns</h2>
+      ${patternsHtml()}
+      <h2 class="big-h" style="margin-top:50px;margin-bottom:6px">Statistics</h2>
+      ${chartCard('coins')}${chartCard('rot')}${chartCard('unrot')}
+      <button class="chunk cal-link" data-act="openCalendar"><span class="em">📅</span><b>Brainlog Calendar</b>${ICON.arrowR}</button>
+    </div>`;
+}
+
+/* ================================================================
+   CHALLENGES
+   ================================================================ */
+function challengeState() {
+  const ch = S.challenge;
+  if (!ch) return null;
+  const ag = A();
+  const dayIdx = Math.min(27, Math.max(0, dayDiff(ch.start, Date.now())));
+  const days = Array.from({ length: 28 }, (_, i) => {
+    const d = addDays(startOfDay(ch.start), i);
+    return { d, done: (ag.coins[dkey(d)] || 0) >= STREAK_GOAL, past: i < dayIdx, today: i === dayIdx };
+  });
+  const finished = dayDiff(ch.start, Date.now()) >= 28;
+  return { dayIdx, days, done: days.filter(x => x.done).length, finished };
+}
+
+function renderChallenges() {
+  const cs = challengeState();
+  const label = !cs ? 'NOT STARTED' : cs.finished ? 'COMPLETED' : 'IN PROGRESS';
+  $('#tab-challenges').innerHTML = `
+    <h1 class="ch-title">Challenges</h1>
+    <div class="ch-label">${label}</div>
+    <button class="ch-card" data-act="openChallenge" aria-label="28 Day Unrot challenge">
+      ${challengeScene()}
+      <span class="tx"><b>28 Day<br>Unrot</b><span>${cs ? `Day ${cs.dayIdx + 1} of 28 · ${cs.done} done` : 'Challenge yourself<br>for 28 days'}</span></span>
+      <span class="bm">${brain('sit')}</span>
+      ${cs ? `<span class="prog"><i style="width:${cs.done / 28 * 100}%"></i></span>` : ''}
+    </button>
+    <div class="soon">${ICON.sparkle}More challenges coming soon</div>`;
+}
+
+/* ================================================================
+   SETTINGS
+   ================================================================ */
+function renderSettings() {
+  const d = DIFFICULTY[S.difficulty];
+  const apps = S.distracting.map(id => APPS.find(a => a[0] === id)).filter(Boolean);
+  const icons = apps.slice(0, 3).map(a => `<i style="background:linear-gradient(135deg,${a[2]},${a[3]});color:${a[4] || '#fff'}">${a[1][0]}</i>`).join('') +
+    (apps.length > 3 ? `<span>+${apps.length - 3}</span>` : '') + (apps.length ? '' : '<span class="val">None</span>');
+  const [bh, bm] = S.bedtime.split(':').map(Number);
+  const row = o => `<button class="srow ${o.cls || ''}" data-act="${o.act}" ${o.id ? `data-id="${o.id}"` : ''}>
+    <span class="si" style="--sb:${o.bg}">${o.icon}</span><span class="tx"><b>${o.title}</b>${o.sub ? `<small>${o.sub}</small>` : ''}</span>
+    ${o.right || ''}<span class="chev">${ICON.chevR}</span></button>`;
+  $('#tab-settings').innerHTML = `
+    <div class="set-bar" id="set-bar" aria-hidden="true">Settings</div>
+    <h1 class="set-title">Settings</h1>
+    <h2 class="set-h">General</h2>
+    <div class="group">
+      ${row({ act: 'pickDistracting', icon: '🔒', bg: '#fdf4cc', title: 'Distracting apps', right: `<span class="apps-stack">${icons}</span>` })}
+      ${row({ act: 'pickDifficulty', icon: '😊', bg: '#dcf6e3', title: 'Difficulty Mode', sub: `${d.rate} coins per minute`, right: `<span class="spill" style="background:${d.tone[0]};color:${d.tone[1]}">${d.label}</span>` })}
+      ${row({ act: 'pickLanguage', icon: '🌐', bg: '#d9ebfd', title: 'Language', right: `<span class="val">${LANGS[S.language]}</span>` })}
+      <div class="srow"><span class="si" style="--sb:#e3effd">💳</span>
+        <span class="tx"><b>Purchase animation</b><small>Card tap &amp; receipt when buying screentime</small></span>
+        <button class="toggle" role="switch" aria-checked="${S.purchaseAnim}" aria-label="Purchase animation" data-act="togglePurchase"></button></div>
+      <div class="note">${ICON.info}<span>We encourage taking a moment to reflect before unblocking apps — the animation is a small reminder that your time has value. But if you find it cumbersome, feel free to turn it off.</span></div>
+    </div>
+    <h2 class="set-h">Habits</h2>
+    <div class="group">
+      ${row({ act: 'editBedtime', icon: '🌙', bg: '#e6e6fd', title: 'Sleep Mode', sub: 'Set your bedtime schedule', right: `<span class="spill">${viTime(bh, bm)}</span>` })}
+      ${row({ act: 'notifications', icon: '🔔', bg: '#dbeafd', title: 'Notifications', sub: 'Manage your habit reminder notifications' })}
+    </div>
+    <h2 class="set-h">Account</h2>
+    <div class="group">
+      ${row({ act: 'editName', icon: '👤', bg: '#dcf6e3', title: 'Name', right: `<span class="val">${esc(S.name)}</span>` })}
+      ${row({ act: 'subscription', icon: '💳', bg: '#fde2e5', title: 'Subscription' })}
+    </div>
+    <h2 class="set-h">Feedback</h2>
+    <div class="group">
+      ${row({ act: 'weeklyRecap', icon: '📊', bg: '#f5dcf8', title: 'Weekly Recap' })}
+      ${row({ act: 'feedback', id: 'feature', icon: '📲', bg: '#dcf5e2', title: 'Request Feature' })}
+      ${row({ act: 'feedback', id: 'feedback', icon: '💬', bg: '#d8eafd', title: 'Give Feedback' })}
+    </div>
+    <h2 class="set-h">Legal</h2>
+    <div class="group">
+      ${row({ act: 'legal', id: 'privacy', icon: '🛡️', bg: '#f1f1f1', title: 'Privacy Notice' })}
+      ${row({ act: 'legal', id: 'terms', icon: '📝', bg: '#f1f1f1', title: 'Terms of Service' })}
+      ${row({ act: 'deleteAccount', icon: '🗑️', bg: '#fde0e0', title: 'Delete my account', cls: 'danger' })}
+    </div>
+    <h2 class="set-h">Help</h2>
+    <div class="group">
+      ${row({ act: 'blocking', icon: '🔧', bg: '#fdd9dc', title: 'Blocking Issues', sub: 'Fix problems with app blocking' })}
+    </div>`;
+  onScroll();
+}
+
+/* ================================================================
+   tabs & refresh
+   ================================================================ */
+const RENDER = { home: renderHome, stats: renderStats, challenges: renderChallenges, settings: renderSettings };
+
+function showTab(t) {
+  UI.tab = t;
+  $$('.tab').forEach(s => s.classList.toggle('on', s.dataset.tab === t));
+  $$('.tabbar button').forEach(b => {
+    const on = b.dataset.id === t;
+    b.classList.toggle('on', on);
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  RENDER[t]();
+  window.scrollTo(0, 0);
+}
+function refresh() {
+  RENDER[UI.tab]();
+  for (const s of stack) if (s.live !== false && !s.closed) drawSheet(s);
+}
+function onScroll() {
+  const bar = $('#set-bar');
+  if (bar) bar.classList.toggle('show', UI.tab === 'settings' && window.scrollY > 44);
+}
+
+/* ================================================================
+   activity sheets
+   ================================================================ */
+function catSheet(cat) {
+  const c = CATS[cat];
+  openSheet({
+    coolTick: true,
+    render: () => `
+      <div class="cat-head ${c.compact ? 'compact' : ''}" style="--hb:${c.bg}">
+        <button class="x-btn" data-act="close" aria-label="Close">${ICON.x}</button>
+        <div class="curve"></div><div class="cat-mascot">${brain(c.mascot)}</div>
+      </div>
+      <div class="cat-body"><h1>${c.title}</h1><p class="sub">${c.sub}</p>
+        <div class="list">${Object.values(ACTS).filter(a => a.cat === cat).map(a => actRow(a.id)).join('')}</div>
+      </div>`,
+  });
+}
+
+function unrotsSheet() {
+  openSheet({
+    render: () => `
+      <div class="cat-head" style="--hb:#9bd77a">
+        <button class="x-btn" data-act="close" aria-label="Close">${ICON.x}</button>
+        <div class="curve"></div><div class="cat-mascot">${brain('wave')}</div>
+      </div>
+      <div class="cat-body"><h1>Unrot</h1><p class="sub">Do something real. Earn Brain Coins for every minute away from your phone.</p>
+        <div class="list">${Object.values(ACTS).filter(a => a.cat === 'timed').map(a => actRow(a.id)).join('')}</div>
+      </div>`,
+  });
+}
+
+function openAct(id) {
+  const a = ACTS[id];
+  if (!a) return;
+  const cd = coolLabel(id);
+  if (cd) { toast(`${a.title}: ${cd.replace('Available: ', 'available ').replace('Available in: ', 'available in ')}`); return; }
+  ({ timed: actSheet, breathe: breathSheet, journal: journalSheet, exercise: counterSheet, quest: questSheet })[a.cat](id);
+}
+
+function actSheet(id) {
+  const a = ACTS[id];
+  openSheet({
+    render: () => {
+      const st = actStats(id), dur = S.durations[id] || 20;
+      return `
+      <div class="act-head">
+        <button class="circ l" data-act="actHistory" data-id="${id}" aria-label="History">${ICON.cal}</button>
+        <button class="circ r" data-act="close" aria-label="Close">${ICON.x}</button>
+        <div class="curve"></div><div class="act-emoji">${a.hero || a.icon}</div>
+      </div>
+      <div class="act-body"><h1>${a.title}</h1>
+        <div class="stats3"><div><b>${st.n}</b><span>Times done</span></div><div><b>${fmtMins(st.mins)}</b><span>Total hours</span></div><div><b>${coin(20)} ${st.coins}</b><span>Coins earned</span></div></div>
+        <button class="chunk opt" data-act="pickDuration" data-id="${id}"><span class="ico">${ICON.watch}</span>
+          <span class="tx"><b>${fmtDurLong(dur)}</b><span>${coin(18)} ${a.rate} coins/hour</span></span><span class="chev">${ICON.chevR}</span></button>
+        <button class="chunk opt" data-act="pickAllowed"><span class="ico">${ICON.shield}</span>
+          <span class="tx"><b>Allowed apps</b><span>Select apps you still need</span></span><em class="pill">${S.allowed.length} app${S.allowed.length === 1 ? '' : 's'}</em></button>
+      </div>
+      <div class="act-foot">
+        <button class="link-green" data-act="shareOffline" data-id="${id}">Tell people you're offline ${ICON.share}</button>
+        <button class="btn-green" data-act="startUnrot" data-id="${id}">Start Unrotting</button>
+      </div>`;
+    },
+  });
+}
+
+const RING_C = 2 * Math.PI * 110;
+function runSheet() {
+  const act = S.active;
+  if (!act) return;
+  const a = ACTS[act.id];
+  openSheet({
+    live: false, noEsc: true, cls: 'run-sheet',
+    render: () => `
+      <div class="run">
+        <div class="ringbox"><svg viewBox="0 0 250 250"><circle cx="125" cy="125" r="110" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="14"/>
+          <circle class="rp" cx="125" cy="125" r="110" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-dasharray="${RING_C.toFixed(1)}" stroke-dashoffset="0"/></svg>
+          <div class="c"><span class="e">${a.hero || a.icon}</span><b class="clock">${fmtClock(act.dur * 60)}</b></div></div>
+        <h1>${a.title}</h1><p>Put your phone down. Your brain is healing.</p>
+        <div class="earned">${coin(24)} <span class="ec">+0</span></div>
+        <div class="spacer"></div>
+        <button class="btn-white" data-act="endUnrot">End session</button>
+        <button class="lnk" data-act="shareOffline" data-id="${act.id}">Tell people you're offline</button>
+      </div>`,
+    mount: s => s.tick(s),
+    tick: s => {
+      const cur = S.active;
+      if (!cur) return;
+      const el = (Date.now() - cur.start) / 1000, total = cur.dur * 60;
+      if (el >= total) { finishUnrot(true); return; }
+      s.el.querySelector('.clock').textContent = fmtClock(total - el);
+      s.el.querySelector('.rp').style.strokeDashoffset = (RING_C * el / total).toFixed(1);
+      s.el.querySelector('.ec').textContent = `+${Math.floor(Math.floor(el / 60) * a.rate / 60)}`;
+    },
+  });
+}
+function finishUnrot(full) {
+  const act = S.active;
+  if (!act) return;
+  const a = ACTS[act.id];
+  const mins = full ? act.dur : Math.floor((Date.now() - act.start) / MIN);
+  S.active = null;
+  const run = stack.find(s => s.cls === 'run-sheet');
+  if (run) closeSheet(run);
+  if (mins < 1) { save(); refresh(); toast('Session ended. Stay at least a minute to log it.'); return; }
+  const coins = Math.floor(mins * a.rate / 60);
+  award({ act: a.id, mins, coins, ts: act.start });
+  resultPanel(full ? '🎉' : '🌱', full ? 'Unrot complete!' : 'Nice effort!',
+    `You spent ${fmtDurLong(mins)} on ${a.title.toLowerCase()} and earned ${coins} Brain Coin${coins === 1 ? '' : 's'}.`);
+}
+
+function breathSheet(id) {
+  const a = ACTS[id];
+  const runPhase = s => {
+    if (s.closed) return;
+    s.phase = (s.phase + 1) % a.steps.length;
+    const [label, secs, big] = a.steps[s.phase];
+    const orb = s.el.querySelector('.orb');
+    orb.style.transitionDuration = `${secs}s`;
+    orb.style.transform = `scale(${big ? 1.65 : .8})`;
+    s.el.querySelector('.ph').textContent = label;
+    s.phaseEnd = Date.now() + secs * 1000;
+    s.to = setTimeout(() => runPhase(s), secs * 1000);
+    s.tick(s);
+  };
+  openSheet({
+    live: false,
+    render: () => `
+      <div class="run" style="--rb:linear-gradient(#8ed6f3,#d4f0fc);color:#1f6a95">
+        <button class="x-btn" data-act="close" aria-label="Close" style="background:rgba(255,255,255,.35)">${ICON.x}</button>
+        <h1 style="margin-top:0">${a.title}</h1><p>${a.perMin} Brain Coins for every minute</p>
+        <div class="breath"><div class="orb"></div><div class="lbl"><span class="ph">Get ready…</span><small class="ct"></small></div></div>
+        <div class="earned" style="background:rgba(255,255,255,.6)">${coin(24)} <span class="ec">+0</span> · <span class="el">00:00</span></div>
+        <div class="spacer"></div>
+        <button class="btn-white" style="color:#1f6a95" data-act="finishBreath" data-id="${id}">Finish</button>
+      </div>`,
+    mount: s => { s.start = Date.now() + 1500; s.phase = -1; s.to = setTimeout(() => runPhase(s), 1500); },
+    tick: s => {
+      if (s.phase < 0) return;
+      const el = Math.max(0, (Date.now() - s.start) / 1000);
+      s.el.querySelector('.ct').textContent = Math.max(1, Math.ceil((s.phaseEnd - Date.now()) / 1000));
+      s.el.querySelector('.el').textContent = fmtClock(el);
+      s.el.querySelector('.ec').textContent = `+${Math.floor(el / 60) * a.perMin}`;
+    },
+    onClose: s => clearTimeout(s.to),
+  });
+}
+
+function journalSheet(id) {
+  const a = ACTS[id];
+  const moods = [['😄', 'Great'], ['🙂', 'Good'], ['😐', 'Okay'], ['😟', 'Low'], ['😢', 'Sad']];
+  openSheet({
+    live: false,
+    render: () => `
+      <div class="cat-head compact" style="--hb:${CATS.journal.bg}">
+        <button class="x-btn" data-act="close" aria-label="Close">${ICON.x}</button>
+        <div class="curve"></div><div class="cat-mascot">${brain('journal')}</div>
+      </div>
+      <div class="cat-body journal"><h1>${a.title}</h1><p class="sub">Write it down to earn ${a.coins} Brain Coins.</p>
+        ${a.moods ? `<div class="moods" role="group" aria-label="Mood">${moods.map(([e, l]) => `<button data-act="mood" data-id="${l}" aria-pressed="false">${e}<small>${l}</small></button>`).join('')}</div>` : ''}
+        <div class="prompt" style="margin-top:16px">${a.prompt}</div>
+        <label class="sr-only" for="j-text">Your entry</label>
+        <textarea id="j-text" placeholder="Start writing…" maxlength="2000"></textarea>
+        <button class="btn-green" style="margin-top:22px" data-act="saveJournal" data-id="${id}" disabled>Save entry</button>
+      </div>`,
+    after: s => {
+      const ta = s.el.querySelector('textarea'), btn = s.el.querySelector('[data-act="saveJournal"]');
+      ta.addEventListener('input', () => { btn.disabled = ta.value.trim().length < 3; });
+    },
+  });
+}
+
+function counterSheet(id) {
+  const a = ACTS[id];
+  openSheet({
+    live: false,
+    render: () => `
+      <div class="run" style="--rb:#8fe3a4;color:#173f22">
+        <button class="x-btn" data-act="close" aria-label="Close">${ICON.x}</button>
+        <h1 style="margin-top:0">${a.title}</h1><p>Phone on the floor, tap it with your nose at the bottom of every pushup.</p>
+        <div class="counter">
+          <button class="pad-btn" data-act="count" data-id="1" aria-label="Count one pushup"><span><b class="cnt">0</b>Tap with your nose</span></button>
+          <div class="pm"><button data-act="count" data-id="-1" aria-label="Minus one">−</button><button data-act="count" data-id="5" aria-label="Plus five">+5</button></div>
+        </div>
+        <div class="earned" style="background:rgba(255,255,255,.55)">${coin(24)} <span class="ec">+0</span></div>
+        <div class="spacer"></div>
+        <button class="btn-white" data-act="finishCount" data-id="${id}">Done</button>
+      </div>`,
+    mount: s => { s.count = 0; },
+  });
+}
+
+let photoFor = null;
+function questSheet(id) {
+  const a = ACTS[id];
+  openSheet({
+    live: false,
+    render: () => `
+      <div class="q-top">
+        <button class="q-info" data-act="questInfo" aria-label="About side quests">${ICON.info}</button>
+        <h2>${a.title}</h2>
+        <button class="q-x" data-act="close" aria-label="Close">${ICON.x}</button>
+      </div>
+      <div class="q-chat"><div class="bm">${brain('wave')}</div><div class="bubble">${a.ask}</div></div>
+      <div class="q-art">${parkScene(id === 'q_water')}${id === 'q_water' ? '' : `<span class="em">${a.icon}</span>`}</div>
+      <div class="q-foot"><button class="btn-green" data-act="questContinue" data-id="${id}">Continue</button></div>`,
+    onClose: s => { if (s.photo) URL.revokeObjectURL(s.photo); },
+  });
+}
+function onPhoto(e) {
+  const file = e.target.files && e.target.files[0];
+  const s = photoFor;
+  photoFor = null;
+  e.target.value = '';
+  if (!file || !s || s.closed) return;
+  if (s.photo) URL.revokeObjectURL(s.photo);
+  s.photo = URL.createObjectURL(file);
+  const a = ACTS[s.questId];
+  const art = s.el.querySelector('.q-art');
+  art.innerHTML = `<img src="${s.photo}" alt="Your photo for ${esc(a.title)}">`;
+  s.el.querySelector('.bubble').textContent = 'Love it! Claim your coins 🎉';
+  s.el.querySelector('[data-act="questContinue"]').textContent = `Claim ${a.coins} coins`;
+}
+
+function scrollSheet() {
+  openSheet({
+    render: () => {
+      const d = DIFFICULTY[S.difficulty];
+      return `
+      <div class="cat-head" style="--hb:#ffb9b2">
+        <button class="x-btn" data-act="close" aria-label="Close">${ICON.x}</button>
+        <div class="curve"></div><div class="cat-mascot">${brain('think')}</div>
+      </div>
+      <div class="cat-body"><h1>Scroll</h1>
+        <p class="sub">Spend Brain Coins to unlock your distracting apps. You have <b style="color:#111">${S.coins}</b> ${coin(18)}</p>
+        <div class="list">${SCROLL_OPTIONS.map(m => {
+          const cost = m * d.rate, ok = S.coins >= cost;
+          return `<button class="chunk row ${ok ? '' : 'is-off'}" data-act="buyScroll" data-id="${m}" ${ok ? '' : 'aria-disabled="true"'}>
+            <span class="ico" style="${toneVars(TONES.blue)}">📱</span>
+            <span class="row-main"><b>${m} minute${m === 1 ? '' : 's'}</b><span class="meta">${coin(22)}<span>${cost}</span><i class="dot"></i><span class="cd">${ok ? `${d.label} mode` : 'Not enough coins'}</span></span></span></button>`;
+        }).join('')}</div>
+      </div>`;
+    },
+  });
+}
+function unlockSheet() {
+  const u = S.unlock;
+  if (!u) return;
+  openSheet({
+    live: false, cls: 'unlock-sheet',
+    render: () => `
+      <div class="run" style="--rb:linear-gradient(#ff8a80,#ffb9b2)">
+        <div class="ringbox"><svg viewBox="0 0 250 250"><circle cx="125" cy="125" r="110" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="14"/>
+          <circle class="rp" cx="125" cy="125" r="110" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-dasharray="${RING_C.toFixed(1)}" stroke-dashoffset="0"/></svg>
+          <div class="c"><span class="e">📱</span><b class="clock">${fmtClock(u.dur * 60)}</b></div></div>
+        <h1 class="ttl">Apps unlocked</h1><p class="msg">Enjoy your ${fmtDurLong(u.dur)}. We'll be here when you're done.</p>
+        <div class="spacer"></div>
+        <button class="btn-white" style="color:#d0453f" data-act="doneScrolling">I'm done scrolling</button>
+      </div>`,
+    mount: s => s.tick(s),
+    tick: s => {
+      const cur = S.unlock;
+      if (!cur) return;
+      const el = (Date.now() - cur.start) / 1000, total = cur.dur * 60;
+      if (el >= total) {
+        S.unlock = null; save();
+        s.el.querySelector('.clock').textContent = '00:00';
+        s.el.querySelector('.rp').style.strokeDashoffset = RING_C.toFixed(1);
+        s.el.querySelector('.ttl').textContent = "Time's up!";
+        s.el.querySelector('.msg').textContent = 'Back to real life 🌱 Earn more Brain Coins by unrotting.';
+        s.el.querySelector('[data-act="doneScrolling"]').textContent = 'Back to unrot';
+        return;
+      }
+      s.el.querySelector('.clock').textContent = fmtClock(total - el);
+      s.el.querySelector('.rp').style.strokeDashoffset = (RING_C * el / total).toFixed(1);
+    },
+  });
+}
+
+let buyDone = null;
+function buyAnimation(m, cost, done) {
+  const now = new Date();
+  const el = document.createElement('div');
+  el.className = 'buy';
+  el.innerHTML = `
+    <div class="term"><div class="scr">TAP CARD</div></div>
+    <div class="mini-bank">${bankScene()}<div class="bn">Unrot Bank</div>${CHIP}<div class="num">**** ${S.card}</div></div>
+    <div class="receipt" role="dialog" aria-label="Receipt">
+      <h4>UNROT BANK</h4><div class="c">SCREEN TIME RECEIPT</div><hr>
+      <div class="ln"><span>Date</span><span>${viDate(now)}</span></div>
+      <div class="ln"><span>Time</span><span>${viTime(now.getHours(), now.getMinutes())}</span></div>
+      <div class="ln"><span>Item</span><span>Scroll time × ${m} min</span></div>
+      <div class="ln"><span>Card</span><span>**** ${S.card}</span></div><hr>
+      <div class="ln tot"><span>TOTAL</span><span>${cost} coin${cost === 1 ? '' : 's'}</span></div>
+      <div class="ln"><span>Balance</span><span>${S.coins} coins</span></div><hr>
+      <div class="quote">“Your time has value. Spend it wisely.”</div>
+      <button data-act="buyDone">Continue</button>
+    </div>`;
+  document.body.appendChild(el);
+  buyDone = () => { buyDone = null; el.classList.remove('open'); setTimeout(() => el.remove(), 260); done(); };
+  const term = el.querySelector('.term'), scr = el.querySelector('.scr');
+  const plan = reduceMotion()
+    ? [[30, () => { el.className = 'buy open s4'; }]]
+    : [
+      [30, () => { el.className = 'buy open'; }],
+      [120, () => { el.className = 'buy open s1'; }],
+      [850, () => { el.className = 'buy open s2'; }],
+      [1350, () => { term.classList.add('ok'); scr.textContent = '✓ APPROVED'; if (navigator.vibrate) navigator.vibrate(30); }],
+      [1950, () => { el.className = 'buy open s3'; }],
+      [2350, () => { el.className = 'buy open s4'; }],
+    ];
+  for (const [t, f] of plan) setTimeout(f, t);
+}
+
+/* ================================================================
+   panels
+   ================================================================ */
+function durationPanel(id) {
+  const a = ACTS[id];
+  openPanel({
+    render: () => {
+      const cur = S.durations[id] || 20;
+      return `<div class="grab"></div><h3>How long?</h3><p class="psub">${a.title} earns ${a.rate} Brain Coins per hour.</p>
+      <div class="body">${DURATIONS.map(m => `<button class="choice ${m === cur ? 'on' : ''}" data-act="setDuration" data-id="${id}:${m}">${fmtDurLong(m)}
+        <span class="r">${coin(18)} ${Math.floor(m * a.rate / 60)}</span></button>`).join('')}</div>`;
+    },
+  });
+}
+function appsPanel(kind) {
+  const list = kind === 'allowed' ? APPS : APPS.slice(0, 16);
+  openPanel({
+    render: () => {
+      const sel = kind === 'allowed' ? S.allowed : S.distracting;
+      return `<div class="grab"></div><h3>${kind === 'allowed' ? 'Allowed apps' : 'Distracting apps'}</h3>
+      <p class="psub">${kind === 'allowed' ? 'Apps you still need while unrotting (maps, music, messages).' : 'The apps that cost Brain Coins to open.'}<br>The web version keeps this list for you but can't block apps itself.</p>
+      <div class="body">${list.map(app => appChoice(app, sel.includes(app[0]), kind === 'allowed' ? 'allowToggle' : 'distToggle')).join('')}</div>
+      <button class="btn-green sm" data-act="close">Done</button>`;
+    },
+  });
+}
+function textPanel({ title, sub, value = '', placeholder = '', multiline = false, ok = 'Save', type = 'text' }, cb) {
+  openPanel({
+    live: false,
+    render: () => `<div class="grab"></div><h3>${title}</h3>${sub ? `<p class="psub">${sub}</p>` : ''}
+      <div class="body">${multiline
+        ? `<textarea class="field" style="height:150px;padding:14px;resize:vertical" placeholder="${esc(placeholder)}" maxlength="2000" autofocus>${esc(value)}</textarea>`
+        : `<input class="field ${type === 'time' ? 'field-time' : ''}" type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}" maxlength="40" autofocus>`}</div>
+      <button class="btn-green sm" data-act="panelOk">${ok}</button><button class="btn-ghost" data-act="close">Cancel</button>`,
+    ok: s => { const f = s.el.querySelector('.field'); cb(f.value); },
+    after: s => {
+      const f = s.el.querySelector('input.field');
+      if (f) f.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); s.ok(s); } });
+    },
+  });
+}
+function calendarPanel() {
+  UI.calMonth = 0;
+  UI.calSel = dkey(Date.now());
+  openPanel({
+    render: () => {
+      const now = new Date(), ag = A();
+      const m = new Date(now.getFullYear(), now.getMonth() + UI.calMonth, 1);
+      const n = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+      const todayK = dkey(now);
+      let cells = WD.map(w => `<span class="wd">${w}</span>`).join('');
+      for (let i = 0; i < m.getDay(); i++) cells += '<button disabled aria-hidden="true"></button>';
+      for (let d = 1; d <= n; d++) {
+        const day = new Date(m.getFullYear(), m.getMonth(), d), k = dkey(day);
+        const plus = ag.coins[k] || 0, minus = ag.rot[k] || 0;
+        const cls = [plus || minus ? (plus >= minus ? 'g' : 'r') : '', k === todayK ? 't' : '', k === UI.calSel ? 'sel' : ''].join(' ');
+        cells += `<button class="${cls}" data-act="calDay" data-id="${k}" ${day > now ? 'disabled' : ''}>${d}</button>`;
+      }
+      const items = S.log.filter(e => dkey(e.ts) === UI.calSel).sort((a, b) => b.ts - a.ts);
+      return `<div class="grab"></div><h3>Brainlog Calendar</h3>
+        <div class="body">
+          <div class="cal-nav"><button data-act="calNav" data-id="-1" aria-label="Previous month">${ICON.chevL}</button><b>thg ${m.getMonth() + 1} ${m.getFullYear()}</b>
+            <button data-act="calNav" data-id="1" aria-label="Next month" ${UI.calMonth >= 0 ? 'disabled' : ''}>${ICON.chevR}</button></div>
+          <div class="cal-grid">${cells}</div>
+          <div class="legend" style="margin-top:14px"><span style="--c:#7fcf5a">More unrot</span><span style="--c:#f08a84">More brainrot</span></div>
+          <div class="day-list"><b style="font-size:17px">${viLong(keyDate(UI.calSel))}</b>
+            ${items.length ? items.map(tlRow).join('') : '<div class="empty">Nothing logged on this day.</div>'}</div>
+        </div>`;
+    },
+  });
+}
+function challengePanel() {
+  openPanel({
+    render: () => {
+      const cs = challengeState();
+      if (!cs) {
+        return `<div class="grab"></div><div style="text-align:center;font-size:52px;line-height:1;margin:6px 0 10px">🧠🌱</div><h3>28 Day Unrot</h3>
+          <p class="psub">Earn at least ${STREAK_GOAL} Brain Coins every day for 28 days. Small daily wins add up to a calmer brain.</p>
+          <button class="btn-green sm" data-act="startChallenge">Start challenge</button><button class="btn-ghost" data-act="close">Not now</button>`;
+      }
+      const cells = cs.days.map((x, i) => `<i class="${x.done ? 'd' : x.past ? 'm' : ''} ${x.today ? 't' : ''}" title="Day ${i + 1}">${i + 1}</i>`).join('');
+      return `<div class="grab"></div><h3>28 Day Unrot</h3>
+        <p class="psub">${cs.finished ? `Finished! You completed ${cs.done} of 28 days.` : `Day ${cs.dayIdx + 1} of 28 · ${cs.done} day${cs.done === 1 ? '' : 's'} completed`}<br>Earn ${STREAK_GOAL} Brain Coins in a day to tick it off.</p>
+        <div class="ch-days">${cells}</div>
+        <button class="btn-green sm" data-act="close">Keep going</button>
+        <button class="btn-ghost" data-act="quitChallenge">${cs.finished ? 'Start over' : 'Quit challenge'}</button>`;
+    },
+  });
+}
+function recapPanel() {
+  const ag = A();
+  const p = period('week', 0), pp = period('week', -1);
+  const tot = (map, per) => sum(per.days.map(d => map[dkey(d)] || 0));
+  const c = tot(ag.coins, p), cp = tot(ag.coins, pp), u = tot(ag.unrot, p), r = tot(ag.rot, p);
+  const best = p.days.reduce((b, d) => ((ag.coins[dkey(d)] || 0) > (ag.coins[dkey(b)] || 0) ? d : b), p.days[0]);
+  infoPanel('Weekly Recap', [
+    `<b>${p.label}</b>`,
+    `${coin(18)} <b>${c}</b> Brain Coins earned (${cp ? `${c >= cp ? '+' : ''}${Math.round((c - cp) / cp * 100)}%` : c ? '+100%' : '0%'} vs last week)`,
+    `🌱 <b>${fmtMins(u)}</b> unrotting · 💀 <b>${fmtMins(r)}</b> brainrot`,
+    (ag.coins[dkey(best)] || 0) > 0 ? `🏆 Best day: <b>${WD[best.getDay()]}, ${viLong(best)}</b>` : 'No coins yet this week. Today is a great day to start!',
+  ]);
+}
+
+/* ================================================================
+   actions (event delegation)
+   ================================================================ */
+const ACTIONS = {
+  tab: id => { while (stack.length) closeSheet(); showTab(id); },
+  close: (_, el) => closeSheet(sheetOf(el) || topSheet()),
+  confirmOk: () => { const cb = confirmCb; confirmCb = null; closeSheet(); if (cb) cb(); },
+  panelOk: (_, el) => { const s = sheetOf(el); if (s && s.ok) s.ok(s); },
+
+  openCat: id => catSheet(id),
+  openAct: id => openAct(id),
+  openUnrots: () => unrotsSheet(),
+  openScroll: () => scrollSheet(),
+  toggleMore: () => { UI.showMore = !UI.showMore; renderHome(); },
+  streakInfo: () => {
+    const st = streakInfo();
+    infoPanel('Daily Streak 🔥', [
+      `Current streak: <b>${st.cur} day${st.cur === 1 ? '' : 's'}</b> · Best: <b>${st.best} day${st.best === 1 ? '' : 's'}</b>`,
+      `Earn <b>${STREAK_GOAL} Brain Coins</b> in a day to keep your streak alive. Today: <b>${Math.min(st.today, STREAK_GOAL)}/${STREAK_GOAL}</b>.`,
+    ]);
+  },
+  claimBonus: () => {
+    if (S.bonusClaimed) return;
+    S.bonusClaimed = true;
+    award({ act: 'bonus', type: 'bonus', cat: 'bonus', title: 'Bonus Coins', icon: '🎁', coins: 30 });
+    toast('First steps complete! +30 Brain Coins');
+  },
+  editEssential: () => openPanel({
+    render: () => `<div class="grab"></div><h3>Essential Unrots</h3><p class="psub">Pick the Unrots that show on your home screen.</p>
+      <div class="body">${Object.values(ACTS).filter(a => a.cat === 'timed' || a.cat === 'quest').map(a =>
+        `<button class="choice ${S.essential.includes(a.id) ? 'on' : ''}" data-act="essToggle" data-id="${a.id}" aria-pressed="${S.essential.includes(a.id)}"><span style="font-size:24px">${a.icon}</span>${a.title}<span class="box">${ICON.check}</span></button>`).join('')}</div>
+      <button class="btn-green sm" data-act="close">Done</button>`,
+  }),
+  essToggle: id => {
+    S.essential = S.essential.includes(id) ? S.essential.filter(x => x !== id) : [...S.essential, id];
+    save(); refresh();
+  },
+
+  // timed unrots
+  pickDuration: id => durationPanel(id),
+  setDuration: v => { const [id, m] = v.split(':'); S.durations[id] = Number(m); save(); closeSheet(); refresh(); },
+  pickAllowed: () => appsPanel('allowed'),
+  allowToggle: id => { S.allowed = S.allowed.includes(id) ? S.allowed.filter(x => x !== id) : [...S.allowed, id]; save(); refresh(); },
+  actHistory: id => {
+    const items = S.log.filter(e => e.act === id).sort((a, b) => b.ts - a.ts).slice(0, 30);
+    openPanel({
+      render: () => `<div class="grab"></div><h3>${ACTS[id].title} history</h3>
+        <div class="body">${items.length ? items.map(e => `<div class="choice" style="cursor:default">${viLong(e.ts)}<span class="r">${fmtMins(e.mins)} · ${coin(18)} ${e.coins}</span></div>`).join('') : '<div class="empty">No sessions yet.</div>'}</div>
+        <button class="btn-green sm" data-act="close">Close</button>`,
+    });
+  },
+  shareOffline: async id => {
+    const a = ACTS[id];
+    const dur = S.active ? S.active.dur : S.durations[id] || 20;
+    const text = `I'm offline for the next ${fmtDurLong(dur)} (${a.title.toLowerCase()}) 🌱 I'll get back to you after!`;
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text); toast('Message copied. Paste it to your friends!'); } catch (_) { toast(text); }
+  },
+  startUnrot: id => {
+    S.active = { id, start: Date.now(), dur: S.durations[id] || 20 };
+    save();
+    closeSheet();
+    runSheet();
+  },
+  endUnrot: () => {
+    const cur = S.active;
+    if (!cur) return;
+    const mins = Math.floor((Date.now() - cur.start) / MIN);
+    const coins = Math.floor(mins * ACTS[cur.id].rate / 60);
+    confirmPanel({ title: 'End session early?', text: mins ? `You'll log ${fmtDurLong(mins)} and earn ${coins} Brain Coin${coins === 1 ? '' : 's'}.` : 'Less than a minute so far, so nothing will be logged.', ok: 'End session', danger: true }, () => finishUnrot(false));
+  },
+
+  // power ups
+  finishBreath: (id, el) => {
+    const s = sheetOf(el), a = ACTS[id];
+    const mins = s && s.phase >= 0 ? Math.floor((Date.now() - s.start) / MIN) : 0;
+    if (mins < 1) { toast('Breathe for at least 1 minute to earn coins'); return; }
+    closeSheet(s);
+    award({ act: id, mins, coins: mins * a.perMin, ts: s.start });
+    resultPanel('😮‍💨', 'Feeling better?', `${fmtDurLong(mins)} of ${a.title.toLowerCase()} earned you ${mins * a.perMin} Brain Coins.`);
+  },
+  mood: (v, el) => { $$('button', el.parentElement).forEach(b => { b.classList.toggle('on', b === el); b.setAttribute('aria-pressed', b === el); }); },
+  saveJournal: (id, el) => {
+    const s = sheetOf(el), a = ACTS[id];
+    const text = s.el.querySelector('textarea').value.trim();
+    const mood = s.el.querySelector('.moods .on');
+    if (text.length < 3) return;
+    closeSheet(s);
+    setCool(a);
+    award({ act: id, coins: a.coins, note: (mood ? `[${mood.dataset.id}] ` : '') + text });
+    resultPanel('📝', 'Entry saved', `Writing it down earned you ${a.coins} Brain Coins. Your entry stays on this device.`);
+  },
+  count: (d, el) => {
+    const s = sheetOf(el);
+    s.count = Math.max(0, s.count + Number(d));
+    s.el.querySelector('.cnt').textContent = s.count;
+    s.el.querySelector('.ec').textContent = `+${s.count * ACTS.pushups.per}`;
+    if (navigator.vibrate) navigator.vibrate(12);
+  },
+  finishCount: (id, el) => {
+    const s = sheetOf(el), a = ACTS[id];
+    if (!s.count) { toast('Do at least one pushup first 💪'); return; }
+    closeSheet(s);
+    award({ act: id, coins: s.count * a.per, title: `${a.title} ×${s.count}` });
+    resultPanel('💪', 'Strong brain!', `${s.count} ${a.unit}${s.count === 1 ? '' : 's'} = ${s.count * a.per} Brain Coins.`);
+  },
+  questInfo: () => infoPanel('Side Quests', [
+    'Side quests are small real-world tasks. Snap a photo to show you did it and the brain pays you in Brain Coins.',
+    'Photos never leave your device. Each quest can be done once a day.',
+  ]),
+  questContinue: (id, el) => {
+    const s = sheetOf(el), a = ACTS[id];
+    if (!s.photo) { s.questId = id; photoFor = s; $('#photo-input').click(); return; }
+    closeSheet(s);
+    setCool(a);
+    award({ act: id, coins: a.coins });
+    resultPanel(a.icon, 'Quest complete!', `${a.title}: +${a.coins} Brain Coins. Come back tomorrow for more.`);
+  },
+
+  // scrolling
+  buyScroll: m => {
+    m = Number(m);
+    const cost = m * DIFFICULTY[S.difficulty].rate;
+    if (S.coins < cost) { toast('Not enough Brain Coins. Go unrot first! 🌱'); return; }
+    S.coins -= cost;
+    logIt({ act: 'scroll', type: 'rot', cat: 'rot', title: 'Brainrot', icon: '🔓', mins: m, coins: -cost });
+    S.unlock = { start: Date.now(), dur: m };
+    save();
+    refresh();
+    const go = () => { const sc = stack.find(s => s.el.querySelector('[data-act="buyScroll"]')); if (sc) closeSheet(sc); unlockSheet(); };
+    if (S.purchaseAnim) buyAnimation(m, cost, go); else go();
+  },
+  buyDone: () => { if (buyDone) buyDone(); },
+  doneScrolling: (_, el) => { S.unlock = null; save(); closeSheet(sheetOf(el)); refresh(); },
+
+  // stats
+  insteadTab: id => { UI.instead = id; renderStats(); },
+  chartMode: v => { const [c, m] = v.split(':'); UI.charts[c] = { mode: m, off: 0 }; renderStats(); },
+  chartNav: v => { const [c, d] = v.split(':'); UI.charts[c].off = Math.min(0, UI.charts[c].off + Number(d)); renderStats(); },
+  openCalendar: () => calendarPanel(),
+  calNav: d => { UI.calMonth = Math.min(0, UI.calMonth + Number(d)); refresh(); },
+  calDay: k => { UI.calSel = k; refresh(); },
+
+  // challenges
+  openChallenge: () => challengePanel(),
+  startChallenge: () => { S.challenge = { start: startOfDay(Date.now()).getTime() }; save(); refresh(); toast('Challenge started. Day 1 of 28!'); },
+  quitChallenge: () => {
+    const finished = challengeState() && challengeState().finished;
+    closeSheet();
+    if (finished) { S.challenge = null; save(); refresh(); challengePanel(); return; }
+    confirmPanel({ title: 'Quit the challenge?', text: 'Your progress on the 28 Day Unrot will be reset.', ok: 'Quit challenge', danger: true }, () => { S.challenge = null; save(); refresh(); });
+  },
+
+  // settings
+  pickDistracting: () => appsPanel('distracting'),
+  distToggle: id => { S.distracting = S.distracting.includes(id) ? S.distracting.filter(x => x !== id) : [...S.distracting, id]; save(); refresh(); },
+  pickDifficulty: () => openPanel({
+    render: () => `<div class="grab"></div><h3>Difficulty Mode</h3><p class="psub">How many Brain Coins one minute of scrolling costs.</p>
+      <div class="body">${Object.entries(DIFFICULTY).map(([k, d]) => `<button class="choice ${S.difficulty === k ? 'on' : ''}" data-act="setDifficulty" data-id="${k}">${d.label}<span class="r">${d.rate} coin${d.rate > 1 ? 's' : ''} per minute</span></button>`).join('')}</div>`,
+  }),
+  setDifficulty: k => { S.difficulty = k; save(); closeSheet(); refresh(); },
+  pickLanguage: () => openPanel({
+    render: () => `<div class="grab"></div><h3>Language</h3>
+      <div class="body">${Object.entries(LANGS).map(([k, l]) => `<button class="choice ${S.language === k ? 'on' : ''}" data-act="setLanguage" data-id="${k}">${l}<span class="box">${ICON.check}</span></button>`).join('')}</div>`,
+  }),
+  setLanguage: k => { S.language = k; save(); closeSheet(); refresh(); },
+  togglePurchase: () => { S.purchaseAnim = !S.purchaseAnim; save(); refresh(); },
+  editBedtime: () => textPanel({ title: 'Sleep Mode', sub: 'When do you want to put your phone away for the night?', value: S.bedtime, type: 'time' }, v => {
+    if (!/^\d{2}:\d{2}$/.test(v)) { toast('Pick a time'); return; }
+    S.bedtime = v; save(); closeSheet(); refresh();
+  }),
+  notifications: () => openPanel({
+    render: () => `<div class="grab"></div><h3>Notifications</h3><p class="psub">Reminders are saved on this device.</p>
+      <div class="body">${[['daily', 'Daily unrot reminder'], ['streak', 'Streak at risk'], ['bedtime', 'Bedtime wind-down']].map(([k, l]) =>
+        `<div class="choice" style="cursor:default">${l}<button class="toggle" style="margin-left:auto" role="switch" aria-checked="${S.notif[k]}" aria-label="${l}" data-act="notifToggle" data-id="${k}"></button></div>`).join('')}</div>
+      <button class="btn-green sm" data-act="close">Done</button>`,
+  }),
+  notifToggle: k => { S.notif[k] = !S.notif[k]; save(); refresh(); },
+  editName: () => textPanel({ title: 'Your name', sub: 'Shown on your Unrot Bank card.', value: S.name, placeholder: 'Name' }, v => {
+    v = v.trim();
+    if (!v) { toast('Name can’t be empty'); return; }
+    S.name = v.slice(0, 40); save(); closeSheet(); refresh();
+  }),
+  subscription: () => infoPanel('Subscription', ['You are on <b>unrot Free</b>. Every feature in this web version is included.']),
+  weeklyRecap: () => recapPanel(),
+  feedback: kind => textPanel({
+    title: kind === 'feature' ? 'Request Feature' : 'Give Feedback',
+    sub: kind === 'feature' ? 'What should unrot do next?' : 'How is unrot working for you?',
+    multiline: true, placeholder: 'Type here…', ok: 'Save',
+  }, v => {
+    v = v.trim();
+    if (!v) { toast('Write something first'); return; }
+    S.feedback.push({ kind, text: v, ts: Date.now() });
+    save(); closeSheet(); toast('Thanks! Saved on this device.');
+  }),
+  legal: kind => infoPanel(kind === 'privacy' ? 'Privacy Notice' : 'Terms of Service', kind === 'privacy'
+    ? ['Everything you do in this app (coins, sessions, journal entries, settings) is stored only in this browser\'s local storage.', 'Nothing is sent to a server. Photos for side quests are shown on screen and never uploaded or saved.', 'Use “Delete my account” to erase all of it.']
+    : ['unrot is a habit tool to help you spend less time scrolling. Brain Coins have no cash value.', 'The web version cannot block other apps; it relies on you keeping your word to yourself.']),
+  deleteAccount: () => confirmPanel({ title: 'Delete my account?', text: 'This erases your coins, history, journal entries and settings from this device. It can’t be undone.', ok: 'Delete everything', danger: true }, () => {
+    try { localStorage.removeItem(KEY); } catch (_) { /* ignore */ }
+    S = blank();
+    save();
+    UI.showMore = false;
+    showTab('home');
+    toast('Account deleted. Fresh start! 🌱');
+  }),
+  blocking: () => infoPanel('Blocking Issues', [
+    'Browsers can’t block other apps, so this web version works on the honour system: spend Brain Coins in <b>Scroll</b> before you open a distracting app.',
+    'For hard blocking, pair it with your phone’s built-in Screen Time (iPhone) or Digital Wellbeing (Android) limits.',
+  ]),
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true' && el.dataset.act !== 'openAct' && el.dataset.act !== 'buyScroll') return;
+  const fn = ACTIONS[el.dataset.act];
+  if (!fn) return;
+  e.preventDefault();
+  fn(el.dataset.id, el, e);
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const s = topSheet();
+  if (s && !s.noEsc) closeSheet(s);
+});
+addEventListener('scroll', onScroll, { passive: true });
+$('#photo-input').addEventListener('change', onPhoto);
+
+/* ================================================================
+   clock
+   ================================================================ */
+let ticks = 0, lastDay = dkey(Date.now());
+function tick() {
+  ticks++;
+  for (const s of stack.slice()) if (s.tick && !s.closed) s.tick(s);
+  const k = dkey(Date.now());
+  if (k !== lastDay) { lastDay = k; ver++; refresh(); return; }
+  if (ticks % 20 === 0) {
+    const bed = $('#bed-card');
+    if (bed && UI.tab === 'home') bed.outerHTML = bedCard();
+    for (const s of stack) if (s.coolTick && !s.closed) drawSheet(s);
+  }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+
+/* ================================================================
+   boot
+   ================================================================ */
+S = load() || seed();
+save();
+$$('.tabbar button').forEach(b => { b.innerHTML = ICON[{ home: 'home', stats: 'stats', challenges: 'trophy', settings: 'user' }[b.dataset.id]]; });
+showTab('home');
+if (S.active) {
+  if (Date.now() - S.active.start >= S.active.dur * MIN) finishUnrot(true); else runSheet();
+} else if (S.unlock) {
+  if (Date.now() < S.unlock.start + S.unlock.dur * MIN) unlockSheet(); else { S.unlock = null; save(); }
+}
+setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
