@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -45,6 +46,7 @@ class ReaderActivity : Activity() {
     private lateinit var titleView: TextView
     private lateinit var spreadBtn: TextView
     private lateinit var modeBtn: TextView
+    private lateinit var closeBtn: TextView
     private lateinit var progress: ProgressBar
     private lateinit var errorView: TextView
 
@@ -88,7 +90,7 @@ class ReaderActivity : Activity() {
                         content = c
                         pageHtml = html
                         slideMode = slide
-                        spreadBtn.visibility = if (c.kind == "pdf") View.VISIBLE else View.GONE
+                        updateSpreadBtn()
                         modeBtn.visibility = if (pageable) View.VISIBLE else View.GONE
                         updateModeLabel()
                         progress.visibility = View.GONE
@@ -188,11 +190,31 @@ class ReaderActivity : Activity() {
         topBar.addView(barButton("Nền") { cycleTheme() })
         root.addView(topBar, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.TOP))
 
+        // Nút ✕ nhỏ, mờ, luôn ở góc trên bên phải: bấm là thoát ngay.
+        closeBtn = TextView(this).apply {
+            text = "✕"
+            setTextColor(Color.WHITE)
+            textSize = 18f
+            gravity = Gravity.CENTER
+            alpha = 0.55f
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(0x99000000.toInt())
+            }
+            contentDescription = "Đóng"
+            setOnClickListener { finish() }
+        }
+        val closeLp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
+        root.addView(closeBtn, closeLp)
+
         root.setOnApplyWindowInsetsListener { _, insets ->
             val t = insets.getInsetsIgnoringVisibility(
                 WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
             )
             topBar.setPadding(t.left, t.top, t.right, 0)
+            closeLp.topMargin = t.top + dp(10)
+            closeLp.marginEnd = t.right + dp(12)
+            closeBtn.layoutParams = closeLp
             insets
         }
 
@@ -251,6 +273,7 @@ class ReaderActivity : Activity() {
     private fun setUiVisible(visible: Boolean) {
         uiVisible = visible
         topBar.visibility = if (visible) View.VISIBLE else View.GONE
+        closeBtn.visibility = if (visible) View.GONE else View.VISIBLE
         window.insetsController?.let { c ->
             c.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             if (visible) c.show(WindowInsets.Type.systemBars()) else c.hide(WindowInsets.Type.systemBars())
@@ -268,7 +291,7 @@ class ReaderActivity : Activity() {
     }
 
     private fun updateScreenWidth() {
-        screenW = resources.displayMetrics.widthPixels.coerceIn(1000, 1800)
+        screenW = (resources.displayMetrics.widthPixels * 1.6).toInt().coerceIn(1400, 2400)
     }
 
     private fun currentTheme(): String {
@@ -289,12 +312,17 @@ class ReaderActivity : Activity() {
         modeBtn.text = if (slideMode) "Cuộn" else "Trình chiếu"
     }
 
+    private fun updateSpreadBtn() {
+        spreadBtn.visibility = if (content?.kind == "pdf" && !slideMode) View.VISIBLE else View.GONE
+    }
+
     private fun toggleMode() {
         val kind = content?.kind ?: return
         slideMode = !slideMode
         prefs.edit().putString("mode_$kind", if (slideMode) "slide" else "scroll").apply()
         web.evaluateJavascript(if (slideMode) "setMode('slide')" else "setMode('scroll')", null)
         updateModeLabel()
+        updateSpreadBtn()
         if (slideMode) {
             setUiVisible(false)
             if (!prefs.getBoolean("slide_hinted", false)) {
