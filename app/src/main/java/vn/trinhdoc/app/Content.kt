@@ -100,7 +100,7 @@ class PdfContent(file: File) : ReaderContent {
 
 class DocxContent(private val result: DocxResult) : ReaderContent {
     override val kind = "docx"
-    override fun body() = "<div class=\"doc\">${result.bodyHtml}</div>"
+    override fun body() = "<div class=\"book\"><div class=\"doc\">${result.bodyHtml}</div></div>"
 
     override fun resource(path: String, screenW: Int): WebResourceResponse? {
         if (!path.startsWith("/img/")) return null

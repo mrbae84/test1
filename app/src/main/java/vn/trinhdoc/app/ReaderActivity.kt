@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.provider.OpenableColumns
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -43,6 +44,7 @@ class ReaderActivity : Activity() {
     private lateinit var topBar: LinearLayout
     private lateinit var titleView: TextView
     private lateinit var spreadBtn: TextView
+    private lateinit var modeBtn: TextView
     private lateinit var progress: ProgressBar
     private lateinit var errorView: TextView
 
@@ -53,6 +55,8 @@ class ReaderActivity : Activity() {
     @Volatile
     private var screenW = 1200
     private var uiVisible = false
+    /** true = trình chiếu (lật từng trang), false = cuộn dọc. Chỉ áp dụng cho PDF và Word. */
+    private var slideMode = false
 
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
 
@@ -74,14 +78,19 @@ class ReaderActivity : Activity() {
         Thread {
             try {
                 val c = DocLoader.load(applicationContext, input, name)
-                val html = Html.page(c, currentTheme()).toByteArray(Charsets.UTF_8)
+                val pageable = c.kind == "pdf" || c.kind == "docx"
+                val slide = pageable && prefs.getString("mode_${c.kind}", "scroll") == "slide"
+                val html = Html.page(c, currentTheme(), slide).toByteArray(Charsets.UTF_8)
                 runOnUiThread {
                     if (isDestroyed) {
                         c.close()
                     } else {
                         content = c
                         pageHtml = html
+                        slideMode = slide
                         spreadBtn.visibility = if (c.kind == "pdf") View.VISIBLE else View.GONE
+                        modeBtn.visibility = if (pageable) View.VISIBLE else View.GONE
+                        updateModeLabel()
                         progress.visibility = View.GONE
                         web.loadUrl("https://$HOST/index.html")
                         showHintOnce()
@@ -170,9 +179,12 @@ class ReaderActivity : Activity() {
             ellipsize = TextUtils.TruncateAt.MIDDLE
         }
         topBar.addView(titleView, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        spreadBtn = barButton("1 | 2 trang") { web.evaluateJavascript("toggleSpread()", null) }
+        spreadBtn = barButton("1|2") { web.evaluateJavascript("toggleSpread()", null) }
         spreadBtn.visibility = View.GONE
         topBar.addView(spreadBtn)
+        modeBtn = barButton("Trình chiếu") { toggleMode() }
+        modeBtn.visibility = View.GONE
+        topBar.addView(modeBtn)
         topBar.addView(barButton("Nền") { cycleTheme() })
         root.addView(topBar, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.TOP))
 
@@ -271,6 +283,44 @@ class ReaderActivity : Activity() {
         prefs.edit().putString("theme", next).apply()
         web.evaluateJavascript("setTheme('$next')", null)
         Toast.makeText(this, THEME_NAMES[next], Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateModeLabel() {
+        modeBtn.text = if (slideMode) "Cuộn" else "Trình chiếu"
+    }
+
+    private fun toggleMode() {
+        val kind = content?.kind ?: return
+        slideMode = !slideMode
+        prefs.edit().putString("mode_$kind", if (slideMode) "slide" else "scroll").apply()
+        web.evaluateJavascript(if (slideMode) "setMode('slide')" else "setMode('scroll')", null)
+        updateModeLabel()
+        if (slideMode) {
+            setUiVisible(false)
+            if (!prefs.getBoolean("slide_hinted", false)) {
+                prefs.edit().putBoolean("slide_hinted", true).apply()
+                Toast.makeText(
+                    this,
+                    "Vuốt sang trái/phải (hoặc chạm cạnh màn hình, nút âm lượng) để lật trang",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    // Nút âm lượng để lật trang khi trình chiếu.
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (slideMode && content != null) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    web.evaluateJavascript("nextPage()", null); return true
+                }
+                KeyEvent.KEYCODE_VOLUME_UP -> {
+                    web.evaluateJavascript("prevPage()", null); return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun showHintOnce() {
