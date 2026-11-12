@@ -78,7 +78,7 @@ class MainActivity : Activity() {
 
         emptyView = TextView(this).apply {
             text = "Chưa có file nào.\n\nBấm “Mở file”, hoặc mở file Word, Excel, PDF từ Zalo, Gmail, " +
-                "trình quản lý file… rồi chọn “Trình đọc”."
+                "trình quản lý file… rồi chọn “Mera Office”."
             textSize = 15f
             alpha = 0.7f
             setPadding(0, dp(12), 0, 0)

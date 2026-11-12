@@ -1,11 +1,11 @@
-# Trình đọc
+# Mera Office
 
 App Android gọn nhẹ để **đọc** file Word (.docx), Excel (.xlsx) và PDF trên Samsung Galaxy Z Fold 8.
 Không quảng cáo, không cần mạng, không thu thập dữ liệu.
 
 ## Tính năng
 - Mở file là hiện **toàn màn hình**. Chạm một lần để hiện/ẩn thanh công cụ.
-- Mở trực tiếp từ Zalo, Gmail, Google Drive, trình quản lý file ("Mở bằng" hoặc "Chia sẻ" → Trình đọc).
+- Mở trực tiếp từ Zalo, Gmail, Google Drive, trình quản lý file ("Mở bằng" hoặc "Chia sẻ" → Mera Office).
 - PDF: cuộn mượt, phóng to bằng hai ngón tay; mở màn hình lớn tự hiện **2 trang cạnh nhau** (bấm "1 | 2 trang" để đổi).
 - Word: giữ tiêu đề, chữ đậm/nghiêng, màu chữ, bảng, hình ảnh, danh sách đánh số.
 - Excel: bảng cuộn ngang/dọc, giữ cố định tên cột và số hàng, chuyển trang tính bằng tab bên dưới, định dạng số và ngày kiểu Việt Nam.
@@ -28,4 +28,4 @@ GitHub tự build; vào tab **Actions** → lần chạy mới nhất → tải 
 ## Cài lên điện thoại
 Chép file `app-debug.apk` sang điện thoại (Zalo "Truyền file", cáp USB, Google Drive…), bấm mở,
 cho phép "Cài ứng dụng không rõ nguồn gốc" khi được hỏi. Sau đó vào Cài đặt → Ứng dụng → Chọn ứng dụng mặc định
-nếu muốn luôn mở PDF/Word/Excel bằng Trình đọc thay cho WPS.
+nếu muốn luôn mở PDF/Word/Excel bằng Mera Office thay cho WPS.

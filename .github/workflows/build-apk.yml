@@ -23,17 +23,17 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
-          cp app/build/outputs/apk/debug/app-debug.apk TrinhDoc.apk
+          cp app/build/outputs/apk/debug/app-debug.apk MeraOffice.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: TrinhDoc-apk
-          path: TrinhDoc.apk
+          name: MeraOffice-apk
+          path: MeraOffice.apk
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete trinhdoc-apk --yes --cleanup-tag || true
-          gh release create trinhdoc-apk TrinhDoc.apk \
+          gh release create trinhdoc-apk MeraOffice.apk \
             --target "$GITHUB_SHA" \
-            --title "Trình đọc – bản mới nhất" \
-            --notes "Tải file TrinhDoc.apk về điện thoại và bấm để cài."
+            --title "Mera Office – bản mới nhất" \
+            --notes "Tải file MeraOffice.apk về điện thoại và bấm để cài."

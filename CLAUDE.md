@@ -1,4 +1,4 @@
-# Trình đọc – app Android đọc Word, Excel, PDF
+# Mera Office – app Android đọc Word, Excel, PDF
 
 App cá nhân của anh Tuyển cho Samsung Galaxy Z Fold 8. Chỉ để XEM file, không quảng cáo,
 không xin quyền Internet, không chỉnh sửa. Giao tiếp với anh Tuyển bằng tiếng Việt.
