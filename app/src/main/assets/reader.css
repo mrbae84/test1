@@ -49,7 +49,7 @@ body.pptx{background:var(--desk)}
 .slide .lsp{min-width:1px;min-height:1px}
 .slide .fl{position:absolute;inset:0;box-sizing:border-box}
 .slide .tx{position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;overflow-wrap:break-word}
-.slide .tx p{margin:0}
+.slide p{margin:0}
 .slide svg.ln,.slide svg.cg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
 .slide .pic{overflow:hidden}
 .slide .pic img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
@@ -97,7 +97,7 @@ body.paged .book,body.paged .pages,body.paged .deck{display:none}
 
 /* PowerPoint: nền đen như máy chiếu */
 .pptx .pgh,.pptx #view{background:#000}
-.pptx #flapw .fpaper{background:#1b1b1b}
+.pptx #flapw .fpaper{background:#f4f4f4;opacity:.86}
 .pptx .pgh .pc{display:flex;align-items:center;justify-content:center}
 .pptx .sframe{width:min(100vw, calc(100vh * var(--r)))}
 .pptx .sframe .slide{margin:0;max-width:none;width:100%;box-shadow:none}

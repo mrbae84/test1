@@ -18,6 +18,8 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sqrt
+import kotlin.math.tan
 
 // ---------- Tiện ích DOM (bỏ tiền tố namespace: "p:sp" -> "sp") ----------
 
@@ -671,8 +673,8 @@ object PptxConverter {
             o.append("<div class=\"sp").append(if (isLine) " lsp" else "").append('"').append(st(pos(box))).append('>')
             if (isLine) {
                 if (lineColor != null) lineSvg(o, box, lineColor, lineW, dash)
-            } else if (cust != null) {
-                custSvg(o, cust, box, fill, lineColor, lineW)
+            } else if (cust != null && custSvg(o, cust, box, fill, lineColor, lineW)) {
+                // đã vẽ bằng SVG
             } else if (fill != null || lineColor != null) {
                 val css = StringBuilder()
                 if (fill != null) css.append("background:").append(fill.css).append(';')
@@ -682,7 +684,7 @@ object PptxConverter {
                 }
                 when (prst) {
                     "ellipse", "flowChartConnector" -> css.append("border-radius:50%;")
-                    "roundRect", "flowChartAlternateProcess" -> {
+                    "roundRect", "flowChartAlternateProcess", "wedgeRoundRectCallout" -> {
                         val adj = spPr?.kid("prstGeom")?.kid("avLst")?.kids("gd")?.firstOrNull()
                             ?.at("fmla")?.removePrefix("val ")?.trim()?.toDoubleOrNull() ?: 16667.0
                         css.append("border-radius:").append(cqwE(min(box.extW, box.extH) * adj / 100000.0)).append(';')
@@ -953,13 +955,73 @@ object PptxConverter {
                 .append(100 - y1).append('"').append(st(css)).append("/></svg>")
         }
 
-        private fun custSvg(o: StringBuilder, cust: Element, b: Box, fill: Paint?, line: String?, lineW: Double) {
-            val paths = cust.kid("pathLst")?.kids("path") ?: return
+        /** Tính các công thức toạ độ (avLst, gdLst) của hình tự do. */
+        private class Geom(w: Double, h: Double, cust: Element) {
+            private val v = HashMap<String, Double>()
+
+            init {
+                val ss = min(w, h)
+                val ls = max(w, h)
+                v["l"] = 0.0; v["t"] = 0.0; v["r"] = w; v["b"] = h; v["w"] = w; v["h"] = h
+                v["hc"] = w / 2; v["vc"] = h / 2; v["ss"] = ss; v["ls"] = ls
+                for (d in listOf(2, 3, 4, 5, 6, 8, 10, 12, 16, 32)) {
+                    v["wd$d"] = w / d; v["hd$d"] = h / d; v["ssd$d"] = ss / d
+                }
+                v["cd2"] = 10800000.0; v["cd4"] = 5400000.0; v["cd8"] = 2700000.0
+                v["3cd4"] = 16200000.0; v["3cd8"] = 8100000.0; v["5cd8"] = 13500000.0; v["7cd8"] = 18900000.0
+                for (lst in listOf("avLst", "gdLst")) {
+                    for (gd in cust.kid(lst)?.kids("gd") ?: emptyList()) {
+                        val name = gd.getAttribute("name")
+                        val r = gd.getAttribute("fmla").let { eval(it) }
+                        if (name.isNotEmpty() && r != null) v[name] = r
+                    }
+                }
+            }
+
+            fun get(s: String?): Double? {
+                if (s == null) return null
+                return s.toDoubleOrNull() ?: v[s]
+            }
+
+            private fun eval(f: String): Double? {
+                val p = f.trim().split(Regex("\\s+"))
+                if (p.isEmpty()) return null
+                fun a(i: Int) = get(p.getOrNull(i)) ?: 0.0
+                val rad = PI / 180 / 60000
+                return when (p[0]) {
+                    "val" -> a(1)
+                    "*/" -> if (a(3) == 0.0) 0.0 else a(1) * a(2) / a(3)
+                    "+-" -> a(1) + a(2) - a(3)
+                    "+/" -> if (a(3) == 0.0) 0.0 else (a(1) + a(2)) / a(3)
+                    "?:" -> if (a(1) > 0) a(2) else a(3)
+                    "abs" -> abs(a(1))
+                    "at2" -> atan2(a(2), a(1)) / rad
+                    "cat2" -> a(1) * cos(atan2(a(3), a(2)))
+                    "sat2" -> a(1) * sin(atan2(a(3), a(2)))
+                    "cos" -> a(1) * cos(a(2) * rad)
+                    "sin" -> a(1) * sin(a(2) * rad)
+                    "tan" -> a(1) * tan(a(2) * rad)
+                    "max" -> max(a(1), a(2))
+                    "min" -> min(a(1), a(2))
+                    "mod" -> sqrt(a(1) * a(1) + a(2) * a(2) + a(3) * a(3))
+                    "pin" -> if (a(2) < a(1)) a(1) else if (a(2) > a(3)) a(3) else a(2)
+                    "sqrt" -> sqrt(max(0.0, a(1)))
+                    else -> null
+                }
+            }
+        }
+
+        /** Vẽ hình tự do; trả về false nếu không đọc được đường nào (khi đó vẽ khung chữ nhật). */
+        private fun custSvg(o: StringBuilder, cust: Element, b: Box, fill: Paint?, line: String?, lineW: Double): Boolean {
+            val paths = cust.kid("pathLst")?.kids("path") ?: return false
+            val geom = Geom(b.extW, b.extH, cust)
+            var drawn = false
             for (path in paths) {
                 val pw = path.num("w")?.takeIf { it > 0 } ?: b.extW
                 val ph = path.num("h")?.takeIf { it > 0 } ?: b.extH
                 if (pw <= 0 || ph <= 0) continue
-                val d = pathData(path) ?: continue
+                val d = pathData(path, geom) ?: continue
+                drawn = true
                 val noFill = path.at("fill") == "none"
                 val noStroke = path.at("stroke").let { it == "0" || it == "false" }
                 val fc = if (noFill) null else fill?.solid
@@ -973,15 +1035,16 @@ object PptxConverter {
                     .append("\" preserveAspectRatio=\"none\"><path d=\"").append(d).append('"').append(tr)
                     .append(st(css)).append("/></svg>")
             }
+            return drawn
         }
 
-        private fun pathData(path: Element): String? {
+        private fun pathData(path: Element, g: Geom): String? {
             val d = StringBuilder()
             var cx0 = 0.0
             var cy0 = 0.0
             fun pt(e: Element?): Pair<Double, Double>? {
-                val x = e?.num("x") ?: return null
-                val y = e.num("y") ?: return null
+                val x = g.get(e?.at("x")) ?: return null
+                val y = g.get(e?.at("y")) ?: return null
                 return Pair(x, y)
             }
             for (c in path.elems()) {
@@ -999,10 +1062,10 @@ object PptxConverter {
                         cx0 = ps.last().first; cy0 = ps.last().second
                     }
                     "arcTo" -> {
-                        val wr = c.num("wR") ?: return null
-                        val hr = c.num("hR") ?: return null
-                        val stA = (c.num("stAng") ?: 0.0) / 60000.0 * PI / 180
-                        var sw = (c.num("swAng") ?: 0.0) / 60000.0 * PI / 180
+                        val wr = g.get(c.at("wR")) ?: return null
+                        val hr = g.get(c.at("hR")) ?: return null
+                        val stA = (g.get(c.at("stAng")) ?: 0.0) / 60000.0 * PI / 180
+                        var sw = (g.get(c.at("swAng")) ?: 0.0) / 60000.0 * PI / 180
                         if (wr <= 0 || hr <= 0 || sw == 0.0) continue
                         fun par(a: Double) = atan2(wr * sin(a), hr * cos(a))
                         val t1 = par(stA)
