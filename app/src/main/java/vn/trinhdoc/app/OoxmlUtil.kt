@@ -51,7 +51,11 @@ internal fun esc(s: String): String {
 }
 
 internal class Zip(file: File) : Closeable {
-    private val zf = ZipFile(file)
+    private val zf = try {
+        ZipFile(file)
+    } catch (e: java.util.zip.ZipException) {
+        throw ReaderException("File bị hỏng, không mở được.")
+    }
 
     fun bytes(name: String): ByteArray? {
         val e = zf.getEntry(name) ?: return null

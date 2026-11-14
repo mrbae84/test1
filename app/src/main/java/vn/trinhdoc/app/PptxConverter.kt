@@ -10,6 +10,9 @@ import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.log10
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -127,6 +130,21 @@ object PptxConverter {
         "flowChartInputOutput" to "20% 0,100% 0,80% 100%,0 100%"
     )
 
+    /** Vùng chữ thu vào trong một số hình (trái, trên, phải, dưới; % khung). */
+    private val TEXT_INSET = mapOf(
+        "ellipse" to doubleArrayOf(14.6, 14.6, 14.6, 14.6),
+        "flowChartConnector" to doubleArrayOf(14.6, 14.6, 14.6, 14.6),
+        "diamond" to doubleArrayOf(25.0, 25.0, 25.0, 25.0),
+        "flowChartDecision" to doubleArrayOf(25.0, 25.0, 25.0, 25.0),
+        "chevron" to doubleArrayOf(20.0, 0.0, 20.0, 0.0),
+        "homePlate" to doubleArrayOf(0.0, 0.0, 20.0, 0.0),
+        "triangle" to doubleArrayOf(25.0, 50.0, 25.0, 0.0),
+        "hexagon" to doubleArrayOf(12.5, 0.0, 12.5, 0.0),
+        "octagon" to doubleArrayOf(8.8, 8.8, 8.8, 8.8),
+        "rightArrow" to doubleArrayOf(0.0, 25.0, 30.0, 25.0),
+        "leftArrow" to doubleArrayOf(30.0, 25.0, 0.0, 25.0)
+    )
+
     private val WINGDINGS = mapOf(
         "§" to "▪", "Ø" to "➢", "ü" to "✓", "q" to "❑", "v" to "❖", "n" to "■", "l" to "●",
         "Ö" to "➤", "à" to "➔", "ð" to "⇨", "Ü" to "✔", "o" to "□", "u" to "◆", "w" to "⬥",
@@ -178,6 +196,8 @@ object PptxConverter {
         private var scheme: Map<String, String> = emptyMap()
         private var clrMap: Map<String, String> = emptyMap()
         private var defaultTextStyle: Element? = null
+        private var tableStyles: Element? = null
+        private var themeRoot: Element? = null
         private var layout: Part? = null
         private var master: Part? = null
 
@@ -190,6 +210,7 @@ object PptxConverter {
             }
             wPt = cx / EMU_PT
             defaultTextStyle = pres.root.kid("defaultTextStyle")
+            tableStyles = pres.ofType("/tableStyles")?.let { part(it) }?.root
 
             val sb = StringBuilder()
             sb.append("<div class=\"deck\"").append(st("--r:" + f3(cx / cy))).append('>')
@@ -258,8 +279,9 @@ object PptxConverter {
 
         private fun setTheme(m: Part?) {
             if (m == null) {
-                scheme = emptyMap(); clrMap = emptyMap(); return
+                scheme = emptyMap(); clrMap = emptyMap(); themeRoot = null; return
             }
+            themeRoot = m.ofType("/theme")?.let { part(it) }?.root
             scheme = themeCache.getOrPut(m.path) {
                 val out = HashMap<String, String>()
                 val theme = m.ofType("/theme")?.let { part(it) }
@@ -290,12 +312,12 @@ object PptxConverter {
         }
 
         /** Màu từ phần tử chứa một nút màu (solidFill, fillRef, buClr, gs...). */
-        fun colorOf(c: Element?): String? {
+        fun colorOf(c: Element?, ph: String? = null): String? {
             if (c == null) return null
             for (k in c.elems()) {
                 val base: String = when (lnm(k)) {
                     "srgbClr" -> k.at("val")
-                    "schemeClr" -> schemeHex(k.at("val"))
+                    "schemeClr" -> if (k.at("val") == "phClr") ph else schemeHex(k.at("val"))
                     "sysClr" -> k.at("lastClr") ?: if (k.at("val") == "window") "FFFFFF" else "000000"
                     "prstClr" -> PRESET_COLORS[k.at("val")]
                     "scrgbClr" -> {
@@ -402,9 +424,9 @@ object PptxConverter {
             return null
         }
 
-        private fun gradient(g: Element): Paint {
+        private fun gradient(g: Element, ph: String? = null): Paint {
             val stops = (g.kid("gsLst")?.kids("gs") ?: emptyList()).mapNotNull { gs ->
-                colorOf(gs)?.let { Pair((gs.num("pos") ?: 0.0) / 1000.0, it) }
+                colorOf(gs, ph)?.let { Pair((gs.num("pos") ?: 0.0) / 1000.0, it) }
             }.sortedBy { it.first }
             if (stops.isEmpty()) return NO_PAINT
             if (stops.size == 1) return Paint(stops[0].second, stops[0].second)
@@ -413,6 +435,37 @@ object PptxConverter {
             val css = if (lin == null && g.kid("path") != null) "radial-gradient(circle, $list)"
             else "linear-gradient(" + f3((lin?.num("ang") ?: 0.0) / 60000.0 + 90.0) + "deg, " + list + ")"
             return Paint(css, stops[0].second)
+        }
+
+        // ---------- Kiểu tô / đường viền lấy từ theme (fillRef, lnRef) ----------
+
+        private fun styleList(name: String): List<Element> =
+            themeRoot?.dig("themeElements", "fmtScheme", name)?.elems() ?: emptyList()
+
+        private fun refFill(ref: Element?): Paint? {
+            if (ref == null) return null
+            val idx = ref.num("idx")?.toInt() ?: return null
+            if (idx <= 0) return null
+            val ph = colorOf(ref)?.takeIf { it.startsWith("#") }?.removePrefix("#")
+            val el = if (idx >= 1001) styleList("bgFillStyleLst").getOrNull(idx - 1001)
+            else styleList("fillStyleLst").getOrNull(idx - 1)
+            return when (el?.let { lnm(it) }) {
+                "solidFill" -> colorOf(el, ph)?.let { Paint(it, it) }
+                "gradFill" -> gradient(el, ph)
+                "noFill" -> NO_PAINT
+                else -> ph?.let { Paint("#$it", "#$it") }
+            }
+        }
+
+        private fun refLine(ref: Element?): Pair<String, Double>? {
+            if (ref == null) return null
+            val idx = ref.num("idx")?.toInt() ?: return null
+            if (idx <= 0) return null
+            val ph = colorOf(ref)?.takeIf { it.startsWith("#") }?.removePrefix("#")
+            val el = styleList("lnStyleLst").getOrNull(idx - 1)
+            if (el?.kid("noFill") != null) return null
+            val col = colorOf(el?.kid("solidFill"), ph) ?: ph?.let { "#$it" } ?: return null
+            return Pair(col, (el?.num("w") ?: 9525.0) / EMU_PT)
         }
 
         // ---------- Trang chiếu ----------
@@ -440,7 +493,7 @@ object PptxConverter {
         private fun background(p: Part): String? {
             val bg = p.root.dig("cSld", "bg") ?: return null
             bg.kid("bgPr")?.let { pr -> paint(pr, p)?.let { if (it !== NO_PAINT) return it.css } }
-            bg.kid("bgRef")?.let { ref -> return colorOf(ref) }
+            bg.kid("bgRef")?.let { ref -> refFill(ref)?.let { if (it !== NO_PAINT) return it.css }; return colorOf(ref) }
             return null
         }
 
@@ -585,9 +638,7 @@ object PptxConverter {
             if (fill == null && ph != null) {
                 fill = chain.drop(1).firstNotNullOfOrNull { c -> c.kid("spPr")?.let { paint(it, p) }?.takeIf { it.solid != null } }
             }
-            if (fill == null) {
-                fill = style?.kid("fillRef")?.takeIf { (it.num("idx") ?: 0.0) > 0 }?.let { r -> colorOf(r)?.let { Paint(it, it) } }
-            }
+            if (fill == null) fill = refFill(style?.kid("fillRef"))
             if (fill === NO_PAINT) fill = null
 
             val ln = spPr?.kid("ln")
@@ -597,10 +648,10 @@ object PptxConverter {
             if (ln?.kid("noFill") == null) {
                 lineColor = ln?.kid("solidFill")?.let { colorOf(it) }
                     ?: ln?.kid("gradFill")?.let { gradient(it).solid }
-                if (lineColor == null) {
-                    lineColor = style?.kid("lnRef")?.takeIf { (it.num("idx") ?: 0.0) > 0 }?.let { colorOf(it) }
-                }
-                lineW = (ln?.num("w") ?: 9525.0) / EMU_PT
+                val rl = if (lineColor == null) refLine(style?.kid("lnRef")) else null
+                if (rl != null) lineColor = rl.first
+                val refW = rl?.second
+                lineW = ln?.num("w")?.let { it / EMU_PT } ?: refW ?: 0.75
                 dash = when (ln?.kid("prstDash")?.at("val")) {
                     "dash", "sysDash", "lgDash", "dashDot", "lgDashDot", "lgDashDotDot", "sysDashDot" -> "dashed"
                     "dot", "sysDot" -> "dotted"
@@ -654,7 +705,7 @@ object PptxConverter {
                     val tbox = boxOf(txX, xf) ?: box
                     o.append("<div class=\"sp\"").append(st(pos(tbox))).append('>')
                 }
-                textBody(o, tb, chain, ph, style)
+                textBody(o, tb, chain, ph, style, if (txX == null) TEXT_INSET[prst] else null)
             }
             o.append("</div>")
             out.append(o)
@@ -668,7 +719,7 @@ object PptxConverter {
             return false
         }
 
-        private fun textBody(o: StringBuilder, tb: Element, chain: List<Element>, ph: Ph?, style: Element?) {
+        private fun textBody(o: StringBuilder, tb: Element, chain: List<Element>, ph: Ph?, style: Element?, inset: DoubleArray?) {
             val bodyPrs = chain.mapNotNull { it.kid("txBody")?.kid("bodyPr") }
             fun bp(n: String) = bodyPrs.firstNotNullOfOrNull { it.at(n) }
             val l = bp("lIns")?.toDoubleOrNull() ?: 91440.0
@@ -685,6 +736,10 @@ object PptxConverter {
                 when (bp("anchor")) { "ctr" -> "center"; "b" -> "flex-end"; else -> "flex-start" }
             ).append(';')
             if (bp("wrap") == "none") css.append("white-space:nowrap;")
+            if (inset != null) {
+                css.append("left:").append(f3(inset[0])).append("%;top:").append(f3(inset[1])).append("%;right:")
+                    .append(f3(inset[2])).append("%;bottom:").append(f3(inset[3])).append("%;")
+            }
             o.append("<div class=\"tx\"").append(st(css)).append('>')
             val ctx = TextCtx(
                 chain.mapNotNull { it.kid("txBody")?.kid("lstStyle") },
@@ -801,7 +856,12 @@ object PptxConverter {
                     else bcss.append("margin-right:.35em;")
                     o.append("<span class=\"bu\"").append(st(bcss)).append('>').append(esc(bu)).append("</span>")
                 }
-                if (hasText) o.append(runs) else o.append("&#8203;")
+                if (hasText) {
+                    o.append(runs)
+                    if (runs.endsWith("<br>")) o.append("&#8203;")
+                } else {
+                    o.append("&#8203;")
+                }
                 o.append("</p>")
                 first = false
             }
@@ -809,8 +869,8 @@ object PptxConverter {
 
         private fun spacing(e: Element?, tc: TextCtx): String? {
             if (e == null) return null
-            e.kid("spcPts")?.num("val")?.let { return cqw(it / 100.0 * tc.scale) }
-            e.kid("spcPct")?.num("val")?.let { return f3(it / 100000.0 * 1.2) + "em" }
+            e.kid("spcPts")?.num("val")?.let { return cqw(it / 100.0 * (1 - tc.lnRed)) }
+            e.kid("spcPct")?.num("val")?.let { return f3(it / 100000.0 * 1.2 * (1 - tc.lnRed)) + "em" }
             return null
         }
 
@@ -1019,9 +1079,7 @@ object PptxConverter {
             when {
                 gd.kid("tbl") != null -> table(out, gd.kid("tbl")!!, box)
                 uri.contains("diagram") -> diagram(out, p, gd, box, xf, level)
-                uri.contains("chart") -> {
-                    out.append("<div class=\"sp chart\"").append(st(pos(box))).append(">Biểu đồ</div>")
-                }
+                uri.contains("chart") -> chart(out, p, gd, box)
                 else -> {
                     // Đối tượng nhúng (OLE...): dùng ảnh xem trước nếu có
                     val pic = e.find("pic")
@@ -1051,46 +1109,108 @@ object PptxConverter {
             val total = grid.sum()
             if (total <= 0) return
             val tblPr = tbl.kid("tblPr")
-            val styled = tblPr?.kid("tableStyleId") != null
+            val styleId = tblPr?.kid("tableStyleId")?.textContent?.trim()
+            val tStyle = tableStyles?.kids("tblStyle")?.firstOrNull { it.at("styleId") == styleId }
             val firstRow = tblPr?.flag("firstRow") == true
+            val lastRow = tblPr?.flag("lastRow") == true
+            val firstCol = tblPr?.flag("firstCol") == true
+            val lastCol = tblPr?.flag("lastCol") == true
             val bandRow = tblPr?.flag("bandRow") == true
+            val bandCol = tblPr?.flag("bandCol") == true
             val accent = "#" + (schemeHex("accent1") ?: "4472C4")
+            val grid0 = styleId == "{5940675A-B579-460E-94D1-54222C63F5DA}"
+            val noStyle = styleId == null || styleId == "{2D5ABB26-0587-4C30-8999-92F81FD0307C}"
             val glob = listOfNotNull(defaultTextStyle, master?.root?.kid("txStyles")?.kid("otherStyle"))
+            val rows = tbl.kids("tr")
+            val nRows = rows.size
+            val nCols = grid.size
 
             val o = StringBuilder()
             o.append("<div class=\"sp\"").append(st(pos(box))).append("><table class=\"tb\"><colgroup>")
             grid.forEach { o.append("<col").append(st("width:" + f3(it * 100 / total) + "%")).append('>') }
             o.append("</colgroup>")
-            tbl.kids("tr").forEachIndexed { ri, tr ->
+            rows.forEachIndexed { ri, tr ->
                 o.append("<tr").append(st("height:" + cqwE(tr.num("h") ?: 0.0))).append('>')
-                val header = styled && firstRow && ri == 0
+                var ci = 0
                 for (tc in tr.kids("tc")) {
+                    val span = tc.num("gridSpan")?.toInt()?.coerceAtLeast(1) ?: 1
+                    val col = ci
+                    ci += if (tc.flag("hMerge") == true) 1 else span
                     if (tc.flag("hMerge") == true || tc.flag("vMerge") == true) continue
                     val tcPr = tc.kid("tcPr")
                     val attrs = StringBuilder()
-                    tc.num("gridSpan")?.toInt()?.takeIf { it > 1 }?.let { attrs.append(" colspan=\"").append(it).append('"') }
+                    if (span > 1) attrs.append(" colspan=\"").append(span).append('"')
                     tc.num("rowSpan")?.toInt()?.takeIf { it > 1 }?.let { attrs.append(" rowspan=\"").append(it).append('"') }
+
+                    // Các phần kiểu bảng áp cho ô này, ưu tiên tăng dần
+                    val isHead = firstRow && ri == 0
+                    val isFoot = lastRow && ri == nRows - 1
+                    val parts = ArrayList<Element>()
+                    if (tStyle != null) {
+                        tStyle.kid("wholeTbl")?.let { parts.add(it) }
+                        if (bandRow && !isHead && !isFoot) {
+                            val bi = ri - (if (firstRow) 1 else 0)
+                            tStyle.kid(if (bi % 2 == 0) "band1H" else "band2H")?.let { parts.add(it) }
+                        }
+                        if (bandCol) tStyle.kid(if (col % 2 == 0) "band1V" else "band2V")?.let { parts.add(it) }
+                        if (firstCol && col == 0) tStyle.kid("firstCol")?.let { parts.add(it) }
+                        if (lastCol && col + span >= nCols) tStyle.kid("lastCol")?.let { parts.add(it) }
+                        if (isFoot) tStyle.kid("lastRow")?.let { parts.add(it) }
+                        if (isHead) tStyle.kid("firstRow")?.let { parts.add(it) }
+                    }
+
                     val css = StringBuilder()
                     var bg = tcPr?.let { paint(it, Part("", it, emptyList())) }
-                    if (bg === NO_PAINT) bg = null
-                    if (bg == null && styled) {
-                        val bodyIndex = ri - (if (firstRow) 1 else 0)
+                    if (bg == null) {
+                        for (pt in parts.asReversed()) {
+                            val ts = pt.kid("tcStyle") ?: continue
+                            bg = ts.kid("fill")?.let { paint(it, Part("", it, emptyList())) } ?: refFill(ts.kid("fillRef"))
+                            if (bg != null) break
+                        }
+                    }
+                    if (bg == null && tStyle == null && !noStyle && !grid0) {
+                        val bi = ri - (if (firstRow) 1 else 0)
                         bg = when {
-                            header -> Paint(accent, accent)
-                            bandRow && bodyIndex % 2 == 0 -> mixWhite(accent, 0.28).let { Paint(it, it) }
+                            isHead -> Paint(accent, accent)
+                            bandRow && bi % 2 == 0 -> mixWhite(accent, 0.28).let { Paint(it, it) }
                             else -> mixWhite(accent, 0.14).let { Paint(it, it) }
                         }
                     }
-                    bg?.let { css.append("background:").append(it.css).append(';') }
+                    if (bg != null && bg !== NO_PAINT) css.append("background:").append(bg.css).append(';')
+
                     for ((side, name) in listOf("left" to "lnL", "right" to "lnR", "top" to "lnT", "bottom" to "lnB")) {
                         val ln = tcPr?.kid(name)
                         val lnFill = ln?.kid("solidFill")
                         val lnW = ln?.num("w") ?: 12700.0
-                        val bc = when {
+                        var bc: String? = when {
                             ln?.kid("noFill") != null -> "none"
                             lnFill != null -> colorOf(lnFill)?.let { cqw(max(lnW / EMU_PT, 0.4)) + " solid " + it }
-                            styled -> "0.12cqw solid #FFFFFF"
                             else -> null
+                        }
+                        if (bc == null && tStyle != null) {
+                            val edge = when (side) {
+                                "left" -> if (col == 0) "left" else "insideV"
+                                "right" -> if (col + span >= nCols) "right" else "insideV"
+                                "top" -> if (ri == 0) "top" else "insideH"
+                                else -> if (ri == nRows - 1) "bottom" else "insideH"
+                            }
+                            for (pt in parts.asReversed()) {
+                                val b = pt.dig("tcStyle", "tcBdr")?.let { it.kid(edge) ?: it.kid(side) } ?: continue
+                                val l = b.kid("ln")
+                                bc = when {
+                                    l == null -> refLine(b.kid("lnRef"))?.let { cqw(max(it.second, 0.4)) + " solid " + it.first }
+                                    l.kid("noFill") != null -> "none"
+                                    else -> colorOf(l.kid("solidFill"))?.let { cqw(max((l.num("w") ?: 12700.0) / EMU_PT, 0.4)) + " solid " + it }
+                                }
+                                if (bc != null) break
+                            }
+                        }
+                        if (bc == null && tStyle == null) {
+                            bc = when {
+                                grid0 -> "0.1cqw solid #000000"
+                                noStyle -> null
+                                else -> "0.12cqw solid #FFFFFF"
+                            }
                         }
                         if (bc != null) css.append("border-").append(side).append(':').append(bc).append(';')
                     }
@@ -1101,13 +1221,19 @@ object PptxConverter {
                     css.append("vertical-align:").append(
                         when (tcPr?.at("anchor")) { "ctr" -> "middle"; "b" -> "bottom"; else -> "top" }
                     ).append(';')
+
+                    var txColor: String? = null
+                    var txBold = false
+                    for (pt in parts) {
+                        val tx = pt.kid("tcTxStyle") ?: continue
+                        colorOf(tx)?.let { txColor = it }
+                        tx.at("b")?.let { txBold = it == "on" }
+                    }
+                    if (tStyle == null && !noStyle && !grid0 && isHead) { txColor = "#FFFFFF"; txBold = true }
+
                     o.append("<td").append(attrs).append(st(css)).append('>')
                     tc.kid("txBody")?.let { tb ->
-                        val ctx = TextCtx(
-                            listOfNotNull(tb.kid("lstStyle")), glob,
-                            if (header) "#FFFFFF" else null, header, 1.0, 0.0
-                        )
-                        paragraphs(o, tb, ctx)
+                        paragraphs(o, tb, TextCtx(listOfNotNull(tb.kid("lstStyle")), glob, txColor, txBold, 1.0, 0.0))
                     }
                     o.append("</td>")
                 }
@@ -1115,6 +1241,405 @@ object PptxConverter {
             }
             o.append("</table></div>")
             out.append(o)
+        }
+
+        // ---------- Biểu đồ (vẽ SVG từ số liệu lưu sẵn trong file) ----------
+
+        private class Ser(val el: Element, val name: String, val cats: List<String?>, val vals: List<Double?>, val color: String)
+
+        private fun cacheValues(el: Element?): List<String?> {
+            if (el == null) return emptyList()
+            val c = listOf("strCache", "numCache", "strLit", "numLit", "multiLvlStrCache")
+                .firstNotNullOfOrNull { el.find(it) } ?: return emptyList()
+            val holder = if (lnm(c) == "multiLvlStrCache") (c.kid("lvl") ?: c) else c
+            val pts = holder.kids("pt")
+            val count = c.kid("ptCount")?.num("val")?.toInt() ?: 0
+            val n = max(count, (pts.maxOfOrNull { it.num("idx")?.toInt() ?: 0 } ?: -1) + 1).coerceIn(0, 2000)
+            val out = arrayOfNulls<String>(n)
+            for (pt in pts) {
+                val i = pt.num("idx")?.toInt() ?: continue
+                if (i in out.indices) out[i] = pt.kid("v")?.textContent
+            }
+            return out.toList()
+        }
+
+        private fun accent(i: Int): String {
+            val hex = schemeHex("accent${i % 6 + 1}") ?: listOf("4472C4", "ED7D31", "A5A5A5", "FFC000", "5B9BD5", "70AD47")[i % 6]
+            if (i < 6) return "#$hex"
+            val v = hex.toLongOrNull(16) ?: return "#$hex"
+            fun c(x: Long) = (x * 0.68).toInt()
+            return String.format(Locale.US, "#%02X%02X%02X", c((v shr 16) and 255), c((v shr 8) and 255), c(v and 255))
+        }
+
+        private fun chart(out: StringBuilder, p: Part, gd: Element, box: Box) {
+            val cp = p.target(gd.kid("chart")?.rid("id"))?.let { part(it) }
+            val chart = cp?.root?.kid("chart")
+            val plot = chart?.kid("plotArea")
+            val svg = if (cp != null && chart != null && plot != null) {
+                try {
+                    chartSvg(cp.root, chart, plot, box)
+                } catch (e: Exception) {
+                    null
+                }
+            } else null
+            if (svg == null) {
+                out.append("<div class=\"sp chart\"").append(st(pos(box))).append(">Biểu đồ</div>")
+            } else {
+                out.append("<div class=\"sp\"").append(st(pos(box))).append('>').append(svg).append("</div>")
+            }
+        }
+
+        private fun niceStep(raw: Double): Double {
+            if (raw <= 0 || raw.isNaN()) return 1.0
+            val p = 10.0.pow(floor(log10(raw)))
+            val f = raw / p
+            return p * when {
+                f <= 1.0 -> 1.0
+                f <= 2.0 -> 2.0
+                f <= 2.5 -> 2.5
+                f <= 5.0 -> 5.0
+                else -> 10.0
+            }
+        }
+
+        private fun fmtNum(v: Double, pct: Boolean = false): String {
+            val nf = java.text.NumberFormat.getNumberInstance()
+            nf.maximumFractionDigits = if (abs(v) >= 100) 0 else 2
+            return nf.format(v) + if (pct) "%" else ""
+        }
+
+        private fun svgText(sb: StringBuilder, x: Double, y: Double, t: String, size: Double, anchor: String, color: String, bold: Boolean = false) {
+            sb.append("<text x=\"").append(f3(x)).append("\" y=\"").append(f3(y)).append("\" font-size=\"").append(f3(size))
+                .append("\" text-anchor=\"").append(anchor).append("\" fill=\"").append(color).append('"')
+            if (bold) sb.append(" font-weight=\"bold\"")
+            sb.append('>').append(esc(t)).append("</text>")
+        }
+
+        private fun svgRect(sb: StringBuilder, x: Double, y: Double, w: Double, h: Double, fill: String) {
+            sb.append("<rect x=\"").append(f3(x)).append("\" y=\"").append(f3(y)).append("\" width=\"").append(f3(max(w, 0.0)))
+                .append("\" height=\"").append(f3(max(h, 0.0))).append("\" fill=\"").append(fill).append("\"/>")
+        }
+
+        private fun clip(t: String, maxChars: Int): String =
+            if (t.length <= maxChars || maxChars < 2) t else t.take(max(1, maxChars - 1)) + "…"
+
+        private fun chartSvg(space: Element, chart: Element, plot: Element, box: Box): String? {
+            val types = plot.elems().filter { lnm(it).endsWith("Chart") }
+            val main = types.firstOrNull() ?: return null
+            val kind = lnm(main).removeSuffix("Chart").removeSuffix("3D")
+            if (kind !in setOf("bar", "line", "area", "pie", "doughnut", "scatter", "ofPie")) return null
+            val series = ArrayList<Ser>()
+            for (t in types) {
+                if (lnm(t).removeSuffix("Chart").removeSuffix("3D") != kind) continue
+                for (ser in t.kids("ser")) {
+                    val i = series.size
+                    val name = cacheValues(ser.kid("tx")).firstOrNull() ?: ser.dig("tx", "v")?.textContent ?: "Chuỗi ${i + 1}"
+                    val cats = cacheValues(ser.kid("cat") ?: ser.kid("xVal"))
+                    val vals = cacheValues(ser.kid("val") ?: ser.kid("yVal")).map { it?.trim()?.toDoubleOrNull() }
+                    val col = colorOf(ser.dig("spPr", "solidFill")) ?: colorOf(ser.dig("spPr", "ln", "solidFill")) ?: accent(i)
+                    series.add(Ser(ser, name, cats, vals, col))
+                }
+            }
+            if (series.isEmpty()) return null
+            val isPie = kind == "pie" || kind == "doughnut" || kind == "ofPie"
+
+            val w = 1000.0
+            val h = w * box.h / box.w
+            if (h <= 10) return null
+            val upt = 12700.0 * w / box.w
+            val baseSz = (space.kid("txPr")?.find("defRPr")?.num("sz") ?: 1200.0) / 100.0
+            val fs = (baseSz * upt).coerceIn(h * 0.03, h * 0.085)
+            val ink = "#404040"
+            val sb = StringBuilder()
+            sb.append("<svg class=\"cg\" viewBox=\"0 0 ").append(f3(w)).append(' ').append(f3(h))
+                .append("\" font-family=\"sans-serif\">")
+            colorOf(space.dig("spPr", "solidFill"))?.let { svgRect(sb, 0.0, 0.0, w, h, it) }
+
+            var top = fs * 0.5
+            var bottom = h - fs * 0.5
+            var left = fs * 0.5
+            var right = w - fs * 0.5
+
+            // Tiêu đề
+            val titleEl = chart.kid("title")
+            val autoDel = chart.kid("autoTitleDeleted")?.num("val") == 1.0
+            val rich = titleEl?.find("rich")?.kids("p")?.joinToString(" ") { p ->
+                p.elems().filter { lnm(it) == "r" || lnm(it) == "fld" }.joinToString("") { it.kid("t")?.textContent ?: "" }
+            }?.trim()
+            val title = rich?.ifEmpty { null } ?: if ((titleEl != null || !autoDel) && series.size == 1) series[0].name else null
+            if (title != null) {
+                svgText(sb, w / 2, top + fs * 1.2, clip(title, (w / (fs * 0.62)).toInt()), fs * 1.25, "middle", ink, true)
+                top += fs * 2.0
+            }
+
+            // Chú thích
+            val cats0 = series.maxByOrNull { it.cats.size }?.cats ?: emptyList()
+            val nCat = max(1, series.maxOf { max(it.vals.size, it.cats.size) })
+            val vary = main.kid("varyColors")?.num("val") == 1.0
+            fun pointColor(s: Ser, i: Int): String {
+                for (d in s.el.kids("dPt")) {
+                    if (d.kid("idx")?.num("val")?.toInt() == i) colorOf(d.dig("spPr", "solidFill"))?.let { return it }
+                }
+                return if (isPie || (vary && series.size == 1)) accent(i) else s.color
+            }
+            val legend = chart.kid("legend")
+            val legendPos = legend?.kid("legendPos")?.at("val") ?: "r"
+            val entries: List<Pair<String, String>> = when {
+                legend == null -> emptyList()
+                isPie -> (0 until nCat).map { i -> Pair(cats0.getOrNull(i) ?: "${i + 1}", pointColor(series[0], i)) }
+                else -> series.map { Pair(it.name, it.color) }
+            }
+            if (entries.isNotEmpty()) {
+                if (legendPos == "r" || legendPos == "l") {
+                    val lw = min(w * 0.32, entries.maxOf { it.first.length } * fs * 0.56 + fs * 2.0)
+                    val x0 = if (legendPos == "r") w - lw else left
+                    var y = (top + bottom) / 2 - entries.size * fs * 1.5 / 2 + fs
+                    for ((name, col) in entries) {
+                        svgRect(sb, x0 + fs * 0.3, y - fs * 0.8, fs * 0.8, fs * 0.8, col)
+                        svgText(sb, x0 + fs * 1.4, y, clip(name, ((lw - fs * 1.6) / (fs * 0.56)).toInt()), fs, "start", ink)
+                        y += fs * 1.5
+                    }
+                    if (legendPos == "r") right = x0 - fs * 0.4 else left = x0 + lw
+                } else {
+                    val rowsL = ArrayList<ArrayList<Pair<String, String>>>()
+                    var cur = ArrayList<Pair<String, String>>()
+                    var curW = 0.0
+                    for (e in entries) {
+                        val iw = e.first.length * fs * 0.56 + fs * 2.2
+                        if (curW + iw > w - fs && cur.isNotEmpty()) { rowsL.add(cur); cur = ArrayList(); curW = 0.0 }
+                        cur.add(e); curW += iw
+                    }
+                    if (cur.isNotEmpty()) rowsL.add(cur)
+                    val lh = rowsL.size * fs * 1.5
+                    var y = if (legendPos == "t") top + fs * 1.1 else bottom - lh + fs * 1.1
+                    for (r in rowsL) {
+                        val rw = r.sumOf { it.first.length * fs * 0.56 + fs * 2.2 }
+                        var x = (w - rw) / 2
+                        for ((name, col) in r) {
+                            svgRect(sb, x, y - fs * 0.8, fs * 0.8, fs * 0.8, col)
+                            svgText(sb, x + fs * 1.1, y, name, fs, "start", ink)
+                            x += name.length * fs * 0.56 + fs * 2.2
+                        }
+                        y += fs * 1.5
+                    }
+                    if (legendPos == "t") top += lh else bottom -= lh
+                }
+            }
+
+            fun showLbl(s: Ser, n: String): Boolean =
+                (s.el.kid("dLbls") ?: main.kid("dLbls"))?.kid(n)?.num("val") == 1.0
+
+            if (isPie) {
+                val s = series[0]
+                val vals = (0 until nCat).map { max(s.vals.getOrNull(it) ?: 0.0, 0.0) }
+                val tot = vals.sum()
+                if (tot <= 0) { sb.append("</svg>"); return sb.toString() }
+                val cxp = (left + right) / 2
+                val cyp = (top + bottom) / 2
+                val r = min(right - left, bottom - top) / 2 * 0.94
+                val hole = if (kind == "doughnut") (main.kid("holeSize")?.num("val") ?: 50.0) / 100.0 * r else 0.0
+                var a = ((main.kid("firstSliceAng")?.num("val") ?: 0.0) - 90.0) * PI / 180
+                for (i in vals.indices) {
+                    val sw = vals[i] / tot * 2 * PI
+                    if (sw <= 0) continue
+                    val col = pointColor(s, i)
+                    if (sw >= 2 * PI - 1e-6) {
+                        sb.append("<circle cx=\"").append(f3(cxp)).append("\" cy=\"").append(f3(cyp)).append("\" r=\"")
+                            .append(f3(r)).append("\" fill=\"").append(col).append("\"/>")
+                    } else {
+                        val a2 = a + sw
+                        val large = if (sw > PI) 1 else 0
+                        val d = StringBuilder()
+                        d.append("M").append(f3(cxp + r * cos(a))).append(' ').append(f3(cyp + r * sin(a)))
+                            .append(" A").append(f3(r)).append(' ').append(f3(r)).append(" 0 ").append(large).append(" 1 ")
+                            .append(f3(cxp + r * cos(a2))).append(' ').append(f3(cyp + r * sin(a2)))
+                        if (hole > 0) {
+                            d.append(" L").append(f3(cxp + hole * cos(a2))).append(' ').append(f3(cyp + hole * sin(a2)))
+                                .append(" A").append(f3(hole)).append(' ').append(f3(hole)).append(" 0 ").append(large).append(" 0 ")
+                                .append(f3(cxp + hole * cos(a))).append(' ').append(f3(cyp + hole * sin(a))).append(" Z")
+                        } else {
+                            d.append(" L").append(f3(cxp)).append(' ').append(f3(cyp)).append(" Z")
+                        }
+                        sb.append("<path d=\"").append(d).append("\" fill=\"").append(col)
+                            .append("\" stroke=\"#FFFFFF\" stroke-width=\"").append(f3(fs * 0.08)).append("\"/>")
+                    }
+                    val pct = showLbl(s, "showPercent")
+                    val sv = showLbl(s, "showVal")
+                    if (pct || sv) {
+                        val mid = a + sw / 2
+                        val rr = if (hole > 0) (r + hole) / 2 else r * 0.64
+                        val label = if (pct) fmtNum(vals[i] / tot * 100, true) else fmtNum(vals[i])
+                        svgText(sb, cxp + rr * cos(mid), cyp + rr * sin(mid) + fs * 0.35, label, fs * 0.95, "middle", "#FFFFFF", true)
+                    }
+                    a += sw
+                }
+                sb.append("</svg>")
+                return sb.toString()
+            }
+
+            // Biểu đồ có trục: cột/thanh, đường, vùng
+            val horizontal = kind == "bar" && main.kid("barDir")?.at("val") == "bar"
+            val grouping = main.kid("grouping")?.at("val") ?: "clustered"
+            val stacked = (kind == "bar" || kind == "area") && (grouping == "stacked" || grouping == "percentStacked")
+            val percent = grouping == "percentStacked" && stacked
+            fun valueAt(s: Ser, c: Int): Double {
+                val v = s.vals.getOrNull(c) ?: 0.0
+                if (!percent) return v
+                val tot = series.sumOf { abs(it.vals.getOrNull(c) ?: 0.0) }
+                return if (tot > 0) v / tot * 100 else 0.0
+            }
+            var vmin = 0.0
+            var vmax = 0.0
+            for (c in 0 until nCat) {
+                if (stacked) {
+                    var pos = 0.0
+                    var neg = 0.0
+                    for (s in series) { val v = valueAt(s, c); if (v >= 0) pos += v else neg += v }
+                    vmax = max(vmax, pos); vmin = min(vmin, neg)
+                } else {
+                    for (s in series) s.vals.getOrNull(c)?.let { vmax = max(vmax, it); vmin = min(vmin, it) }
+                }
+            }
+            val valAx = plot.kid("valAx")
+            if (vmax == vmin) vmax = vmin + 1
+            val step = niceStep((vmax - vmin) / 5)
+            vmax = ceil(vmax / step - 1e-9) * step
+            vmin = floor(vmin / step + 1e-9) * step
+            valAx?.dig("scaling", "max")?.num("val")?.let { vmax = it }
+            valAx?.dig("scaling", "min")?.num("val")?.let { vmin = it }
+            if (vmax <= vmin) vmax = vmin + step
+            val ticks = ArrayList<Double>()
+            var tv = vmin
+            while (tv <= vmax + step * 1e-6 && ticks.size < 30) { ticks.add(tv); tv += step }
+            val tickLabels = ticks.map { fmtNum(it, percent) }
+            val valLabW = (tickLabels.maxOfOrNull { it.length } ?: 1) * fs * 0.56 + fs * 0.6
+            val catLabels = (0 until nCat).map { cats0.getOrNull(it) ?: "${it + 1}" }
+
+            val pl: Double
+            val pr = right - fs * 0.3
+            val pt = top + fs * 0.5
+            val pb: Double
+            if (!horizontal) {
+                pl = left + valLabW
+                pb = bottom - fs * 1.7
+            } else {
+                pl = left + min((catLabels.maxOfOrNull { it.length } ?: 1) * fs * 0.56 + fs * 0.6, (right - left) * 0.35)
+                pb = bottom - fs * 1.7
+            }
+            if (pr - pl < 20 || pb - pt < 20) return null
+            val catLen = if (horizontal) pb - pt else pr - pl
+            val catW = catLen / nCat
+            fun vpos(v: Double): Double {
+                val k = (v - vmin) / (vmax - vmin)
+                return if (horizontal) pl + k * (pr - pl) else pb - k * (pb - pt)
+            }
+            fun cpos(c: Double): Double = if (horizontal) pb - c * catW else pl + c * catW
+
+            // Lưới + nhãn trục giá trị
+            for ((i, v) in ticks.withIndex()) {
+                val q = vpos(v)
+                if (horizontal) {
+                    sb.append("<line x1=\"").append(f3(q)).append("\" y1=\"").append(f3(pt)).append("\" x2=\"").append(f3(q))
+                        .append("\" y2=\"").append(f3(pb)).append("\" stroke=\"#D9D9D9\" stroke-width=\"").append(f3(fs * 0.06)).append("\"/>")
+                    svgText(sb, q, pb + fs * 1.3, tickLabels[i], fs * 0.9, "middle", ink)
+                } else {
+                    sb.append("<line x1=\"").append(f3(pl)).append("\" y1=\"").append(f3(q)).append("\" x2=\"").append(f3(pr))
+                        .append("\" y2=\"").append(f3(q)).append("\" stroke=\"#D9D9D9\" stroke-width=\"").append(f3(fs * 0.06)).append("\"/>")
+                    svgText(sb, pl - fs * 0.35, q + fs * 0.32, tickLabels[i], fs * 0.9, "end", ink)
+                }
+            }
+            // Nhãn danh mục
+            val maxChars = if (horizontal) ((pl - left - fs * 0.4) / (fs * 0.5)).toInt() else (catW / (fs * 0.5)).toInt()
+            val catFs = if (!horizontal && catLabels.maxOf { it.length } * fs * 0.5 > catW) fs * 0.8 else fs * 0.9
+            for (c in 0 until nCat) {
+                val m = cpos(c + 0.5)
+                val t = clip(catLabels[c], max(maxChars, 3))
+                if (horizontal) svgText(sb, pl - fs * 0.35, m + fs * 0.32, t, catFs, "end", ink)
+                else svgText(sb, m, pb + fs * 1.3, t, catFs, "middle", ink)
+            }
+
+            val zero = vpos(max(vmin, min(0.0, vmax)))
+            if (kind == "bar") {
+                val gap = main.kid("gapWidth")?.num("val") ?: 150.0
+                val groupW = catW * 100.0 / (100.0 + gap)
+                val off = (catW - groupW) / 2
+                val bw = if (stacked) groupW else groupW / series.size
+                for (c in 0 until nCat) {
+                    var posAcc = 0.0
+                    var negAcc = 0.0
+                    for ((si, s) in series.withIndex()) {
+                        val raw = s.vals.getOrNull(c) ?: continue
+                        val v = valueAt(s, c)
+                        val v0: Double
+                        val v1: Double
+                        if (stacked) {
+                            if (v >= 0) { v0 = posAcc; posAcc += v; v1 = posAcc } else { v0 = negAcc; negAcc += v; v1 = negAcc }
+                        } else { v0 = 0.0; v1 = v }
+                        val a0 = c * catW + off + (if (stacked) 0.0 else si * bw)
+                        val col = pointColor(s, c)
+                        val q0 = vpos(max(vmin, min(vmax, v0)))
+                        val q1 = vpos(max(vmin, min(vmax, v1)))
+                        if (horizontal) {
+                            val yTop = cpos((a0 + bw) / catW)
+                            svgRect(sb, min(q0, q1), yTop, abs(q1 - q0), bw, col)
+                            if (showLbl(s, "showVal")) svgText(sb, max(q0, q1) + fs * 0.3, yTop + bw / 2 + fs * 0.3, fmtNum(raw), fs * 0.8, "start", ink)
+                        } else {
+                            val x = pl + a0
+                            svgRect(sb, x, min(q0, q1), bw, abs(q1 - q0), col)
+                            if (showLbl(s, "showVal")) svgText(sb, x + bw / 2, min(q0, q1) - fs * 0.3, fmtNum(raw), fs * 0.8, "middle", ink)
+                        }
+                    }
+                }
+            } else {
+                val acc = DoubleArray(nCat)
+                for (s in series) {
+                    val ptsL = ArrayList<Pair<Double, Double>>()
+                    for (c in 0 until nCat) {
+                        val v = s.vals.getOrNull(c) ?: continue
+                        val y = if (stacked) { acc[c] += valueAt(s, c); acc[c] } else v
+                        ptsL.add(Pair(cpos(c + 0.5), vpos(y)))
+                    }
+                    if (ptsL.isEmpty()) continue
+                    val line = ptsL.joinToString(" ") { f3(it.first) + "," + f3(it.second) }
+                    if (kind == "area") {
+                        sb.append("<polygon points=\"").append(f3(ptsL.first().first)).append(',').append(f3(zero)).append(' ')
+                            .append(line).append(' ').append(f3(ptsL.last().first)).append(',').append(f3(zero))
+                            .append("\" fill=\"").append(s.color).append("\" fill-opacity=\"0.85\"/>")
+                    } else {
+                        val lineCol = colorOf(s.el.dig("spPr", "ln", "solidFill")) ?: s.color
+                        val noLine = s.el.dig("spPr", "ln")?.kid("noFill") != null
+                        if (!noLine) {
+                            sb.append("<polyline points=\"").append(line).append("\" fill=\"none\" stroke=\"").append(lineCol)
+                                .append("\" stroke-width=\"").append(f3(fs * 0.2)).append("\" stroke-linejoin=\"round\"/>")
+                        }
+                        val sym = s.el.dig("marker", "symbol")?.at("val") ?: main.dig("marker")?.at("val")
+                        if (sym != "none" && (sym != null || kind == "scatter" || noLine)) {
+                            for ((x, y) in ptsL) {
+                                sb.append("<circle cx=\"").append(f3(x)).append("\" cy=\"").append(f3(y)).append("\" r=\"")
+                                    .append(f3(fs * 0.26)).append("\" fill=\"").append(lineCol).append("\"/>")
+                            }
+                        }
+                        if (showLbl(s, "showVal")) {
+                            var k = 0
+                            for (c in 0 until nCat) {
+                                val v = s.vals.getOrNull(c) ?: continue
+                                val (x, y) = ptsL[k++]
+                                svgText(sb, x, y - fs * 0.5, fmtNum(v), fs * 0.8, "middle", ink)
+                            }
+                        }
+                    }
+                }
+            }
+            // Trục gốc
+            if (horizontal) {
+                sb.append("<line x1=\"").append(f3(zero)).append("\" y1=\"").append(f3(pt)).append("\" x2=\"").append(f3(zero))
+                    .append("\" y2=\"").append(f3(pb)).append("\" stroke=\"#A6A6A6\" stroke-width=\"").append(f3(fs * 0.08)).append("\"/>")
+            } else {
+                sb.append("<line x1=\"").append(f3(pl)).append("\" y1=\"").append(f3(zero)).append("\" x2=\"").append(f3(pr))
+                    .append("\" y2=\"").append(f3(zero)).append("\" stroke=\"#A6A6A6\" stroke-width=\"").append(f3(fs * 0.08)).append("\"/>")
+            }
+            sb.append("</svg>")
+            return sb.toString()
         }
     }
 }
