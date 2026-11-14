@@ -37,6 +37,15 @@ jobs:
         with:
           name: MeraOffice-apk
           path: MeraOffice.apk
+      - name: Publish test build (dev branch)
+        if: always() && github.ref == 'refs/heads/trinhdoc-dev'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd app/build && zip -qr ../../converted.zip converted) || true
+          gh release delete dev-test --yes --cleanup-tag || true
+          gh release create dev-test MeraOffice.apk $( [ -f converted.zip ] && echo converted.zip ) \
+            --prerelease --target "$GITHUB_SHA" --title "Bản thử nghiệm (không dùng)" --notes "Bản kiểm thử nội bộ."
       - name: Publish release
         if: github.ref == 'refs/heads/trinhdoc'
         env:
