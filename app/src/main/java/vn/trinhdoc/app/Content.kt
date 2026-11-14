@@ -99,7 +99,7 @@ class PdfContent(file: File) : ReaderContent {
 }
 
 /** Word và PowerPoint: HTML đã chuyển đổi + ảnh nhúng phục vụ qua /img/. */
-class OfficeContent(override val kind: String, private val result: DocxResult) : ReaderContent {
+class OfficeContent(override val kind: String, private val result: DocxResult, val file: File) : ReaderContent {
     override fun body() =
         if (kind == "docx") "<div class=\"book\"><div class=\"doc\">${result.bodyHtml}</div></div>" else result.bodyHtml
 
@@ -174,8 +174,8 @@ object DocLoader {
         try {
             return when (kind) {
                 Kind.PDF -> PdfContent(stored)
-                Kind.DOCX -> OfficeContent("docx", DocxConverter.convert(stored))
-                Kind.PPTX -> OfficeContent("pptx", PptxConverter.convert(stored))
+                Kind.DOCX -> OfficeContent("docx", DocxConverter.convert(stored), stored)
+                Kind.PPTX -> OfficeContent("pptx", PptxConverter.convert(stored), stored)
                 Kind.XLSX -> XlsxContent(XlsxConverter.convert(stored))
                 else -> throw ReaderException("Không nhận dạng được loại file này.")
             }

@@ -11,8 +11,8 @@ android {
         applicationId = "vn.trinhdoc.app"
         minSdk = 30
         targetSdk = 35
-        versionCode = 5
-        versionName = "2.0"
+        versionCode = 6
+        versionName = "2.1"
     }
 
     // Khoá ký cố định để cài bản mới đè lên bản cũ mà không phải gỡ app.

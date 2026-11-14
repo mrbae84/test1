@@ -20,6 +20,8 @@ object DocxConverter {
 
     private class Frame(val kind: Int) {
         val sb = StringBuilder()
+        /** Số thứ tự đoạn văn trong document.xml (dùng khi lưu bản sửa). */
+        var pid = -1
         // đoạn văn
         var style: String? = null
         var jc: String? = null
@@ -36,7 +38,8 @@ object DocxConverter {
         var highlight: String? = null
     }
 
-    private val SKIP = setOf(
+    /** Các phần tử bỏ qua khi đọc; DocxEditor dùng chung để đếm đoạn văn khớp với HTML. */
+    internal val SKIP = setOf(
         "mc:Fallback", "w:instrText", "w:delText", "w:del", "w:moveFrom",
         "w:rPrChange", "w:pPrChange", "w:tblPrChange", "w:tcPrChange", "w:trPrChange",
         "w:sectPr", "w:sdtPr", "w:sdtEndPr", "w:fldData", "w:tabs"
@@ -59,6 +62,7 @@ object DocxConverter {
         stack.addLast(Frame(ROOT))
         // vị trí dấu '>' của thẻ <td> đang mở, để chèn colspan/nền ô sau
         val cells = ArrayDeque<Pair<StringBuilder, Int>>()
+        var pCount = 0
         var skip = 0
         var inText = false
         var inTcPr = false
@@ -102,7 +106,7 @@ object DocxConverter {
                     } else if (n in SKIP) {
                         skip = 1
                     } else when (n) {
-                        "w:p" -> stack.addLast(Frame(PARA))
+                        "w:p" -> stack.addLast(Frame(PARA).also { it.pid = pCount++ })
                         "w:r" -> stack.addLast(Frame(RUN))
                         "w:pStyle" -> para()?.style = p.attr("val")
                         "w:jc" -> para()?.jc = p.attr("val")
@@ -253,7 +257,7 @@ object DocxConverter {
         if (content.isBlank() && prefix.isEmpty()) cls.append(if (cls.isEmpty()) "e" else " e")
         val clsAttr = if (cls.isEmpty()) "" else " class=\"$cls\""
         val styleAttr = if (css.isEmpty()) "" else " style=\"$css\""
-        return "<$tag$clsAttr$styleAttr>$prefix$content</$tag>"
+        return "<$tag data-p=\"${f.pid}\"$clsAttr$styleAttr>$prefix$content</$tag>"
     }
 
     /** styleId -> cấp tiêu đề (1..6). */

@@ -360,6 +360,7 @@
   document.addEventListener('touchcancel', function () { if (drag) release(true); t0 = null; }, { passive: true });
 
   document.addEventListener('click', function (e) {
+    if (editing) return;
     var tg = e.target;
     if (tg && tg.closest && (tg.closest('.tabs') || tg.closest('#sheet') || tg.closest('#backdrop'))) return;
     if (sheetOpen) { closeSheet(); return; }
@@ -467,6 +468,73 @@
   };
 
   window.isPaged = function () { return !!view; };
+
+  // ---------- Sửa văn bản (Word) ----------
+  var editing = false, orig = {};
+  var BLOCKS = 'p,h1,h2,h3,h4,h5,h6,div,span.blk';
+
+  function ownText(el) {
+    var out = '';
+    (function walk(n) {
+      for (var c = n.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType === 3) out += c.data;
+        else if (c.nodeType === 1) {
+          if (c.tagName === 'BR') out += '\n';
+          else if (c.hasAttribute('data-p') || (c.classList && c.classList.contains('num')) ||
+            (c.matches && c.matches(BLOCKS + ',table,img'))) continue;
+          else walk(c);
+        }
+      }
+    })(el);
+    out = out.replace(/\u200B/g, '');
+    if (out.charAt(out.length - 1) === '\n') out = out.slice(0, -1);
+    return out;
+  }
+
+  window.startEdit = function () {
+    if (KIND !== 'docx' || editing) return false;
+    if (view) {
+      var pos = currentPos();
+      exitPaged();
+      requestAnimationFrame(function () { restorePos(pos); });
+    }
+    closeSheet();
+    var doc = document.querySelector('.book .doc');
+    if (!doc) return false;
+    orig = {};
+    var ps = doc.querySelectorAll('[data-p]');
+    for (var i = 0; i < ps.length; i++) orig[ps[i].getAttribute('data-p')] = ownText(ps[i]);
+    var nums = doc.querySelectorAll('.num');
+    for (var k = 0; k < nums.length; k++) nums[k].contentEditable = 'false';
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { }
+    doc.contentEditable = 'true';
+    doc.spellcheck = false;
+    B.classList.add('editing');
+    editing = true;
+    return true;
+  };
+
+  /** Danh sách thao tác theo thứ tự trên trang, gửi cho DocxEditor. */
+  window.collectEdits = function () {
+    var doc = document.querySelector('.book .doc');
+    var res = { ops: [], changed: 0 };
+    if (!doc) return res;
+    var els = doc.querySelectorAll(BLOCKS), seen = {}, last = -1, present = 0;
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], id = el.getAttribute('data-p'), t = ownText(el);
+      if (id !== null && !seen[id] && orig.hasOwnProperty(id)) {
+        seen[id] = 1; present++; last = +id;
+        if (t !== orig[id]) { res.ops.push({ id: +id, text: t }); res.changed++; }
+        else res.ops.push({ id: +id });
+      } else {
+        res.ops.push({ id: -1, base: id !== null ? +id : last, text: t });
+        res.changed++;
+      }
+    }
+    for (var key in orig) { if (orig.hasOwnProperty(key) && !seen[key]) res.changed++; }
+    return res;
+  };
+  window.hasEdits = function () { return editing && window.collectEdits().changed > 0; };
 
   // ---------- Khởi động ----------
   applyLook();

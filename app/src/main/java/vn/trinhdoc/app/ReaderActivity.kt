@@ -2,6 +2,8 @@ package vn.trinhdoc.app
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.ContentValues
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
@@ -9,6 +11,8 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.text.TextUtils
 import android.view.Gravity
@@ -28,6 +32,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -47,6 +52,9 @@ class ReaderActivity : Activity() {
     private lateinit var topBar: LinearLayout
     private lateinit var titleView: TextView
     private lateinit var settingsBtn: TextView
+    private lateinit var editBtn: TextView
+    private lateinit var cancelBtn: TextView
+    private lateinit var saveBtn: TextView
     private lateinit var closeBtn: TextView
     private lateinit var progress: ProgressBar
     private lateinit var errorView: TextView
@@ -63,6 +71,10 @@ class ReaderActivity : Activity() {
     private var pagedMode = false
     @Volatile
     private var kind = ""
+    private var docName = ""
+    /** Đang ở chế độ sửa văn bản (chỉ file Word). */
+    private var editing = false
+    private var saving = false
 
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
 
@@ -79,8 +91,13 @@ class ReaderActivity : Activity() {
             return
         }
         val (input, name) = resolved
+        docName = name
         titleView.text = name
+        loadDoc(input, name)
+    }
 
+    private fun loadDoc(input: Input, name: String, after: (() -> Unit)? = null) {
+        progress.visibility = View.VISIBLE
         Thread {
             try {
                 val c = DocLoader.load(applicationContext, input, name)
@@ -89,14 +106,17 @@ class ReaderActivity : Activity() {
                     if (isDestroyed) {
                         c.close()
                     } else {
+                        val old = content
                         content = c
                         kind = c.kind
                         pageHtml = html
+                        old?.close()
                         pagedMode = currentMode(c.kind) != "scroll"
                         settingsBtn.visibility = View.VISIBLE
+                        editBtn.visibility = if (c.kind == "docx") View.VISIBLE else View.GONE
                         progress.visibility = View.GONE
                         web.loadUrl("https://$HOST/index.html")
-                        showHintOnce()
+                        if (after == null) showHintOnce() else after()
                     }
                 }
             } catch (e: ReaderException) {
@@ -174,7 +194,7 @@ class ReaderActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(0xE6202124.toInt())
         }
-        topBar.addView(barButton("←") { finish() })
+        topBar.addView(barButton("←") { leave() })
         titleView = TextView(this).apply {
             setTextColor(Color.WHITE)
             textSize = 16f
@@ -186,6 +206,17 @@ class ReaderActivity : Activity() {
         settingsBtn.textSize = 19f
         settingsBtn.visibility = View.GONE
         topBar.addView(settingsBtn)
+        editBtn = barButton("✏ Sửa") { startEdit() }
+        editBtn.visibility = View.GONE
+        topBar.addView(editBtn)
+        cancelBtn = barButton("Huỷ") { cancelEdit() }
+        cancelBtn.visibility = View.GONE
+        topBar.addView(cancelBtn)
+        saveBtn = barButton("Lưu") { saveEdit() }
+        saveBtn.setTypeface(saveBtn.typeface, android.graphics.Typeface.BOLD)
+        saveBtn.setTextColor(0xFF8AB4F8.toInt())
+        saveBtn.visibility = View.GONE
+        topBar.addView(saveBtn)
         root.addView(topBar, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.TOP))
 
         // Nút ✕ nhỏ, mờ, luôn ở góc trên bên phải: bấm là thoát ngay.
@@ -200,7 +231,7 @@ class ReaderActivity : Activity() {
                 setColor(0x99000000.toInt())
             }
             contentDescription = "Đóng"
-            setOnClickListener { finish() }
+            setOnClickListener { leave() }
         }
         val closeLp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
         root.addView(closeBtn, closeLp)
@@ -213,6 +244,13 @@ class ReaderActivity : Activity() {
             closeLp.topMargin = t.top + dp(10)
             closeLp.marginEnd = t.right + dp(12)
             closeBtn.layoutParams = closeLp
+            // Chừa chỗ cho bàn phím khi sửa văn bản
+            val ime = insets.getInsets(WindowInsets.Type.ime()).bottom
+            val wl = web.layoutParams as FrameLayout.LayoutParams
+            if (wl.bottomMargin != ime) {
+                wl.bottomMargin = ime
+                web.layoutParams = wl
+            }
             insets
         }
 
@@ -274,7 +312,7 @@ class ReaderActivity : Activity() {
     inner class Bridge {
         @JavascriptInterface
         fun tap() {
-            runOnUiThread { setUiVisible(!uiVisible) }
+            runOnUiThread { if (!editing) setUiVisible(!uiVisible) }
         }
 
         /** Trang đọc lưu một cài đặt (màu nền, phông, kiểu xem...). */
@@ -284,6 +322,144 @@ class ReaderActivity : Activity() {
             prefs.edit().putString(key, value).apply()
             if (key == "mode_$kind") pagedMode = value != "scroll"
         }
+    }
+
+    // ---------- Sửa văn bản ----------
+
+    private fun setEditUi(on: Boolean) {
+        editing = on
+        settingsBtn.visibility = if (on) View.GONE else View.VISIBLE
+        editBtn.visibility = if (on || kind != "docx") View.GONE else View.VISIBLE
+        cancelBtn.visibility = if (on) View.VISIBLE else View.GONE
+        saveBtn.visibility = if (on) View.VISIBLE else View.GONE
+        titleView.text = if (on) "Đang sửa" else docName
+        setUiVisible(true)
+    }
+
+    private fun startEdit() {
+        if (content?.kind != "docx") return
+        web.evaluateJavascript("startEdit()") { r ->
+            if (r == "true") {
+                setEditUi(true)
+                if (!prefs.getBoolean("edit_hinted", false)) {
+                    prefs.edit().putBoolean("edit_hinted", true).apply()
+                    Toast.makeText(this, "Chạm vào chữ để sửa. Sửa xong bấm Lưu.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    /** Thoát chế độ sửa, hiển thị lại tài liệu như trước khi sửa. */
+    private fun cancelEdit(ask: Boolean = true) {
+        if (!editing) return
+        if (!ask) {
+            setEditUi(false)
+            web.loadUrl("https://$HOST/index.html")
+            return
+        }
+        web.evaluateJavascript("hasEdits()") { r ->
+            if (r == "true") {
+                AlertDialog.Builder(this)
+                    .setMessage("Bỏ các thay đổi chưa lưu?")
+                    .setPositiveButton("Bỏ thay đổi") { _, _ -> cancelEdit(false) }
+                    .setNegativeButton("Tiếp tục sửa", null)
+                    .show()
+            } else {
+                cancelEdit(false)
+            }
+        }
+    }
+
+    private fun leave() {
+        if (!editing) { finish(); return }
+        web.evaluateJavascript("hasEdits()") { r ->
+            if (r == "true") {
+                AlertDialog.Builder(this)
+                    .setMessage("Tài liệu có thay đổi chưa lưu.")
+                    .setPositiveButton("Lưu") { _, _ -> saveEdit(thenFinish = true) }
+                    .setNegativeButton("Bỏ thay đổi") { _, _ -> finish() }
+                    .setNeutralButton("Huỷ", null)
+                    .show()
+            } else {
+                finish()
+            }
+        }
+    }
+
+    @Deprecated("Xử lý nút Quay lại khi đang sửa")
+    override fun onBackPressed() {
+        if (editing) leave() else {
+            @Suppress("DEPRECATION")
+            super.onBackPressed()
+        }
+    }
+
+    private fun saveEdit(thenFinish: Boolean = false) {
+        val c = content as? OfficeContent ?: return
+        if (!editing || saving) return
+        saving = true
+        progress.visibility = View.VISIBLE
+        web.evaluateJavascript("collectEdits()") { json ->
+            Thread {
+                try {
+                    val res = JSONObject(json)
+                    if (res.optInt("changed") == 0) {
+                        runOnUiThread {
+                            saving = false
+                            progress.visibility = View.GONE
+                            Toast.makeText(this, "Không có thay đổi nào.", Toast.LENGTH_SHORT).show()
+                            cancelEdit(false)
+                            if (thenFinish) finish()
+                        }
+                        return@Thread
+                    }
+                    val ops: JSONArray = res.getJSONArray("ops")
+                    val tmp = File(cacheDir, "edit_tmp.docx")
+                    DocxEditor.apply(c.file, tmp, ops)
+                    DocxConverter.convert(tmp) // kiểm tra file mới đọc lại được
+                    tmp.copyTo(c.file, overwrite = true)
+                    tmp.delete()
+                    val exported = try {
+                        exportCopy(c.file, docName)
+                    } catch (e: Exception) {
+                        false
+                    }
+                    runOnUiThread {
+                        saving = false
+                        Toast.makeText(
+                            this,
+                            if (exported) "Đã lưu. Bản sao ở thư mục Tải xuống/Mera Office." else "Đã lưu trong ứng dụng.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        if (thenFinish) {
+                            finish()
+                        } else {
+                            setEditUi(false)
+                            loadDoc(Input.Local(c.file), docName) { setUiVisible(true) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        saving = false
+                        progress.visibility = View.GONE
+                        Toast.makeText(this, "Không lưu được: " + (e.message ?: e.javaClass.simpleName), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }.start()
+        }
+    }
+
+    /** Lưu một bản sao vào Tải xuống/Mera Office (không cần xin quyền). */
+    private fun exportCopy(src: File, name: String): Boolean {
+        val fileName = if (name.lowercase().endsWith(".docx")) name else "$name.docx"
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.MIME_TYPE, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Mera Office")
+        }
+        val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
+        contentResolver.openOutputStream(uri)?.use { out -> src.inputStream().use { it.copyTo(out) } } ?: return false
+        return true
     }
 
     private fun setUiVisible(visible: Boolean) {
@@ -327,7 +503,7 @@ class ReaderActivity : Activity() {
 
     // Nút âm lượng để lật trang khi ở kiểu Trượt / Lật sách.
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (pagedMode && content != null) {
+        if (pagedMode && !editing && content != null) {
             when (keyCode) {
                 KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     web.evaluateJavascript("nextPage()", null); return true

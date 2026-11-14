@@ -23,7 +23,8 @@
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|keyboardHidden|uiMode"
             android:exported="true"
             android:resizeableActivity="true"
-            android:theme="@style/ReaderTheme">
+            android:theme="@style/ReaderTheme"
+            android:windowSoftInputMode="adjustResize">
 
             <!-- "Mở bằng" từ trình quản lý file, Zalo, Gmail, Drive... -->
             <intent-filter>
