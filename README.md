@@ -11,6 +11,9 @@ Không quảng cáo, không cần mạng, không thu thập dữ liệu.
   - Màu nền: trắng, giấy, xanh dịu mắt, tối.
   - Riêng Word: phông chữ (không chân / có chân / mảnh), cỡ chữ, giãn dòng, lề trang.
 - Lật trang: vuốt ngang, chạm mép trái/phải màn hình, hoặc bấm nút âm lượng.
+- **Sửa file Word khi cần**: chạm giữa màn hình → bấm **✏ Sửa** → chạm vào chữ để sửa (có thể xuống dòng, xoá đoạn) → bấm **Lưu**.
+  Đoạn không sửa giữ nguyên định dạng; đoạn đã sửa giữ kiểu chữ của đoạn đó. Bản đã lưu cập nhật trong danh sách Gần đây
+  và có một bản sao ở thư mục Tải xuống/Mera Office (file gốc trong Zalo, Gmail... không bị ghi đè).
 - PDF: phóng to bằng hai ngón tay; khi cuộn trên màn hình lớn tự hiện 2 trang cạnh nhau.
 - Word: giữ tiêu đề, chữ đậm/nghiêng, màu chữ, bảng, hình ảnh, danh sách đánh số.
 - PowerPoint: giữ bố cục, màu theme, ảnh, bảng, SmartArt, hình vẽ, biểu đồ (cột, thanh, đường, vùng, tròn); mặc định trình chiếu từng slide nền đen.

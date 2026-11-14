@@ -16,6 +16,9 @@ không xin quyền Internet, không chỉnh sửa. Giao tiếp với anh Tuyển
 - `DocxConverter.kt`, `XlsxConverter.kt`, `PptxConverter.kt`: tự đọc XML trong file Office và sinh HTML.
   PowerPoint: kế thừa layout/master, màu theme, fillRef/lnRef, bảng theo tableStyles.xml, SmartArt (bản vẽ dsp),
   hình tự do (custGeom + công thức), biểu đồ vẽ SVG từ số liệu lưu sẵn.
+- Sửa Word: `reader.js` (startEdit/collectEdits, contenteditable, mỗi đoạn có data-p = thứ tự w:p trong document.xml)
+  → `DocxEditor.kt` viết lại đúng các đoạn thay đổi bằng DOM rồi đóng gói lại .docx; ReaderActivity lưu vào bản
+  trong "Gần đây" và xuất bản sao ra Download/Mera Office qua MediaStore. Kiểm thử: `DocxEditorTest`.
 - `Html.kt`: khung trang, nhúng cài đặt (window.S) và loại file (window.KIND).
 - Kiểm thử: `src/test/ConvertSamplesTest` (Robolectric) chuyển đổi các file trong `src/test/samples`
   (gồm file mẫu của Apache POI, giấy phép Apache 2.0) và ghi kết quả ra `build/converted/`.
