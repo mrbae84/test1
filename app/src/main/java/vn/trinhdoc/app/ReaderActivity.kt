@@ -28,6 +28,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
 
@@ -37,15 +38,15 @@ class ReaderActivity : Activity() {
     companion object {
         const val EXTRA_PATH = "path"
         private const val HOST = "reader.local"
-        private val THEMES = arrayOf("light", "sepia", "dark")
-        private val THEME_NAMES = mapOf("light" to "Nền sáng", "sepia" to "Nền giấy", "dark" to "Nền tối")
+        private val THEMES = setOf("light", "sepia", "green", "dark")
+        /** Các cài đặt trang đọc được phép lưu (từ bảng cài đặt trong trang). */
+        private val SETTING_KEYS = setOf("theme", "font", "fs", "lh", "mg", "spread", "mode_pdf", "mode_docx", "mode_pptx")
     }
 
     private lateinit var web: WebView
     private lateinit var topBar: LinearLayout
     private lateinit var titleView: TextView
-    private lateinit var spreadBtn: TextView
-    private lateinit var modeBtn: TextView
+    private lateinit var settingsBtn: TextView
     private lateinit var closeBtn: TextView
     private lateinit var progress: ProgressBar
     private lateinit var errorView: TextView
@@ -57,8 +58,11 @@ class ReaderActivity : Activity() {
     @Volatile
     private var screenW = 1200
     private var uiVisible = false
-    /** true = trình chiếu (lật từng trang), false = cuộn dọc. Chỉ áp dụng cho PDF và Word. */
-    private var slideMode = false
+    /** true khi đang ở kiểu Trượt hoặc Lật sách (nút âm lượng dùng để lật trang). */
+    @Volatile
+    private var pagedMode = false
+    @Volatile
+    private var kind = ""
 
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
 
@@ -80,19 +84,16 @@ class ReaderActivity : Activity() {
         Thread {
             try {
                 val c = DocLoader.load(applicationContext, input, name)
-                val pageable = c.kind == "pdf" || c.kind == "docx"
-                val slide = pageable && prefs.getString("mode_${c.kind}", "scroll") == "slide"
-                val html = Html.page(c, currentTheme(), slide).toByteArray(Charsets.UTF_8)
+                val html = Html.page(c, settingsJson()).toByteArray(Charsets.UTF_8)
                 runOnUiThread {
                     if (isDestroyed) {
                         c.close()
                     } else {
                         content = c
+                        kind = c.kind
                         pageHtml = html
-                        slideMode = slide
-                        updateSpreadBtn()
-                        modeBtn.visibility = if (pageable) View.VISIBLE else View.GONE
-                        updateModeLabel()
+                        pagedMode = currentMode(c.kind) != "scroll"
+                        settingsBtn.visibility = View.VISIBLE
                         progress.visibility = View.GONE
                         web.loadUrl("https://$HOST/index.html")
                         showHintOnce()
@@ -181,13 +182,10 @@ class ReaderActivity : Activity() {
             ellipsize = TextUtils.TruncateAt.MIDDLE
         }
         topBar.addView(titleView, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        spreadBtn = barButton("1|2") { web.evaluateJavascript("toggleSpread()", null) }
-        spreadBtn.visibility = View.GONE
-        topBar.addView(spreadBtn)
-        modeBtn = barButton("Trình chiếu") { toggleMode() }
-        modeBtn.visibility = View.GONE
-        topBar.addView(modeBtn)
-        topBar.addView(barButton("Nền") { cycleTheme() })
+        settingsBtn = barButton("Aa") { web.evaluateJavascript("toggleSheet()", null) }
+        settingsBtn.textSize = 19f
+        settingsBtn.visibility = View.GONE
+        topBar.addView(settingsBtn)
         root.addView(topBar, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.TOP))
 
         // Nút ✕ nhỏ, mờ, luôn ở góc trên bên phải: bấm là thoát ngay.
@@ -246,6 +244,16 @@ class ReaderActivity : Activity() {
                     val html = pageHtml ?: return notFound()
                     return WebResourceResponse("text/html", "utf-8", ByteArrayInputStream(html))
                 }
+                if (path == "/reader.css" || path == "/reader.js") {
+                    return try {
+                        WebResourceResponse(
+                            if (path.endsWith(".css")) "text/css" else "application/javascript", "utf-8",
+                            assets.open(path.removePrefix("/"))
+                        )
+                    } catch (e: Exception) {
+                        notFound()
+                    }
+                }
                 val res = try {
                     content?.resource(path, screenW)
                 } catch (e: Throwable) {
@@ -267,6 +275,14 @@ class ReaderActivity : Activity() {
         @JavascriptInterface
         fun tap() {
             runOnUiThread { setUiVisible(!uiVisible) }
+        }
+
+        /** Trang đọc lưu một cài đặt (màu nền, phông, kiểu xem...). */
+        @JavascriptInterface
+        fun save(key: String, value: String) {
+            if (key !in SETTING_KEYS || value.length > 20) return
+            prefs.edit().putString(key, value).apply()
+            if (key == "mode_$kind") pagedMode = value != "scroll"
         }
     }
 
@@ -294,51 +310,24 @@ class ReaderActivity : Activity() {
         screenW = (resources.displayMetrics.widthPixels * 1.6).toInt().coerceIn(1400, 2400)
     }
 
-    private fun currentTheme(): String {
-        prefs.getString("theme", null)?.let { if (it in THEMES) return it }
-        val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        return if (night) "dark" else "light"
-    }
+    private fun currentMode(k: String): String =
+        prefs.getString("mode_$k", null) ?: if (k == "pptx") "slide" else "scroll"
 
-    private fun cycleTheme() {
-        val next = THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.size]
-        prefs.edit().putString("theme", next).apply()
-        web.evaluateJavascript("setTheme('$next')", null)
-        Toast.makeText(this, THEME_NAMES[next], Toast.LENGTH_SHORT).show()
-    }
-
-    private fun updateModeLabel() {
-        modeBtn.text = if (slideMode) "Cuộn" else "Trình chiếu"
-    }
-
-    private fun updateSpreadBtn() {
-        spreadBtn.visibility = if (content?.kind == "pdf" && !slideMode) View.VISIBLE else View.GONE
-    }
-
-    private fun toggleMode() {
-        val kind = content?.kind ?: return
-        slideMode = !slideMode
-        prefs.edit().putString("mode_$kind", if (slideMode) "slide" else "scroll").apply()
-        web.evaluateJavascript(if (slideMode) "setMode('slide')" else "setMode('scroll')", null)
-        updateModeLabel()
-        updateSpreadBtn()
-        if (slideMode) {
-            setUiVisible(false)
-            if (!prefs.getBoolean("slide_hinted", false)) {
-                prefs.edit().putBoolean("slide_hinted", true).apply()
-                Toast.makeText(
-                    this,
-                    "Vuốt sang trái/phải (hoặc chạm cạnh màn hình, nút âm lượng) để lật trang",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+    /** Cài đặt hiện tại gửi vào trang đọc. */
+    private fun settingsJson(): String {
+        val o = JSONObject()
+        for (k in SETTING_KEYS) prefs.getString(k, null)?.let { o.put(k, it) }
+        if (o.optString("theme") !in THEMES) {
+            val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
+            o.put("theme", if (night) "dark" else "light")
         }
+        return o.toString()
     }
 
-    // Nút âm lượng để lật trang khi trình chiếu.
+    // Nút âm lượng để lật trang khi ở kiểu Trượt / Lật sách.
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (slideMode && content != null) {
+        if (pagedMode && content != null) {
             when (keyCode) {
                 KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     web.evaluateJavascript("nextPage()", null); return true
@@ -352,9 +341,13 @@ class ReaderActivity : Activity() {
     }
 
     private fun showHintOnce() {
-        if (!prefs.getBoolean("hinted", false)) {
-            prefs.edit().putBoolean("hinted", true).apply()
-            Toast.makeText(this, "Chạm một lần vào màn hình để hiện thanh công cụ", Toast.LENGTH_LONG).show()
+        if (!prefs.getBoolean("hinted2", false)) {
+            prefs.edit().putBoolean("hinted2", true).apply()
+            Toast.makeText(
+                this,
+                "Chạm giữa màn hình để hiện thanh công cụ. Bấm Aa để chọn kiểu đọc, màu nền, cỡ chữ.",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
