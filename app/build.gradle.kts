@@ -11,8 +11,8 @@ android {
         applicationId = "vn.trinhdoc.app"
         minSdk = 30
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "2.0"
     }
 
     // Khoá ký cố định để cài bản mới đè lên bản cũ mà không phải gỡ app.
@@ -43,6 +43,15 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { it.maxHeapSize = "2g" }
+    }
 }
 
-// Không dùng thư viện ngoài: chỉ có Android SDK và Kotlin.
+// App không dùng thư viện ngoài (chỉ Android SDK + Kotlin). Thư viện dưới đây chỉ để kiểm thử.
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+}

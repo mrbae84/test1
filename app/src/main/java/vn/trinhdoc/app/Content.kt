@@ -86,7 +86,7 @@ class PdfContent(file: File) : ReaderContent {
         val i = path.removePrefix("/pdf/").removeSuffix(".jpg").toIntOrNull() ?: return null
         if (i !in sizes.indices) return null
         val bytes = render(i, screenW) ?: return null
-        return WebResourceResponse("image/jpeg", null, ByteArrayInputStream(bytes))
+        return cached(WebResourceResponse("image/jpeg", null, ByteArrayInputStream(bytes)))
     }
 
     @Synchronized
@@ -98,9 +98,10 @@ class PdfContent(file: File) : ReaderContent {
     }
 }
 
-class DocxContent(private val result: DocxResult) : ReaderContent {
-    override val kind = "docx"
-    override fun body() = "<div class=\"book\"><div class=\"doc\">${result.bodyHtml}</div></div>"
+/** Word và PowerPoint: HTML đã chuyển đổi + ảnh nhúng phục vụ qua /img/. */
+class OfficeContent(override val kind: String, private val result: DocxResult) : ReaderContent {
+    override fun body() =
+        if (kind == "docx") "<div class=\"book\"><div class=\"doc\">${result.bodyHtml}</div></div>" else result.bodyHtml
 
     override fun resource(path: String, screenW: Int): WebResourceResponse? {
         if (!path.startsWith("/img/")) return null
@@ -115,8 +116,14 @@ class DocxContent(private val result: DocxResult) : ReaderContent {
             "svg" -> "image/svg+xml"
             else -> "application/octet-stream"
         }
-        return WebResourceResponse(mime, null, ByteArrayInputStream(bytes))
+        return cached(WebResourceResponse(mime, null, ByteArrayInputStream(bytes)))
     }
+}
+
+/** Cho phép WebView giữ ảnh trong bộ nhớ đệm, lật trang không phải tải lại. */
+internal fun cached(r: WebResourceResponse): WebResourceResponse {
+    r.responseHeaders = mapOf("Cache-Control" to "max-age=86400")
+    return r
 }
 
 class XlsxContent(private val html: String) : ReaderContent {
@@ -153,9 +160,8 @@ object DocLoader {
 
         val kind = sniff(file)
         val problem = when (kind) {
-            Kind.OLD_OFFICE -> "Đây là file Office định dạng cũ (.doc/.xls) hoặc có mật khẩu. " +
-                "Ứng dụng hiện đọc được .docx, .xlsx và .pdf. Anh có thể mở file trên máy tính và lưu lại dạng mới."
-            Kind.PPTX -> "File PowerPoint chưa được hỗ trợ."
+            Kind.OLD_OFFICE -> "Đây là file Office định dạng cũ (.doc/.xls/.ppt) hoặc có mật khẩu. " +
+                "Ứng dụng đọc được .docx, .xlsx, .pptx và .pdf. Anh có thể mở file trên máy tính và lưu lại dạng mới."
             Kind.UNKNOWN -> "Không nhận dạng được loại file này."
             else -> null
         }
@@ -168,7 +174,8 @@ object DocLoader {
         try {
             return when (kind) {
                 Kind.PDF -> PdfContent(stored)
-                Kind.DOCX -> DocxContent(DocxConverter.convert(stored))
+                Kind.DOCX -> OfficeContent("docx", DocxConverter.convert(stored))
+                Kind.PPTX -> OfficeContent("pptx", PptxConverter.convert(stored))
                 Kind.XLSX -> XlsxContent(XlsxConverter.convert(stored))
                 else -> throw ReaderException("Không nhận dạng được loại file này.")
             }

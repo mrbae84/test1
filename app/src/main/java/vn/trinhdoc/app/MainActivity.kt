@@ -34,7 +34,9 @@ class MainActivity : Activity() {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "application/msword",
-            "application/vnd.ms-excel"
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.ms-powerpoint"
         )
     }
 
@@ -56,7 +58,7 @@ class MainActivity : Activity() {
             setTypeface(typeface, Typeface.BOLD)
         })
         root.addView(TextView(this).apply {
-            text = "Word · Excel · PDF — không quảng cáo, chỉ để đọc"
+            text = "Word · Excel · PowerPoint · PDF — không quảng cáo"
             textSize = 14f
             alpha = 0.7f
             setPadding(0, dp(4), 0, 0)
@@ -77,7 +79,7 @@ class MainActivity : Activity() {
         })
 
         emptyView = TextView(this).apply {
-            text = "Chưa có file nào.\n\nBấm “Mở file”, hoặc mở file Word, Excel, PDF từ Zalo, Gmail, " +
+            text = "Chưa có file nào.\n\nBấm “Mở file”, hoặc mở file Word, Excel, PowerPoint, PDF từ Zalo, Gmail, " +
                 "trình quản lý file… rồi chọn “Mera Office”."
             textSize = 15f
             alpha = 0.7f
@@ -154,6 +156,7 @@ class MainActivity : Activity() {
         "pdf" -> Pair("PDF", 0xFFD93025.toInt())
         "docx", "doc" -> Pair("W", 0xFF1A56C4.toInt())
         "xlsx", "xls" -> Pair("X", 0xFF188038.toInt())
+        "pptx", "ppt" -> Pair("P", 0xFFC43E1C.toInt())
         else -> Pair("•", 0xFF6B6B70.toInt())
     }
 

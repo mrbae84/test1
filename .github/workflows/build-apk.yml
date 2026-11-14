@@ -3,7 +3,7 @@ name: Build APK
 
 on:
   push:
-    branches: [trinhdoc]
+    branches: [trinhdoc, trinhdoc-dev]
   workflow_dispatch:
 
 permissions:
@@ -24,11 +24,21 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
           cp app/build/outputs/apk/debug/app-debug.apk MeraOffice.apk
+      - name: Test converters on sample files
+        continue-on-error: true
+        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: converted
+          path: app/build/converted
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: MeraOffice-apk
           path: MeraOffice.apk
       - name: Publish release
+        if: github.ref == 'refs/heads/trinhdoc'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
