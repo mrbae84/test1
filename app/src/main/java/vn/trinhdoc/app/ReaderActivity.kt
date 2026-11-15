@@ -71,6 +71,12 @@ class ReaderActivity : Activity() {
     private var pagedMode = false
     @Volatile
     private var kind = ""
+    /**
+     * Mỗi lần mở tài liệu dùng một địa chỉ riêng (vd. d3f9a1.reader.local) để bộ nhớ đệm của WebView
+     * không lấy nhầm ảnh trang của file mở trước (các file đều có /pdf/0.jpg, /img/word/media/...).
+     */
+    @Volatile
+    private var host = HOST
     private var docName = ""
     /** Đang ở chế độ sửa văn bản (chỉ file Word). */
     private var editing = false
@@ -110,12 +116,14 @@ class ReaderActivity : Activity() {
                         content = c
                         kind = c.kind
                         pageHtml = html
+                        host = "d" + java.lang.Long.toHexString(System.nanoTime()) +
+                            Integer.toHexString((Math.random() * 0xFFFFFF).toInt()) + "." + HOST
                         old?.close()
                         pagedMode = currentMode(c.kind) != "scroll"
                         settingsBtn.visibility = View.VISIBLE
                         editBtn.visibility = if (c.kind == "docx") View.VISIBLE else View.GONE
                         progress.visibility = View.GONE
-                        web.loadUrl("https://$HOST/index.html")
+                        web.loadUrl("https://$host/index.html")
                         if (after == null) showHintOnce() else after()
                     }
                 }
@@ -276,7 +284,7 @@ class ReaderActivity : Activity() {
         web.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse {
                 val url = request.url
-                if (url.host != HOST) return notFound()
+                if (url.host != host) return notFound()
                 val path = url.path ?: "/"
                 if (path == "/index.html") {
                     val html = pageHtml ?: return notFound()
@@ -354,7 +362,7 @@ class ReaderActivity : Activity() {
         if (!editing) return
         if (!ask) {
             setEditUi(false)
-            web.loadUrl("https://$HOST/index.html")
+            web.loadUrl("https://$host/index.html")
             return
         }
         web.evaluateJavascript("hasEdits()") { r ->
@@ -535,6 +543,8 @@ class ReaderActivity : Activity() {
     }
 
     override fun onDestroy() {
+        // Dọn ảnh trang đã lưu tạm để không chiếm bộ nhớ máy
+        web.clearCache(true)
         web.destroy()
         content?.close()
         content = null
